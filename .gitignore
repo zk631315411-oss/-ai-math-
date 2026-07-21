@@ -55,3 +55,12 @@ frontend/tests/
 frontend/public/*.pdf
 比赛相关文件与文件夹/
 参考项目/
+
+# 数据库文件（运行时产生，非项目代码）
+data/*.db
+
+# 调试截图
+frontend/debug-*.png
+
+# TypeScript 构建缓存
+frontend/tsconfig.tsbuildinfo
