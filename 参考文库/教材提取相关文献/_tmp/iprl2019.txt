@@ -1,0 +1,739 @@
+
+--- PAGE 1 ---
+TheNinthAAAISymposiumonEducationalAdvancesinArtificialIntelligence(EAAI-19)
+Concept Extraction and Prerequisite
+Relation Learning from Educational Data
+WeimingLu,YangfanZhou,JialeYu,ChenhaoJia
+CollegeofComputerScienceandTechnology,ZhejiangUniversity,Hangzhou,China
+{luwm,21621119,21721115,21821117}@zju.edu.cn
+Abstract methods,learningbasedmethodsandrecoverybasedmeth-
+ods. For the local statistical information, reference dis-
+Prerequisiterelationsamongconceptsarecrucialforeduca-
+tanceandcross-entropywereproposed (Liangetal.2015;
+tional applications. However, it is difficult to automatically
+Gordonetal.2016)tomeasureprerequisiterelationsamong
+extract domain-specific concepts and learn the prerequisite
+relationsamongthemwithoutlabeleddata. concepts. For the learning based methods, several features
+wereproposedfortheprerequisiteclassification.Forexam-
+Inthispaper,wefirstextracthigh-qualityphrasesfromaset
+of educational data, and identify the domain-specific con- ple,Panetal.(2017a)proposedcontextual,structuralandse-
+cepts by a graph based ranking method. Then, we propose manticfeatures,andLiangetal.(2018)utilizedgraph-based
+an iterative prerequisite relation learning framework, called andtext-basedfeatures.Incontrast,recoverybasedmethods
+iPRL, which combines a learning based model and recov- do not need to extract features to learn a prerequisite clas-
+ery based model to leverage both concept pair features and sifier.Forexample,Liangetal.(2017)canrecoverconcept
+dependenciesamonglearningmaterials.Inexperiments,we prerequisiterelationsfromcoursedependenciesdirectly.
+evaluatedourapproachontworeal-worlddatasetsTextbook
+However, there are still many challenges to automat-
+DatasetandMOOCDataset,andvalidatedthatourapproach
+ically mine prerequisite relations among domain-specific
+can achieve better performance than existing methods. Fi-
+concepts. (1) It is difficult to extract fine-grained concepts
+nally,wealsoillustratesomeexamplesofourapproach.
+for each domain. (2) It is time-consuming to label the pre-
+requisite relations in the learning based methods. (3) The
+Introduction
+recoverybasedmethodsonlyrelyonthedependencyamong
+Domain-specificconceptsandtheirprerequisiterelationsare educational data, but neglect the contextual, structural and
+thecoreofknowledgespaceandpersonalizedlearningthe- semanticfeatures.
+ory (Falmagne et al. 2006). Prerequisite relations can be In order to address these challenges, we propose a
+essentially considered as the dependency among concepts, domain-specificconceptextractionapproach,calledDsCE,
+andtheyarecrucialforpeopletolearn,organize,applyand and an iterative prerequisite relation learning approach,
+generateknowledge(MargolisandLaurence1999).Forex- called iPRL. DsCE can extract high-quality phrases from
+ample,theprerequisiteknowledgeof”ConditionalRandom documentsfirstly,andthenidentifyingdomain-specificcon-
+Fields” is ”Hidden Markov Model”. Thus, organizing the cepts with a graph based ranking method. While iPRL can
+knowledgeinprerequisiterelationscanimprovetheeduca- utilize both the advantage of the learning based model and
+tional tasks, such as curriculum planning (Liu et al. 2016) the recovery based model. It can learn the prerequisite re-
+andintelligenttutoring(WangandLiu2016). lations among concepts without human labeled data, and
+However,recentresearchesmainlyfocusonkeywordex- improvetheperformancegraduallywiththeinteractionbe-
+traction (Mihalcea and Tarau 2004; Liu, Chen, and Sun tweentwomodels.
+2011; Tixier, Malliaros, and Vazirgiannis 2016) or high- We conduct extensive experiments on two real-world
+quality phrase mining (Liu et al. 2015; Shang et al. 2018), datasets: Textbook and MOOC datasets. The results show
+and there are only a few efforts aiming to extract domain- thatourapproachoutperformsthestate-of-the-artmethods.
+specificconceptsandlearnprerequisiterelationsfromedu-
+cationaldata,suchascourses(Yangetal.2015;Liangetal.
+OurApproach
+2015;Liuetal.2016;Liangetal.2017),MOOCs(Massive
+Open Online Courses) (Pan et al. 2017a), textbooks (Wang ProblemFormulation
+etal.2016;Liangetal.2018)andscientificpapers(Gordon
+As shown in Figure 1, given a set of educational data in
+etal.2016).
+one domain, which is modeled as a set of sequential learn-
+Theprerequisiterelationlearningmethodscanbeclassi-
+ing materials (denoted as LMs for short) such as textbook
+fiedintothreecategories:localstatisticalinformationbased
+chaptersandMOOCvideos,wewanttoextractthedomain-
+Copyright(cid:13)c 2019,AssociationfortheAdvancementofArtificial specificconceptsandtheprerequisiterelationsamongthem
+Intelligence(www.aaai.org).Allrightsreserved. fromthesedata.
+9678
+--- PAGE 2 ---
+defined part-of-speech rules such as Noun+Noun and
+… [Adj|Noun]+Noun are unsuitable for the extraction task.
+𝑀𝑀1 𝑀𝑀2 𝑀𝑀3 … 𝑀𝑀𝑚𝑚1 Because some domain-specific concepts are complex, e.g.,
+…… List non-homogeneous linear differential equation, and linear
+𝑀𝑀1 𝑀𝑀2 𝑀𝑀3 𝑀𝑀𝑚𝑚2 differentialequationwithconstantcoefficientsofthesecond
+…… …… …… orderintheCalculusdomain.Inaddition,notallphrasesare
+Tree Graph
+domain-specific,e.g.,basictheoryisagoodphrase,butitis
+…… notadomain-specificconcept.
+𝑀𝑀1 𝑀𝑀2 𝑀𝑀3 𝑀𝑀𝑚𝑚3 We developed an unsupervised and domain-independent
+Sequential Learning Materials Knowledge Space
+approach (DsCE) to extract domain-specific concepts from
+Figure1:IllustrationofDomain-specificConceptExtraction textbooks,whichconsistsoftwosteps:(1)extractinghigh-
+and Prerequisite Relation Learning from Sequential Learn- quality phrases from textbooks. (2) identifying domain-
+ingMaterials,whicharedenotedas{M ,M ,...,M }. specificconceptsfromthephrases.
+1 2 mi
+Extracting high-quality phrases A phrase is defined as
+a sequence of words that appear consecutively in the text,
+For convenience, we list the main symbols used in this forming a complete semantic unit in certain contexts of
+paperinTable1. the given documents (Finch 2000). A high-quality phrase
+is a phrase which has a high probability to be a complete
+Symbol Meaning semantic unit, meeting the criteria of Popularity, Concor-
+D asetofeducationaldatainonedomain,andD =
+dance, Informativeness and Completeness (Liu et al. 2015;
+{dm }|
+m
+D
+=
+|
+1
+.
+Shangetal.2018).
+C a set of concepts extracted from D, and C =
+P { a c s i e } t | i C o = | f 1 h . igh-qualityphrasesextractedfromD,and use G d iv A e u n to th P e hr s a e s t e of (S e h d a u n c g at e io t n a a l l . d 2 a 0 t 1 a 8 D ) to in e o x n tr e ac d t om th a e in h , ig w h e -
+P={pi }|
+i
+P
+=
+|
+1
+. qualityphrasesP toformthecandidatesofdomain-specific
+dm ∈D aneducationaldatawithasequentialLMs,suchas concepts, since AutoPhrase has the following advantages:
+a book with a sequence of chapters or a MOOC (1)Itisarobustpositive-onlydistanttrainingmethod,which
+coursewithasequenceofvideos.
+canbeusedinmanydifferentdomainswiththeminimalhu-
+Q(pi ) thequalityscoreofpi ∈Pofbeingaphrase.
+maneffort.(2)Itcanleveragepart-of-speech(POS)tagsto
+conf(pi ) theconfidencescoreofpi ∈Pofbeingadomain-
+specificconcept. furtherenhancetheextractionperformance.
+xm
+i
+∈R|C| thevectorrepresentationoftheithLMM
+i
+m ∈dm However, the high-quality phrases extracted by Au-
+inconceptspaceC. toPhrasemaynotbedomain-specific.Weextractedphrases
+(cid:55)→ prerequisiterelationbetweenconceptsorLMs. from textbooks in three domains: ”Calculus”(CAL), ”Data
+Ω A m a Ω A m s = et = (a o { i f , i j p (cid:55)→ ) r ∈ er j e [ } − q M u 1 i i m s , i 1 , t M e ]|C j m r | e × ∈ l | a d C t m | io , r M n e s p i m re a (cid:55)→ s m e M n o t n j m s g , p d r m L e M r ∈ e D q s, u . i a s n it d e S er t a ru g c e tu ra r t e i ” o (D of S t ) h , e an d d om ”P a h in y - s s i p c e s” c ( ifi P c H c Y o ) n , c a e n p d ts c i a n lc t u o l p at K ed p t h h r e a a s v es -
+relationsamongconceptswhichisobtainedfroma according to its quality score. The result is shown in Fig-
+recoverybasedmodel,andai,jistheweightquan- ure2,whichdemonstratesthathigh-qualityphrasesmaynot
+tifyinghowconceptidependsonconceptj. bedomain-specific,andhasmanynoiseinthetopKphrases.
+F F = (fi,j ) ∈ [−1,1]|C|×|C| represents the pre- Therefore,weshouldidentifythedomain-specificconcepts
+dictedresultsfromalearningbasedmodelF,and
+fromthesehigh-qualityphrases.
+fi,jisthepredictedresultforconceptiandconcept
+j.
+W W = (wi,j ) ∈ [0,1]|C|×|C|representstherelated- 0.7
+nessamongconcepts. 0.6
+0.5
+Table1:Meaningofsymbolsused 0.4
+0.3
+0.2
+Therefore, the problem could be formally defined as: 0.1
+given a set of educational data in one domain, D = 0
+{d }M , and each data is a sequential learning materials 50 100 150 200 250
+m m=1
+d
+m
+= {M
+i
+m}|
+i
+d
+=
+m 1|. The goal is to extract domain-specific
+conceptsC fromD,andthenlearntheprerequisiterelation
+matrix A among these concepts by an iterative prerequisite
+relationlearningapproach.
+Domain-specificConceptExtraction
+Domain-specific concepts should be identified before pre-
+requisiterelationlearning.
+However, it is time consuming and tedious to anno-
+tate all fine-grained concepts in each domain, and pre-
+oitar
+K
+Figure2:Theratioofthedomain-specificconceptsintopK
+phrasesoftheresultsofAutoPhrase.
+Identifyingdomain-specificconcepts Inordertoidentify
+domain-specificconceptsinthehigh-qualityphrases,were-
+sortedtoagraphpropagationbasedrankingmethod(Panet
+al.2017b).
+First, a weighted undirected fully-connected graph G =
+(V,E)wasconstructed,whereV isthevertexsetofG and
+9679
+--- PAGE 3 ---
+E istheedgesetofG.EachvertexinV isaphrasep ∈ P binarytree (cid:55)→ undirectedgraphandBtree (cid:55)→ DAGgraph,
+i
+with a quality score Q(p ) extracted by AutoPhrase. For where(cid:55)→meansthereisaprerequisiterelationbetweenLMs
+i
+eachedge(p ,p )∈E,itsweightw(p ,p )isthesemantic orconcepts.
+i j i j
+relatedness of the two phrases p and p . We trained word
+i j
+embeddingvectorsbasedanonlineencyclopediacorpusvia
+word2vec(Mikolovetal.2013b),andthenobtainedthese-
+Binary tree Binary treuendirected graphundirected graph
+manticrepresentationofeachphraseviathevectoraddition Binary tree Binary tree
+B tree B tree DAG graph DAG graph
+of its individual word vectors. Then, the semantic related- AVL tree AVL tree Minimum Minimum B tree B treeDAG graph DAG graph
+nessoftwophrasesisdefinedasthecosinesimilarityoftheir Spanning Tree Spanning Tree AVL tree AVL tree
+vectors. …… ⟼…… ……⟼ …… …… ⟼…… ⟼
+Second, a propagation based ranking method was ex- Chapter Tree Chapter TreCehapter Graph Chapter Graph Related conceptRselated concepts
+ecuted on the graph G with the assumption that high- (a)Observation1 (b)Observation2
+confidenceconceptsinthegraphcouldpropagatetheircon-
+fidence scores to their neighbor nodes that have high se- Figure 3: The observations of the prerequisite relations
+mantic relatedness with them, to discover other potential
+amongconcepts.
+domain-specific concepts. Each vertex p has a confidence
+i
+score conf(p ) of being a domain-specific concept, and
+i
+(2)Relatedconceptswouldhavesimilarprerequisiterela-
+confk(p )isthescoreofp inthek-thiterationoftheprop-
+i i tionswithotherconcepts.AsinFigure3(b),binarytreeand
+agation.Wesettheinitialconfidencescoreofeachvertexas
+conf0(p )=1.Thepropagationfunctionsaredefinedas: B tree are highly related, so if binarytree (cid:55)→ DAGgraph,
+i thenBtree(cid:55)→DAGgraph.
+sk(p ,p ) = opf(p ,p )·Q(p )·e(p ,p )·confk(p ) (3)Theresultsoftherecoverybasedmodelandthelearn-
+j i i j j i j j
+confk+1(p ) = 1 (cid:32)(cid:80) pj∈A(pi) sk(p j ,p i ) (cid:33) i b n e g tte b r a t s h e a d t m A o e d q e u l a s l h s o to ul F d , b w e h c e o r n e s A ist i e s n t t h . e T r h e a s t ul i t s, o i f t t w he ou re ld co b v e -
+i Z |A(p i )| ery based model and F is the result of the learning based
+model.
+where sk(p j ,p i ) is the voting score that p j propagates to Thus,theoptimizationfunctionisdesignedasfollows.
+p in the k-th iteration, which is determined by the seman-
+t o i f i c p rela Q te ( d p ne ) s , s t b h e e tw co e n e fi n d p e i n a c n e d s p c j or e e (p o i f ,p p j ), in the th q e u k al - i t t h ys it c e o r r a e - A m ,ξ i , n F ||ξ|| 2 +λ 1 ||A | − C| F 2 || F +
+j j j
+p tion op co f n (p fk , ( p p j ) ) . , I a f n p dth a e nd ov p erla c p o p n i t n ai g n p o e n n e alt o y r b m et o w re ee i n de p n i t a ic n a d l λ 2 (cid:88) w i,j ||A(i,:)− |C| A(j,:)|| 2
+j i j i j 1≤i(cid:54)=j≤|C|
+words, we say they are overlapping, and should be penal-
+ized during the score propagation. For example, this algo-
+s.t. (xm
+i
+)T[Cm
+i(cid:55)→j
+(cid:12)A]xm
+j
+≥θ−ξ
+i
+m
+,j
+,
+rithmandsortalgorithmarerelatedbycosinesimilarity,but ∀d m ∈D,(i,j)∈Ω m (1)
+sortalgorithmshouldnotpropagateitsconfidencescoreto Ai,j +Aj,i =0,0<i(cid:54)=j <|C| (2)
+thisalgorithm,sincethisalgorithmisnotadomain-specific −1≤Ai,j ≤1,0<i(cid:54)=j <|C| (3)
+concept.Wesetopf(p ,p ) = 1,ifp andp arenotover-
+i j i j A(cid:12)(1−D)=0 (4)
+lapping. Otherwise, opf(p ,p ) = λ, λ ∈ (0,1) (We set
+λ = 0.5intheexperiments i ).c j onfk+1(p )isthenewconfi- Ai,j >0,∀d m ∈D,pos m (i)<pos m (j) (5)
+i
+dencescoreofp i ,whichisdependentontheaveragevoting where ξ i m ,j is a slack parameter for a pair of LMs M i m (cid:55)→
+scoreofvertexesinA(p i ).A(p i )isthevertexsetwhichwill M j m ind m ∈Dwhichhasaprerequisiterelation.θ,λ 1 and
+propagatethevotingscorestop i ineachiteration.Aftereach λ 2 arepositivehyperparameters,andtheyaresetto1.0,0.2
+iteration,theconfidencescoresshouldbenormalized,soZ and0.2intheexperimentsrespectively.
+isthenormalizationfactor. For the objective function, the first term is the empirical
+Finally,thephraseswiththeconfidencescoregreaterthan loss as in Liang et al. (2017). The second term is based on
+φ=0.6areselectedasthedomain-specificconceptsC. the third observation, which makes A be close to F. The
+thirdtermisbasedonthesecondobservation,whichmeans
+PrerequisiteRelationLearning if concept i and j are related, A(i,:) and A(j,:) should be
+similar.Here,w istherelatednessbetweenconceptiand
+After obtained the domain-specific concepts C, we would i,j
+j,whichwouldbecomputedinadvance.HowtocalculateF
+liketolearntheprerequisiterelationsamongtheseconcepts.
+andWwillbeelaboratedinthefollowingsection.
+InspiredbyLiangetal.(2017),weobservedthat(1)The
+For the constraints, the first three constraints are learned
+dependencyamonglearningmaterialsiscausedbysufficient
+from Liang et al. (2017). The first constraint is based on
+evidenceprovidedbyprerequisiterelationsamongconcepts
+thefirstobservationmentionedabove,where(cid:12)iselement-
+in that materials. This means if one learning material de-
+wise product, and C m is used to remove the contribu-
+pends on another one for knowledge learning, there must i j
+tionfromthecommon(cid:55)→conceptsbetweenMm andMm,so
+be sufficient concept pairs between them which have pre- i j
+requisite relations. Taking Figure 3(a) as an example, be- C m i j = (cm s,t ) ∈ {0,1} |C|×|C| , and cm s,t = 0 if xm i [s] > 0
+cause chapter Tree (cid:55)→ Graph, then the concepts in these or (cid:55)→ xm[t] > 0, otherwise cm = 1, and ξm is the penalty
+j s,t i,j
+chapters would like to have prerequisite relations, such as ofthisconstraint.Thesecondconstraintmeansifconcepti
+9680
+--- PAGE 4 ---
+is a prerequisite of j, then j is not a prerequisite of i. The tencerefd,Wikipediarefd,averagepositiondistance,distri-
+third constraint bounds the strength of prerequisite relation butionalasymmetrydistanceandcomplexityleveldistance.
+in[−1,1]. For textbooks, in addition to the features mentioned
+The fourth constraint assumes that there is no prerequi- above,wherewereplacedvideorefdandsentencerefdwith
+siterelationbetweentwoconceptsifoneconceptisnotcon- chapter refd, we also added Wikipedia abstract occurrence
+tained in other’s encyclopedia article according to Taluk- andcontentrefd.
+dar and Cohen (2012). Here, 1 = {1} |C|×|C| , and D ∈ chapter refd: For a concept pair (a,b), chapter ref-
+{0,1} isintroducedtofilterconceptpairs.Whenthe erence weight (crw), which is to qualify how b is re-
+|C|×|C|
+articleofconcepti(j)containsconceptj (i),Di,j =1,oth- ferred by chapters of a, is defined as: crw(a,b) =
+e i r a w lw is a e y D so i, c j c = urs 0. b T ef h o e re la j s , t t c h o e n n s i tr m ai a n y ts b p e e t c h i e fie p s re t r h e a q t u if is c it o e n c c o e n p - t (cid:80) dm(cid:80) ∈ d D m (cid:80) ∈D M (cid:80) ∈d M m ∈ f d ( m a, f M (a ) , · M r(M ) ,b) , where f(a,M) indicates the
+cept of j, but j must not be the prerequisite concept of i. term frequency of concept a in chapter M, and r(M,b) ∈
+Here,pos (i)isthepositionofconceptiind . {0,1} denotes whether concept b appears in chapter M.
+m m Then,chapterrefdof(a,b)iscrw(b,a)−crw(a,b).
+Theoptimizationproblemissolvediteratively.Ifwedon’t
+Wikipediaabstractoccurrence:Foraconceptpair(a,b),
+haveanylabeleddata,Fisinitializedrandomly,otherwisea
+probabilisticclassifierFistrainedtopredictF.Then,byfix- if concept a occurs in the Wikipedia abstract of concept b,
+Wikipediaabstractoccurrenceof(a,b)is1,otherwise0.
+ingF,theproblembecomesaquadraticoptimizationprob-
+lem, and A and ξ are solved by MOSEK1 software. When Wikipedia content refd: For a concept pair (a,b), the
+obtaininganewA,newtrainingdatacanbeselectedtoen- Wikipedia content refd is defined as: f b (a)−f a (b), where
+hancetheclassifierF.Inourexperiments,theperformance f b (a)isthetermfrequencyofconceptainthearticleofb.
+ofourmodelincreasesgraduallyandtendstoconverge. TodefineW,weproposedtworelatednessmeasurements
+Specifically, during the kth iterations, three datasets betweenconceptiandj.
+are formed firstly: Pk = {(i,j)|Ai,j > τ}; Nk = Semantic Relatedness: Wi,j is definedas the normalized
+{(i,j)||Ai,j | < τ}; Ok = {(i,j)|Ai,j == 0}. Then, the cosine distance between two embedding vectors: Ws i,j =
+p co o n si c t e iv p e t s p a a m ir p s le f s ro i m sfo P rm k. ed T b h y e s n e e le g c a t t i i n v g e t s h a e m t p o l p es ( k a + k ls 1 o )2 h |P av k e | l 2 1 e ( a 1 rn + ed|b| v y i v | i |w · · v ||o j v r j d||2 ) v , e w c h (M ere ik v o i lo i v s e th t e al w .2 o 0 r 1 d 3 e a m ). bedding vector
+the same number of the positive samples, but they con- PositionRelatedness:iftwoconceptshavethesimilarpo-
+sists of three parts: 20% data is randomly selected from sitionsintextbooksorMOOCvideos,theywouldhavesim-
+{(j,i)|(i,j) ∈ Pk}, and the remaining 80% data is ran- ilarprerequisiterelationswithotherconcepts.Thus,Wi,j is
+domly selected from Nk and Ok equally. τ = 0.6 in our defined as: W p = 1(cid:80) (cid:80) (pM +pM)|pM −
+experiments.TheprocedureisshownintheAlgorithm1. pM j |, where pM i i,j ∈ dm 2 = d n n m ( ( i i∈ , , d MD m ) ) , M n( ∈ i d , m M) i is the j term i fre-
+quencyofconceptiinthematerialM.
+Input:D:asetofeducationaldatainadomain.
+C:asetofconceptsextractedfromDbyDsCE.
+Experiments
+x:thevectorrepresentationsofalllearningmaterialsinD.
+Output:A:theprerequisiterelationsamongconceptsinC. Inthissection,wewillevaluatethedomain-specificconcept
+InitializeFrandomly,ortrainaprobabilisticclassifierF
+extractionandprerequisitelearningrespectively.
+usinglabeleddatatoinitializeF;
+CalculatetheconceptrelatednessmatrixWaccordingtoD;
+EvaluationonDomain-specificConceptExtraction
+ObtainAbysolvingEq.1withMOSEK;
+whileAisnotconvergentdo
+Datasets In order to evaluate the domain-specific con-
+UpdatetrainingdataforF accordingtoA;(Updatethe
+cept extraction, we collected six Chinese textbooks in
+LearningbasedModel)
+UpdateFusingF; eachdomain:”Calculus”(CAL),”DataStructure”(DS),and
+FixingF,obtainnewAbysolvingEq.1;(Updatethe ”Physics”(PHY)fromourdigitallibrary,andthenextracted
+RecoverybasedModel) thecontentofthetextbooksforconceptextraction.
+end
+BaselineMethods Weemployedthefollowingthreebase-
+Algorithm1:IterativePrerequisiteRelationLearning.
+linemethodstocomparewithourDsCEmethod.
+TextRank (Mihalcea and Tarau 2004): An unsupervised
+graph-basedrankingmodelforkeywordextraction.
+ConceptFeaturesandRelatedness THUCKE (Liu, Chen, and Sun 2011)2: A word trigger
+To train F, we used several features to capture whether a methodforkeywordextractionbasedonwordalignmentin
+conceptpairhasaprerequisiterelation. statisticalmachinetranslation.
+For MOOCs, in order to compare the method in (Pan AutoPhrase (Shang et al. 2018)3: An automated phrase
+et al. 2017a), we still used the same features, including miningmethodwithPOS-guidedphrasalsegmentation.
+semantic relatedness, video reference distance (refd), sen-
+2https://github.com/thunlp/THUCKE
+1http://www.mosek.com 3https://github.com/shangjingbo1226/AutoPhrase
+9681
+--- PAGE 5 ---
+Performancecomparisonandanalysis Tomeasureper- Textbook
+formance,weaskedthreestudentswhoaremajoringinthe dataset #books #concepts #pairs(+)
+CAL 6 89 439
+correspondingdomaintoannotatewhethertheconceptsex-
+DS 6 90 453
+tracted from each method are domain-specific or not, and
+PHY 6 139 630
+then took a majority vote of the annotations to create final
+domain-specificconceptsetforeachdomain.Precisionand MOOC
+Recallareusedtoevaluatetheextractionresults. dataset #courses #concept #pairs(+)
+ML 5 244 1,735
+In Figure 4, we show the precision of domain-specific
+DSA 8 201 1,148
+concept extraction in top K results of different methods in
+thethreedomains.
+Table2:Statisticsofthedatasetsforevaluatingonprerequi-
+We find that our method (DsCE) outperforms baseline
+siterelationlearning.
+methods across all domains. Specifically, we have the fol-
+lowing observations. First, AutoPhrase can extract high-
+quality phrases, but it does not focus on keyword extrac-
+CPR-Recover (Liang et al. 2017): An unsupervised
+tion,sothetoprankedphrasesmaynotbedomain-specific.
+method, which can recover concept prerequisite relations
+Second, the precision in Calculus domain is relatively low
+fromcoursedependencies.Inourdatasets,weusedittore-
+comparing to other two domains. This is because there are
+cover concept prerequisite relations from book chapter or
+many mathematical formulas in the textbooks of Calculus,
+MOOCvideodependencies.
+whichaffecttheOCR(OpticalCharacterRecognition)qual-
+ity for textbooks. Third, the graph propagation based rank- PRinMOOC (Pan et al. 2017a): A supervised method
+forprerequisiterelationlearninginMOOC,whichproposed
+ing method can indeed improve the performance of Au-
+contextual, structural and semantic features, and then used
+toPhrasefordomain-specificconceptextraction.
+random forest to capture the prerequisite relations between
+In addition, we also calculate the average precision and
+concepts.
+recall for each method across all domains, and show the
+precision-recall curves in Figure 5. Obviously, we find that In the experiments, we trained the English and Chinese
+ourmethodoutperformsbaselinemethodsgreatly. word vectors by word2vec (Mikolov et al. 2013a) on En-
+Figure 6 illustrates some examples of the top ranked glish Wikipedia and Baidu Baike5 respectively, and the di-
+domain-specific concepts extracted for each domain. We
+mensionsarebothsetto100.
+find that (1) TextRank and THUCKE are unable to extract
+Performancecomparisonandanalysis Weevaluatedthe
+complex concepts, which makes them have low recall. (2)
+methodsunderseveralscenarios,includingwithnon-labeled
+Sometop-rankedconceptsextractedbyAutoPhraseareob-
+data,withlabeleddata,differentconceptrelatednessandit-
+scure, such as michelson interferometer and Nicol prism,
+erativelearning.
+whilethebasiccoreconceptsarenotrankedinthetop.
+(1) Evaluation with non-labeled data. We compared
+EvaluationonPrerequisiteRelationLearning iPRL with RefD and CPR-Recover without any labeled
+data in both Textbook and MOOC datasets. The results are
+Datasets We evaluated the prerequisite relation learning
+showninTable3.
+withthefollowingtwodifferentdatasets.
+Textbook:Tothebestofourknowledge,theseisnopub-
+Textbook MOOC
+licdatasetforminingprerequisiterelationbetweenconcepts Method
+CAL DS PHY ML DSA
+intextbooks.WealsochoseChinesetextbooksinthreedo-
+P 35.49 34.78 27.96 71.70 72.69
+mains: Calculus, Data Structure, and Physics to create the RefD R 57.40 44.54 50.32 30.4 37.8
+dataset. The construction procedure is as follows. For each F 1 43.86 39.06 35.94 42.70 49.74
+domain,weextractedconceptsfromtextbooksbyourDsCE P 44.69 31.70 29.07 57.79 55.94
+method, and asked three students to select the most related CPR-R R 62.41 57.68 60.89 35.6 35.8
+domain concepts. Finally, the prerequisite relation among F 1 52.09 40.91 39.35 44.06 43.66
+themwereannotatedthroughamajorityvotestrategy. P 91.38 58.86 71.69 65.72 72.48
+MOOC: We used MOOC data mentioned in (Pan et al. iPRL R 55.58 64.80 57.85 46.4 43.2
+2017a),whichhasbeenreleased4. F 1 69.12 61.69 64.06 54.40 54.14
+The statistics of the datasets are listed in Table 2, which
+Table3:Comparisonwithnon-labeleddata(%)onTextbook
+lists the number of concepts and the positive pairs in each
+andMOOCdatasets
+domain.
+Baseline Methods We use the following state-of-the-art
+From the tables, we can see that (i) iPRL outperforms
+methodsasbaselines:
+other methods under the non-labeled data situation, which
+RefD (reference distance) (Liang et al. 2015): A link-
+achieves +16.69% for CPR-Recover and +18.44% for
+basedmetricformeasuringtheprerequisiterelationsamong
+concepts.
+RefDwithrespecttotheaverageF
+1
+.(ii)CPR-Recovercan
+achieveacomparablerecall,butitsprecisionistoolow.
+4http://keg.cs.tsinghua.edu.cn/jietang/software/acl17-
+prerequisite-relation.rar 5https://baike.baidu.com/
+9682
+--- PAGE 6 ---
+0.8 0.7
+0.6 0.5
+0.4
+0.3
+0.2
+0.1 50 100 150 200 250 300 350 400
+noisicerP
+Calculus
+1 AutoPhrase DsCE TextRank THUCKE 0.9
+0.8 0.7
+0.6
+0.5
+0.4
+0.3 50 100 150 200 250 300 350 400 K
+(a)Calculus
+noisicerP
+Data Structure
+AutoPhrase DsCE TextRank THUCKE 1 0.9
+0.8
+0.7
+0.6
+0.5
+0.4 50 100 150 200 250 300 350 400 K
+(b)DataStructure
+noisicerP
+Physics
+AutoPhrase DsCE TextRank THUCKE
+K
+(c)Physics
+Figure4:Theprecisionofdomain-specificconceptextractionofdifferentmethodsinthreedomains.
+1
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+0 0.2 0.4 0.6 0.8
+noisicerp
+PeAruftooPrhrmaseanceDcsoCEmparTisexotRnankandaTnHaUClyKsEis Tomeasureper-
+formance,weaskedthreestudentswhoaremajoringinthe
+correspondingdomaintoannotatewhethertheconceptsex-
+tracted from each method are domain-specific or not, and
+thentookamajorityvoteoftheannotationstocreatefinal
+domain-specificconceptsetforeachdomain.Precisionand
+Recallareusedtoevaluatetheextractionresults.
+In Figure 4, we show the precision of domain-specific
+conceptextractionintopKresultsofdifferentmethodsin
+thethreedomains.
+We find that our method (DsCE) outperforms baseline
+recall
+methodsacrossalldomains.Specifically,wehavethefol-
+lowing observations. First, AutoPhrase can extract high-
+Figure 5: The precision-recall curves of domain-specific quality phrases, but it does not focus on keyword extrac-
+conceptextracttiioonn,sothetoprankedphrasesmaynotbedomain-specific.
+Second,theprecisioninCalculusdomainisrelativelylow
+comparingtoothertwodomains.Thisisbecausethereare
+manymathematicalformulasinthetextbooksofCalculus,
+(2) EvaluatwiohnichwaiftfehctltahbeeOleCdR(dOapttaic . a F lC o h r a t r h ac e te l r a R b e e c l o e g d ni d ti a o t n a ) , qual-
+we applied 5-iftoylfdorctreoxtsbsoovkasl.iTdahitrido,nthteogreavpahlupraotpeagthateionpebrafsoedr-rank-
+manceofthepirnogpmoseethdodmecathnoidnd,ie.eed.,uimsipnrogv4e fthoeldpseirnfomrmeatnhcoedosf Au-
+suchasPRinMtoOPhOraCseafonrddoiPmRaiLn-,spaencdifitchceonncteepsttienxgtratchteiomn.with
+theremainingfo I l n d. ad W di e tio a n l , so we se a l l e so ct c e a d lc r u a la n t d e o th m ea f v o e r r e a s g t e a p s reFcis a io s nand
+recall for each method across all domains, and show the
+in(Panetal.2017a).ThecomparisonbetweenPRinMOOC
+precision-recallcurvesinFigure5.Obviously,wefindthat
+andiPRLisshoourwmneithnoTdaobultepe4rf.ormsbaselinemethodsgreatly.
+Method measure ML DSA
+1 P 72.08 88.32
+PRinMOOC 0 0 . . 8 9 R 59.4 48.4
+0 0 . . 6 7 F 1 65.13 62.53 0.5 P 65.96 70.93
+iPRL 0 0 . . 3 4 R 68.6 74.2
+0 0 . . 1 2 F 1 67.25 72.53
+0
+0 0.2 0.4 0.6 0.8
+Table 4: Comparison with labeled data(%) on MOOC
+dataset
+From the table, we can see that: (i) iPRL outperforms
+PRinMOOC, which only has the learning model. (ii) La-
+beleddatacanpromoteiPRL.ComparingTable4withTa-
+ble 3, the average F increases by 12.85% and 18.39% on 1
+MLandDSAdatasets.
+(3) Evaluation with concept relatedness. We evaluated
+bothsemanticrelatednessandpositionrelatednessonText-
+book dataset in iPRL, and the result is shown in Table 5.
+From the table, we can see that (i) Both semantic related-
+nessandpositionrelatednessachieveabetterperformance.
+(ii) Position relatedness outperforms semantic relatedness
+noisicerp
+TextRank THUCKE AutoPhrase DsCE
+Calculus
+¼ê ¼ê (cid:129)(cid:2)(cid:20)±Ï ‡©¥Š½n
+function function minimalpositiveperiod differentialmean
+valuetheorem
+(cid:144)§ 4(cid:129) ~Xê‚5‡©(cid:144)§ …Ü¥Š½n
+function limit lineardifferentialequation Cauchymeanvalue
+withconstantcoefficients theorem
+?ê (cid:144)§ ©ÜÈ©{ ‡©úª
+series function integrationbyparts differentialformula
+DataStructure
+Ž{ êâ ¢Ú^S©‡ ‚5óL
+algorithm data indexedsequentialfile linearlinkedlist
+!: (cid:127); ê|(cid:3)ƒ ê|eI
+node storage arrayelement arrayindex
+(cid:6)é Ž{ ˜(cid:141)(cid:2) (cid:141)(cid:2)Cþ
+search algorithm nullpointer pointervariable
+Physics
+$Ä $Ä òŽ(cid:15)šZ(cid:21)¤ >|rÝ
+movement movement michelsoninterferometer electricfieldstrength
+ÔN „Ý Ÿ%$Ä½n µ^>|
+object velocity theoremofthemotionfor vortexelectricfield
+centerofmass
+„Ý L§ Z‰(cid:15)cº >|Uþ
+velocity procedure Nicolprism fieldenergy
+FiguTarbele6:2:EExxaammpplleessooffddoommaina-isnp-escpifieccificocncceopntsceexpttrsacetexdtracted
+forfeoarcehacdhodmomaianinwwiitthhddiifffeferernetnmtemtheotdhso,dwsh,ewrehtheereEtnhgelisEhnglish
+phraphserasseusnudnedrerththeeCChhiinneesseepphrharsaesseasreatrheetthraenstlraatniosnlsa.tions.
+AutoPhrase DsCE TextRank THUCKE
+method, and asked three students to select the most relat-
+sligehdtldyo.mTahinecponocseiptitos.nFionfalclyo,nthceepprtesremquaiysitbeeremlatoiorneasmuoitnagblefor dedtuhcemingweprreearnenqoutaisteidtethrreoluagtihoanms.ajorityvotestrategy.
+MOOC: We used MOOC data mentioned in (Pan et al. (4 20 ) 1 E 7a v ) a ,w lu h a ic t h io h n as w be i e th nr i e t l e ea r s a e t d i4v . e learning. Figure 7 shows
+the peTrhfeorsmtataisnticcesoofftihPeRdaLta p seotsnarTeexlitsbteodoiknTdaabtalese3t,wvahircihes with
+thelisittsertahteionnums.beTrhoefcoinntceerpatsctainodnthbeeptowsietievnepLaiersarinnienagchbased
+recall Moddoemlaainnd. RecoverybasedModeliniPRLcanreallymake
+theperformancebettergradually.
+Figure 5: The precision-recall curves of domain-specific Textbook
+Finally,wdaetasshetows#sbooomkseex#acmonpceleptssof#ppraeirrse(+q)uisiterelations
+conceptextraction
+amongconcCepAtLsextrac6tedbyiP8R9LinFi4g3u9re8.
+DS 6 90 453
+Table 2 illustrates some examples of the top ranked PHY 6 139 630
+domain-specific concepts extracted for each domain. We RelatedWork
+MOOC
+find that (1) TextRank and THUCKE are unable to extract dataset #courses #concept #pairs(+)
+complexconcepts,whichmakesthemhavelowrecall.(2) Domain-sp M ec L ificCo 5 nceptE 2 x 44 tractio 1 n ,735
+Sometop-rankedconceptsextractedbyAutoPhraseareob- DSA 8 201 1,148
+Keyword extraction is the most related task to domain- scure, such as michelson interferometer and Nicol prism,
+whilethebasiccoreconceptsarenotrankedinthetop. specTiafiblcec3o:Sntcaetipstticesxotfrathcetidoanta.sTethseforereavraelusaetivnegroanlparpeprerqouaic-hesto
+extrsaitcetrekleaytiwonolredarsn.inSgu.pervised learning methods usually ex-
+EvaluationonPrerequisiteRelationLearning tract syntactic and lexical features for keyword extraction.
+Datasets We evaluated the prerequisite relation learning For example, KEA (Witten et al. 1999) proposed two fea-
+Baseline Methods We use the following state-of-the-art
+withthefollowingtwodifferentdatasets. turems:ethToFdIsDasFbaasneldinefisr:st occurrence, and then used a clas-
+Textbook:Tothebestofourknowledge,theseisnopub-
+RefD (reference distance) (Liang et al. 2015): A link-
+licdatasetforminingprerequisiterelationbetweenconcepts
+basedmetricformeasuringtheprerequisiterelationsamong
+intextbooks.WealsochoseChinesetextbooksinthree9d6o8-3
+concepts.
+mains:Calculus,DataStructure,andPhysicstocreatethe
+dataset.Theconstructionprocedureisasfollows.Foreach 4http://keg.cs.tsinghua.edu.cn/jietang/software/acl17-
+domain,weextractedconceptsfromtextbooksbyourDsCE prerequisite-relation.rar
+--- PAGE 7 ---
+MethModethodmeamsueraesureCACLAL DSDS PHPHYY Calculus
+P P 91.9318.38585.886.86 717.16.969 ¼ê(function) ƒ‚(tangent) ‡©(differential) ¥Š½n(mean value
+iPRLiPRL R R 55.5558.58646.840.80 575.78.585 theorem) .‚ 7→ KF¥Š½n(Lag 7→ rangemeanvaluethe 7→ orem)
+F P 1 F P 1 6 9 9 2 . . 6 9 1 9 9 2 2 6 . . 1 9 2 6 6 5 1 9 6 5 . . 6 1 1 9 9 6 . . 6 1 9 6 6 6 4 9 6 6 . . 4 9 0 7 . . 6 0 0 7 6 0 © ¼ (cid:144) ê § (fu ( n l 7→ i c n t e io a n r ) fi 7→ rst (cid:19) -or ê de ( r d d er if iv fe a r t e iv n e ti ) a 7→ le ‡ qu © ati (cid:144) on) §(differentialequation) 7→ ˜(cid:30)‚5‡
+iPRL iPsRLs R R 54. 5 2 4 1 .21 66 6 .1 6 4 .14 60 6 . 0 0 . 9 09 DataStructure
+iPRL iP p RLp F F P R 1 1 F F P R 1 1 6 9 5 6 8 2 6 9 . . . . 6 9 5 6 4 4 0 7 8 2 6 9 8 8 3 8 . . . . 4 4 0 7 8 8 3 8 6 6 6 6 2 0 5 2 6 6 6 6 . . . . 4 1 2 6 2 0 5 2 6 6 5 0 . . . . 4 1 2 6 6 6 5 0 6 7 5 6 4 1 9 4 6 7 5 6 . . . . 4 1 9 4 5 1 6 8 . . . . 4 2 1 6 5 1 6 8 4 2 1 6 ê ï ã P (K h (cid:19) ( r â y g u s r s i (cid:3) ( a c k d p s a a ä h l t ’ ) a s 7→ ( ) b 7→ a a l ( g l ä a o n r : i c ( t t e h r ( d e n m e o b ) ) d i 7→ n e a ) 7→ (cid:19) ry (cid:129) (cid:3) tre (cid:2) ä e) ( ) bin ¤ ar ä y ( tr m ee in ) 7→ ima (cid:19) ls (cid:3) pa | nn ¢ ing ä tr ( e b e in ) 7→ ary Ž se ° ar d ch k tre (cid:16) e) 7→ Ž ² {
+Table 6: Performance of concept relatednesss(%) on Text- „Ý(velocity) ÄU(kineticenergy) Å(cid:22)U(mechanicalenergy) Å(cid:22)UÅð
+Tablebo5o:kP d e a r ta fo se rm t,w an h c e e re osf a c n o d npce d p en t o r t e e la th te e dsneemsassn(t%ic)reolante T d e n x e t s - s ½Æ(conservat 7→ ionlawofmechanicale 7→ nergy) 7→
+bookadnadtpasoesti,tiwonhreerleat s edanneds p s denotethesemanticrelatedness >Ö(charge) >6(electricity) >^aA(electromagneticinduction) >^aA
+7→ 7→ 7→
+andpositionrelatedness ½Æ(lawofelectromagneticinduction)
+0.7 CAL DS PHY FTiagbulere78::EExaxmamplpelsesofofprperreeqreuqisuitiesitreelraetiloantisonesxtreaxcttreadctbedy by
+0.7
+0.65
+CAL DS PHY iiPPRRLL..
+0.65
+1F0.6
+2017a),textbooks(Wangetal.2016;Liangetal.2018)and
+proposed to measure the prerequisite relations among con-
+1F 0.6 scientificpapers(Gordonetal.2016).
+0.55 ceptsincoursesorscientificpapers.WhilePanetal.(2017a)
+Thestatisticalinformationsuchasreferencedistanceand
+proposedsemantic,contextualandstructuralfeaturestode-
+0.55 cross-entropy (Liang et al. 2015; Gordon et al. 2016) was
+0.5
+1 2 3 4 5 6 7 8 9 tpercotpporseerdeqtouimsieteasruerleattihoenspraemreoqnugisicteonrecleaptitosnisnaMmOonOgCcso.n-
+ITERATIONS
+0.5 cepOtsthinercowuorsrekssourtsicliizeendtifitchepadpeeprse.nWdehnilceyPaanmeotnagl.(c2o0u1r7sae)s or
+1 2 3 4 5 6 7 8 9
+ITERATIONS
+tperxotpboosoekdss.eFmoarnetixca,mcopnltee,x(tuYaalnagndetstarlu.c2tu0r1a5l;feLaituureesttaol.d2e0-16)
+Figure6:PerformanceofiPRLponTextbookvarieswiththe
+ptercotpporseerdeqauisciotenrceelpattiognrsapahmolenagrcnoinngcefprtasmineMwoOrOkCfos.r within-
+iterations
+Figure7:PerformanceofiPRLponTextbookvarieswiththe andOtchreorsws-olerkvselutiinlifzeerdentchee doefpepnrdeerenqcyuiasimteonrgelcaotiuornsessaotrthe
+iterations
+cteoxutrbsoeo-klesv.eFloranedxatmhpelec,o(nYcaenpgt-eletvael.l2d0i1re5c;tLediugertaaplh.s2.01(L6)iang
+to extract keywords. Supervised learning methods usually
+eptroaplo.s2e0d1a7)coandcderpetssgerdapthheleaprrnoibnlgemframofewreocrokvfeorrinwgitchoinn-cept
+extract syntactic and lexical features for keyword extrac-
+parnedrecqruoisssi-tleevreellaitniofenrsenfcreomofunpirvereerqsiutiysitceourreslaetidoenpsenatdethnecies.
+course-level and the concept-level directed graphs. (Liang
+sifiertioton.dFeotreremxaimnepleth,eKEkeAyw(Woridttse.nRetecael.nt1l9y9,9a)npreonpcoosdeder-t- (Wangetal.2016)proposedajointoptimizationmodelfor
+et al. 2017) addressed the problem of recovering concep-
+decowdeorfferaatmureews:oTrkF(IDMFenagndetfiarls.t2o0c1c7u)rwreanscea,papnlidedthteonguesneedr-a conceptmapextractionfromtextbooksthatutilizesthemu-
+tprerequisiterelationsfromuniversitycoursedependencies.
+atekcelyapshsirfiaesre.toUdnestueprmerivniesethdelekaerynwinogrdms.eRtheocednstluys,uaanlleynacpopdleyr- tual interdependency between concept extraction and pre-
+(Wangetal.2016)proposedajointoptimizationmodelfor
+graphd-ebcaosdeedrfsreammaewntoicrkre(Mlaetendgneetsasl.m2e0a1s7u)rwesasfoaprpkleieydwtoorgdeenxe-r- requisiterelationlearning.Theyfurtherappliedactivelearn-
+conceptmapextractionfromtextbooksthatutilizesthemu-
+tracti a o te n. k F ey o p r h e r x a a se m . p U l n e s , u T p e e x rv tR is a e n d k le ( a M rn i i h n a g lc m e e a th a o n d d s T u a su ra a u lly 20 ap 0 p 4 l ) y i t n u g al to in t t h er e d c e o pe n n c d e e p n t c p y re b r e e t q w u e i e s n ite co le n a c r e n p i t ng ex ( t L ra i c a t n io g n et an a d l. p 2 r 0 e 1 - 8).
+graph-basedsemanticrelatednessmeasuresforkeywordex-
+representedadocumentasatermgraph,andusedagraph- requisiterelationlearning.Theyfurtherappliedactivelearn-
+traction.Forexample,TextRank(MihalceaandTarau2004)
+based ranking algorithm to assign importance scores to ingtotheconceptprereqCuiosinteclleuarsniionng(Liangetal.2018).
+representedadocumentasatermgraph,andusedagraph-
+terms. Tixier, Malliaros, and Vazirgiannis (2016) proposed
+based ranking algorithm to assign importance scores to Inthispaper,weproposeadomain-specificconceptextrac-
+agraphdegeneracy-basedapproachforkeywordextraction. Conclusion
+terms. Tixier, Malliaros, and Vazirgiannis (2016) proposed tionapproachandaniterativeprerequisiterelationlearning
+Ho a w g e ra v p e h r, d t e h g e e s n e er r a e c s y e - a b r a c s h e e d s a m pp a r i o n a l c y h f f o o c r u k s e e y d w o o n rd t e h x e tr s a e c l t e io c n - . aInppthroisacphap.eTr,hwiseappropprooasechadcaonmaeixnt-rsapcetcidfiocmcoainnc-esppteecxitfircacc-on-
+tionofHwoowrdesvethr,atthceasnebreessetadrecshcersibmeatihnelydofoccuumseednto,nbuthteigsneolerec- ctieopntsapapnrdoaclehaarnndtahneitperrearteivqeupisrietreeqrueilsaittieorneslawtiointhloeuatrnhinugman
+the ftaicotntohfawtodrodmstahiant-cspanecbiefisctdceosnccriebpettshaerdeocuusmuaelnlyt,bcuotmigpnleoxre laapbperloeadchd.aTtah.isInapepxropaecrhimceanntse,xtwraectedvoamluaaitne-dspeocuirficapcponro-ach
+andfithnee-fgacratitnheadt.domain-specific concepts are usually complex o c n ept t s wo and rea le l- a w rn or t l h d e d p a r t e a r s e e q t u s is T it e e xt r b e o la o ti k on D s a w ta i s th e o t u a t n h d um M a O n OC
+Reacnednfitlnye,-gsreavineeradl. works (Liu et al. 2015; Shang et D la a b t e a le s d et, da a t n a d . I v n al e id x a p t e e r d im t e h n a t t s, o w ur e a e p v p a r lu o a a t c e h d c o a u n r a a c p h p i r e o v a e ch bet-
+al. 201R8e)cefnotcluy,s soenverhaolwwotorksex(tLraicut ehtigahl-.qu20a1li5ty; Sphharnasgese.t on two real-world datasets Textbook Dataset and MOOC
+terperformancethanexistingmethods.Inaddition,wealso
+SegPahl.ras2e018(L)iufoceuts aoln. 2h0o1w5)topreoxptroascetdhiaghs-eqgumalietnytaptihornas-- Dataset, and validated that our approach can achieve bet-
+illustratedsomeexamplesoftheresultsofourapproach.In
+integersa.teSdegfPrahmraesweo(Lrkiubeyt ianl.te2g0r1a5ti)ngpropphorasesde eaxsteragcmtieonntatainodn- terperformancethanexistingmethods.Inaddition,wealso
+future,weplantousedeeplearningandactivelearningtech-
+phrasinatlegsreagtmedenfrtaamtioewnotrokmbyutiunatelglyratbinegnepfihtraesaechextortahcetiro.nAaun-d illustratedsomeexamplesoftheresultsofourapproach.In
+nologiestofurtherimprovetheperformance.
+phrasal segmentation to mutually benefit each other. Au- future,weplantousedeeplearningandactivelearningtech-
+toPhrase (Shang et al. 2018) extended SegPhrase by intro-
+toPhrase (Shang et al. 2018) extended SegPhrase by intro- nologiestofurtherimprovetheperformance.
+ducing two new technologies: robust positive-only distant
+ducing two new technologies: robust positive-only distant Acknowledgments
+training,andPOS-guidedphrasalsegmentation.
+training,andPOS-guidedphrasalsegmentation. This work is supp A o c rt k e n d o b w y l t e h d e g Z m he e j n ia t n s g Provincial Natural
+PrerequisiteRelationLearning
+STchiiesnwceorFkoiusnsduaptpioonrteodfbCyhitnhae(ZNhoej.iaLnYg1P7rFo0v2in0c0ia1l5N),atthueraFlun-
+PrerequisiteRelationLearning dSacmienencetaFloRuensdeaatirocnhoFfuCnhdisnafo(Nr oth.eLYC1e7nFtr0a2l0U01n5iv),etrhseitiFeusn(-No.
+A few efforts aim to learn prerequisite relations from edu-
+A few efforts aim to learn prerequisite relations from edu- 2d0am17eFnZtaAlR50es1e6a)r,cChKFuCnEdSsTfo,ranthdeMCOenEtr-aElnUgniniveeerrsiintigesR(eNseoa.rch
+catiocnaatliodnaatlad,astuac,hsuacshcaosucrosuesrs(eYsa(Ynganegteatl.a2l.021051;5L;Liainanggeettaal.l. 2017FZA5016),CKCEST,andMOE-EngineeringResearch
+CenterofDigitalLibrary.
+20152;0L1i5u;eLtiuale.t2a0l.1260;1L6i;aLngianegtaelt.a2l0.21071),7M),MOOOOCCss(P(Pananeettaal.l. CenterofDigitalLibrary.
+2017a),textbooks(Wangetal.2016;Liangetal.2018)and
+References
+scientificpapers(Gordonetal.2016).
+Thestatisticalinformationsuchasreferencedistanceand Falmagne, J.-C.; Cosyn, E.; Doignon, J.-P.; and Thie´ry, N.
+cross-entropy (Liang et al. 2015; Gordon et al. 2016) was 2006. Theassessmentofknowledge,intheoryandinprac-
+9684
+--- PAGE 8 ---
+tice. InMissaoui,R.,andSchmidt,J.,eds.,FormalConcept Proceedings of the Seventh Workshop on Building Educa-
+Analysis, 61–79. Berlin, Heidelberg: Springer Berlin Hei- tional Applications Using NLP, 307–315. Association for
+delberg. ComputationalLinguistics.
+Finch, G. 2000. Linguistic Terms and Concepts. How to Tixier,A.J.-P.;Malliaros,F.D.;andVazirgiannis,M. 2016.
+study.Macmillan. Agraphdegeneracy-basedapproachtokeywordextraction.
+Gordon,J.;Zhu,L.;Galstyan,A.;Natarajan,P.;andBurns, InEMNLP.
+G. 2016. Modeling concept dependencies in a scientific Wang,S.,andLiu,L. 2016. Prerequisiteconceptmapsex-
+corpus. In Proceedings of the 54th Annual Meeting of the traction for automatic assessment. In Proceedings of the
+AssociationforComputationalLinguistics(Volume1:Long 25th International Conference Companion on World Wide
+Papers),volume1,866–875. Web,519–521. InternationalWorldWideWebConferences
+Liang,C.;Wu,Z.;Huang,W.;andGiles,C.L. 2015. Mea- SteeringCommittee.
+suring prerequisite relations among concepts. In Proceed- Wang, S.; Ororbia, A.; Wu, Z.; Williams, K.; Liang, C.;
+ingsofthe2015ConferenceonEmpiricalMethodsinNatu- Pursel, B.; and Giles, C. L. 2016. Using prerequisites to
+ralLanguageProcessing,1668–1674. extractconceptmapsfromtextbooks. InProceedingsofthe
+Liang,C.;Ye,J.;Wu,Z.;Pursel,B.;andGiles,C.L. 2017. 25th acm international on conference on information and
+Recovering concept prerequisite relations from university knowledgemanagement,317–326. ACM.
+coursedependencies. InAAAI,4786–4791. Witten, I. H.; Paynter, G. W.; Frank, E.; Gutwin, C.; and
+Liang,C.;Ye,J.;Wang,S.;Pursel,B.;andGiles,C.L.2018. Nevill-Manning, C. G. 1999. Kea: Practical automatic
+Investigating active learning for concept prerequisite learn- keyphraseextraction. InACMDL.
+ing. Proc.EAAI. Yang,Y.;Liu,H.;Carbonell,J.;andMa,W. 2015. Concept
+Liu,J.;Shang,J.;Wang,C.;Ren,X.;andHan,J.2015.Min- graphlearningfromeducationaldata. InProceedingsofthe
+ingqualityphrasesfrommassivetextcorpora. Proceedings. Eighth ACM International Conference on Web Search and
+ACM-Sigmod International Conference on Management of DataMining,159–168. ACM.
+Data2015:1729–1744.
+Liu,H.; Ma,W.;Yang,Y.; andCarbonell,J. 2016. Learn-
+ingconceptgraphsfromonlineeducationaldata. Journalof
+ArtificialIntelligenceResearch55:1059–1090.
+Liu,Z.;Chen,X.;andSun,M. 2011. Asimplewordtrigger
+methodforsocialtagsuggestion. InEMNLP.
+Margolis,E.,andLaurence,S. 1999. Concepts:coreread-
+ings. MitPress.
+Meng, R.; Zhao, S.; Han, S.; He, D.; Brusilovsky, P.; and
+Chi,Y. 2017. Deepkeyphrasegeneration. InACL.
+Mihalcea,R.,andTarau,P. 2004. Textrank:Bringingorder
+intotexts.
+Mikolov, T.; Sutskever, I.; Chen, K.; Corrado, G. S.; and
+Dean, J. 2013a. Distributed representations of words and
+phrases and their compositionality. In Advances in neural
+informationprocessingsystems,3111–3119.
+Mikolov, T.; Sutskever, I.; Chen, K.; Corrado, G. S.; and
+Dean, J. 2013b. Distributed representations of words and
+phrasesandtheircompositionality. InNIPS.
+Pan, L.; Li, C.; Li, J.; and Tang, J. 2017a. Prerequisite re-
+lationlearningforconceptsinmoocs. InProceedingsofthe
+55th Annual Meeting of the Association for Computational
+Linguistics(Volume1:LongPapers),volume1,1447–1456.
+Pan, L.; Wang, X.; Li, C.; Li, J.-Z.; and Tang, J. 2017b.
+Course concept extraction in moocs via embedding-based
+graphpropagation. InIJCNLP.
+Shang,J.;Liu,J.;Jiang,M.;Ren,X.;Voss,C.R.;andHan,J.
+2018. Automatedphraseminingfrommassivetextcorpora.
+IEEE Transactions on Knowledge and Data Engineering
+1–1.
+Talukdar,P.P.,andCohen,W.W.2012.Crowdsourcedcom-
+prehension:predictingprerequisitestructureinwikipedia.In
+9685

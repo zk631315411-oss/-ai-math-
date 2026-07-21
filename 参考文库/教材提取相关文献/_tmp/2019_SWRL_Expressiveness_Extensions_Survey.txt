@@ -1,0 +1,1651 @@
+The Semantic Web Rule Language
+Expressiveness Extensions — A Survey
+Abba Lawan1,3 and Abdur Rakib 2
+1 School of Computer Science
+The University of Nottingham, Malaysia Campus
+khyx3alw@nottingham.edu.my
+2 Department of Computer Science and Creative Technologies
+The University of the West of England, Bristol, UK
+Rakib.Abdur@uwe.ac.uk
+3 Crops For the Future (CFF), Malaysia
+Abstract. The Semantic Web Rule Language (SWRL) is a direct ex-
+tension of OWL 2 DL with a subset of RuleML, and it is designed to be
+the rule language of the Semantic Web. This paper explores the state-
+of-the-art of SWRL’s expressiveness extensions proposed over time. As
+a motivation, the eﬀectiveness of the SWRL/OWL combination in mod-
+eling domain facts is discussed while some of the common expressive
+limitations of the combination are also highlighted. The paper then clas-
+siﬁes and presents the relevant language extensions of the SWRL and
+their added expressive powers to the original SWRL deﬁnition. Further-
+more, it provides a comparative analysis of the syntax and semantics
+of the proposed extensions. In conclusion, the decidability requirement
+and usability of each expressiveness extension are evaluated towards an
+eﬃcient inclusion into the OWL ontologies.
+Keywords: Semantic Web, OWL, Description Logic, Decidability, SWRL Built-
+ins, Semantics
+1 Introduction
+The OWL/SWRL combination oﬀers a more ﬂexible ontology language for mod-
+eling knowledge domains with higher degree of expressiveness than using OWL
+alone. However, despite the high expressive powers added by SWRL, the combi-
+nation does not guarantee a comprehensive ontology modeling language. SWRL
+is found to be lacking descriptive constructs to model complex real-life scenar-
+ios as required by the Semantic Web. This has led to the evolution of various
+expressiveness extensions to the classical SWRL formalism, ranging from simple
+mathematical built-ins to extensions that facilitate modeling of vague facts and
+predictive knowledge of a given domain.
+The semantic web rule language (SWRL) [18] is a W3C recommendation that
+extends the Web Ontology Language (OWL)[25] with horn-clause rules. This al-
+lows declarative representation of complex domain information that may not be
+arXiv:1903.11723v1  [cs.AI]  27 Mar 2019
+2 A. Lawan and A. Rakib
+possible in OWL alone. OWL being the recommended ontology language for the
+semantic web [38], has shown considerable expressive powers over other ontol-
+ogy languages, especially its predecessor, the Resource Description Framework
+(RDF)4. However, while OWL ontologies provide simple, reusable and easy to
+understand domain knowledge models, they lack the declarative expressiveness
+oﬀered by rules. As evidently shown in the semantic web architecture (Fig.1),
+Rules are projected to support ontologies for eﬃcient domain knowledge rep-
+resentation and the semantic web rule language (SWRL) is one of such rules’
+languages syntactically closest to OWL. Expressive limitations of the RDFS and
+OWL formalisms can thus be augmented by the capabilities of rules designed
+for the complex assertion of facts that goes beyond simple declaration of domain
+concepts. Moreover, being in common practice with well-established logics, rules
+such as SWRL, oﬀers an eﬃcient reasoning support to ontologies with of course
+the beneﬁt of added expressiveness.
+Fig. 1: The Semantic web language stack[4]
+1.1 The SWRL Formalism
+SWRL is an expressive rule language designed to enable declarative assertions
+using OWL concepts. It is fashioned as the union of Horn logic (HL) and Descrip-
+tion logic (DL) in order to achieve higher domain expressiveness and reasoning
+capacity than when using OWL alone. In other words, SWRL is a direct exten-
+sion of OWL that utilizes its model-theoretic semantics and its syntax basically
+stemmed from the combination of DL-based OWL and HL-based Rule-ML. Clas-
+sical SWRL rules include positive, function-free horn-clauses written as implica-
+tions — consisting of an antecedent (body of the rule), as well as consequent(or
+head of the rule). A SWRL-enabled ontology thus contains an OWL Knowledge
+base and set of horn-clause rule axioms.
+4 https://www.w3.org/RDF/
+SWRL Expressiveness Extensions— A Survey 3
+SWRL Syntax and Semantics In its human readable form, both SWRL’s rule
+body (B) and rule head (H) typically consist of a conjunction of atoms, which
+can contain a combination of OWL constructs. Such constructs can be either
+in the form of OWL-DL class descriptions of the form C(x), individual-valued
+properties — P(x,y), data-valued properties — Q(x,y), OWL same individuals
+— sameAs(x,y), OWL diﬀerent individuals — diﬀerentFrom(x,y), or the spe-
+ciﬁc built-in functions — builtIn(r, x, ...) . Where ’x’ and ’y’ are either variables
+representing OWL classes, properties, and individual data values (in which case
+preceded by a ’?’) or OWL individuals themselves.
+Note: ’r’ is any SWRL built-in function — bound to a dataLiteral, such as:
+swrlb:greaterThan(), swrlb:Multiply() etc.
+atom B1∧atomB2...∧atomBn−→atomH1∧atomH2...∧atomHn (1).
+The semantics ensures that the condition in the rule’s head be evaluated to
+true whenever the conditions in the body are satisﬁed. However, there are vari-
+ants to the basic format above such as rules with disjunctions in their heads or
+those extended to handle classical negations, etc. The aim of this paper is to re-
+view such various expressiveness extensions attributed to the SWRL formalism.
+Decidability of SWRL Rules Even though SWRL oﬀers an unrestricted op-
+portunity of combining ontologies and declarative assertion of rules, it however,
+does so at the expense of decidability. As clearly pointed out in [2], ”there is un-
+doubtedly no inference engine that can draw exactly the same conclusion as the
+SWRL semantics”. This is due to the highly expressive nature of the formalism
+and SWRL being in ﬁrst-order horn clause is unlike its complement OWL-DL,
+undecidable. Therefore, for SWRL ontologies to be decidable, a restriction needs
+to be placed on the rule axioms. To achieve decidability, SWRL rules are made
+to conform to DL-Safety, which is a name for a restriction imposed on the rule
+axioms such that they contain only known concepts [35]. In essence, variables in
+DL-safe SWRL atoms must be bound only to those concepts or individuals that
+are known to exist in the ontology. DL-based reasoners (such as Pellet, HermiT
+and Fact++, etc) are needed to reason over SWRL rules.
+While the DL-safety may result in an incomplete expression of facts in a
+given ontology (due to the limits imposed on the language), inferences from DL-
+safe rules are always formally sound. However, as is the case with other logic
+programs, such eﬀorts to keep the SWRL formalism within decidable language
+constructs and computationally feasible inferences, have resulted in considerable
+limitations to the ontology rule language. This is evidently discussed in section
+1.3, and thus leading to various expressiveness extensions of SWRL proposed
+over time. In what follows, we brieﬂy compare the A-Box and T-Box decidability
+requirements followed by highlights in section 1.2 on the strategic importance of
+SWRL in OWL ontologies — a reasonable justiﬁcation for our study. For brevity,
+reasoning paradigm in SWRL is not discussed here and we refer the interested
+reader to [27].
+4 A. Lawan and A. Rakib
+T-Box versus A-BOX Decidability: Depending on the inference-subject involved,
+the DL-safety can be interpreted in terms of the T-Box (Concepts or Terminol-
+ogy Box) or the A-Box (Individuals or Facts Assertion Box) of a given ontology.
+In terms of the T-Box, DL-Safety imposes a limitation that only those classes
+or terms previously deﬁned in the ontology can be used in the SWRL rules —
+meaning that no new or unknown individual may be added to the terminol-
+ogy box. Whereas in relation to the A-Box, the DL-Safety can be interpreted
+thus: variables used in the consequent of a rule must have also appeared in its
+antecedent — which implies that no anonymous or loosed individuals can be
+introduced into the ontology’s A-Box.
+Understanding these limitations can thus make it easier to design new SWRL
+extensions that stay within the decidable fragment of the DL, thereby allowing
+the inference engines or Reasoners to complete inferences within a ﬁnite time.
+Where such design cannot be easily achieved, a syntactic limitation or manual
+restriction were usually imposed on the use of the new extensions as discussed
+in details in section 3.
+1.2 Why SWRL?
+Rules generally allow eﬃcient declarative assertions in domain knowledge model-
+ing. However, the semantic web rule language (SWRL) is particularly important
+in the semantic web knowledge modeling as it allows both the assertion of facts
+in OWL ontologies as well as their retrieval. Information retrieval is achieved
+through its slightly modiﬁed Semantic Web Query language(SQWRL), which is
+an SQL-extended version of SWRL for querying OWL ontologies [29]. The ﬂex-
+ibility for users to deﬁne application-speciﬁc methods (user-deﬁned built-ins) as
+extension to the SWRL formalism is an important feature that makes SWRL
+formalism indispensable where domain modeling using OWL is considered. Re-
+garding the added expressiveness of SWRL to the OWL language, the authors
+of [16] summarize some of the basic advantages of SWRL as follows:
+i. The ability to use class names or their descriptions as predicates.
+ii. The use of equalities and inequalities, and
+iii. Allowing conjunctions of atoms in both SWRL’s antecedent and consequent.
+These syntactic advances, coupled with the numerous expressiveness advan-
+tages of logic programming rules, enables SWRL to achieve complex representa-
+tion of domain knowledge — making the formalism indispensable in the Semantic
+Web project. Further reasons for our focus on the SWRL formalism include the
+facts that:
+iv. SWRL Rules can be used in transferring characteristics from one class or
+property to another without sub-classing — which goes beyond the expres-
+sive powers of OWL. A commonly cited example of this transferring prop-
+erty is the composite property assertion, popularly referred to as ’the uncle
+relationship’.
+SWRL Expressiveness Extensions— A Survey 5
+v. SWRL rules allow inference of new individuals using existential operators
+(e.g. swrlx: makeOWLThing), some of which are deﬁned as built-ins in the
+formalism (see section 2.6). While the built-in semantics is yet to be formally
+deﬁned as a SWRL speciﬁcation, the ability of SWRL to achieve existential
+quantiﬁcation as well as its syntax extensions through user-deﬁned built-ins,
+goes beyond the expressive powers of OWL and the classical horn clause rule
+formalisms.
+vi. Lastly, SWRL being a semantic extension of OWL have enjoyed considerable
+experts’ commitment and engaging support from the Semantic Web research
+community.
+Consequently, the compatibility of the SWRL formalism with OWL and also the
+RuleML, makes it easier and sometimes even compelling, for researchers inter-
+ested in semantic web rules to equally extend SWRL’s capabilities whenever the
+corresponding OWL language is augmented with additional syntax and seman-
+tics. A similar view was upheld in [6], where the authors aﬃrms that the added
+expressiveness of OWL to cover negative property assertions inspired them to
+consider a corresponding SWRL extension. SWRL’s negation extensions were
+ﬁrst described and analyzed in [33].
+1.3 Limitations of SWRL
+Despite the above discussed expressive powers obtained from SWRL, the com-
+bination (of OWL and SWRL) still does not guarantee an all-inclusive domain
+modeling language. Classical SWRL formalism cannot appropriately represent
+various real-world scenarios. For example, expert opinions, which forms a con-
+siderable part of every domain knowledge, are typically in the form of imprecise
+facts. Thus requiring formalisms that are capable of representing domain facts
+based on some degree of certainty or partial truth. Likewise, in legacy software
+models, much of formalized domain facts, such as business rules may only hold
+where other fragments of existing knowledge remain valid. Therefore, accurate
+representation of such scenarios requires knowledge exclusion, prioritization of
+facts, as well as knowledge retraction, among others. These forms of knowledge
+modeling scenarios are crucial to the eﬀectiveness of expert systems and their
+related applications. With common examples found in information fusion, mul-
+timedia information processing, automated ontology merging and alignment,
+among others. In the remainder of this subsection, however, we highlight some
+of the commonly cited limitations of the classical SWRL formalism as follows:
+i. Limitation in modeling imprecise domain knowledge. The evolutionary and
+sometimes inconsistent nature of human knowledge necessitates represent-
+ing vague or imprecise domain information. Hence, the inability of SWRL to
+represent inherently vague domain knowledge and business uncertainties is
+therefore, a huge setback in modeling real-world scenarios on the semantic
+web. This has led to the various fuzzy and probabilistic extensions of the
+semantic web rule language.
+6 A. Lawan and A. Rakib
+ii. Lack of Non-monotonic constructs. Rule-based modeling of a knowledge
+domain involves expressing domain facts or situations of domain objects,
+through the use of ’if-then’ statements. This ordered representation of fact,
+basically reﬂects the ordered nature of the human knowledge — which typ-
+ically includes ordering or setting a precedence of activities, leading to the
+addition of new facts to existing knowledge bases. The inability of SWRL
+to comprehensively model non-monotonic facts such as existentials, quanti-
+ﬁers, rule exclusion, and prioritization, etc., were also considered as weighty
+limitations that cannot be otherwise ignored. Moreover, it has been shown
+that deductive forms of inference, where new facts get inferred from the ab-
+sence of other facts, cannot be represented by the SWRL formalism [11].
+iii. Removal of Facts. Further examples of realistic scenarios encountered in-
+clude the need for ’unlearning’ facts in knowledge bases, i.e. removal of
+facts. Constructs needed to model and achieve such scenarios were found to
+be lacking in the classical SWRL deﬁnition.
+iv. Lack of Support for Modeling Complex Scientiﬁc Knowledge. Other limita-
+tions include the SWRL’s inability to eﬃciently model scientiﬁc and engi-
+neering knowledge domains, especially those involving complex mathemat-
+ical formulas and constraints [19]. The lack of precise constructs to handle
+complex engineering formulas usually leads to the development of volumi-
+nous set of rules to explain few facts.
+1.4 Motivation and Scope
+The limitations of OWL and SWRL formalism to provide some of the needed
+constructs to model complex scenarios are a hindrance in achieving accurate
+representation of domain knowledge on the semantic web. The aim of this work,
+therefore, is partly to explore the existing approaches proposed to eliminate these
+limitations. We evaluate the various expressiveness extensions to the SWRL for-
+malism. To the best of our knowledge, there is no existing work that reviews the
+diﬀerent SWRL expressiveness extensions. We consider that the work presented
+in this paper can help early researchers and developers in the ﬁeld of seman-
+tic technologies to identify the versatility as well as scope of the SWRL/OWL
+combination. Moreover, the expressiveness extensions discussed can serve as a
+guide for future enhancement and standardization of SWRL, OWL, and their
+related formalisms. We limit our explorative review of the available literature to
+published (though not necessarily peer-reviewed) works on SWRL expressive-
+ness extensions. While some of these proposals are largely theoretical, there are
+exceptional cases where the proposed extensions were supported with justiﬁable
+implementations. Our comparison of these extensions is largely analytical with
+little eﬀorts to verify all the implementation details for the extensions. Moreover,
+as the review is intended to serve as a quick comparison guide to the SWRL ex-
+pressiveness extensions, the discussions do not cover all aspects presented in
+SWRL Expressiveness Extensions— A Survey 7
+the original research works. Our focus is mainly on their added syntax and se-
+mantics, implementation eﬃciency, followed by brief notes on their decidability
+requirements.
+In the remainder of the paper, we set the stage in the next subsection with
+the Preliminaries, highlighting the basic terminologies and their interpretations
+within the context of this research. Essence of the paper is presented in Section 2,
+where we discuss and summarize the various extensions of the SWRL formalism.
+The decidability requirements of the reviewed extensions is expounded in section
+3. This is followed by a discussion and summary in Section 4 and lastly, conclude
+the paper in Section 5 highlighting some future research works.
+1.5 Basic Terms and Interpretations
+– Clausal Logic (CL) is a particular kind of First-Order Logic (FOL) — a
+powerful formalism used to express relationships between objects in a given
+knowledge domain through quantiﬁed variables and predicates. CL provides
+the basis for Logic Programming (LP) through its fragment called Horn
+Clause Logic (HCL).
+– A Horn-Clause is logic program rule containing disjunctions of literals (rule
+atoms) with at most one positive literal [15]. A ﬁnite collection of Horn
+clauses together with ground facts are referred to as logic programs (LP).
+Simply put, LPs are a ﬁnite set of rules and facts.
+– Datalogs on the other hand, are function-free horn-clauses, having only vari-
+ables and constants as terms.
+– Description Logic (DL) [3] is basically a decidable fragment of FOL that
+allows modeling of knowledge domains using concepts (classes) the binary
+relations between them (called roles or properties), and individual instances
+(facts). Being decidable, the DL forms the basis of most domain modeling
+(ontology) languages including OWL.
+– Decidability: In the context of this work, decidability refers to the ability
+of a ’Reasoner’ to achieve inference — checking the consistency of logical
+consequences of ontology axioms and return true or otherwise, within a ﬁnite
+time. That is, given any Ontology, a set of rules, and a sentence, the Reasoner
+can check that the sentence is entailed by the ontology and rules. More
+importantly, there exists a terminating procedure.
+– OWL-DL is a decidable fragment of the Web Ontology Language (OWL).
+OWL being the most expressive ontology language for the Semantic Web,
+as recommended by the W3C [25], evolves overtime as improvement from
+other languages such as the RDF, FRAMES, DAML and OIL ontology
+languages (see Fig. 2: OWL Evolution and Contextual Relationship with
+SWRL). Other fragments of OWL are the OWL-Full which subsumes the
+OWL-DL in terms of expressivity and the OWL-Lite, which is the least
+expressive fragment. To achieve reasoning over OWL ontologies, a subset
+of OWL-Full that completely conforms to the DL framework is extracted as
+8 A. Lawan and A. Rakib
+the OWL-DL. Generally, OWL ontologies are restricted to the DL expressiv-
+ity degree in order to achieve decidability and a complete OWL-DL ontology
+can have the expressive equivalence ofSHOIN (D) in the DL expressiveness
+metric.
+– The DL Expressiveness Metric: In DL-based languages, factual knowledge
+during terminology deﬁnitions and individual assertions are usually stored
+as formulas in First Order Logic (FOL). However, restrictions are usually at-
+tached to these formulas to ensure the decidability and for eﬃcient reasoning
+over the ontology they represent [37]. These restrictions also specify a degree
+of expressiveness of DL language as compared to the FOL, which is highly
+expressive — though undecidable. Basic DL restrictions are represented by
+letter-symbol keys e.g. (ALC,SHIQ,SHOIN (D),) etc, to denote a given
+expressive power of a modeling language, as described below:
+• S—An abbreviation of an Attributive Language with Complement (ALC)
+extended with transitive roles.
+• ALC— this is obtained when AL is extended with the atomic con-
+cept negation such as for example, the Top concept ( ⊤≡ C⊔¬C) and
+Floor concept (⊥≡ C∩¬C), where C is an atomic concept. In owl, the
+Top concept is called ’Thing’ owl:Thing and all classes are subclasses of
+owl:Thing, while the ﬂoor concept is considered as ’Nothing’.
+• AL— Attributive Language: is the basic DL language that allows the use
+of Concept intersection (∩), universal restrictions (∀), limited existential
+quantiﬁcation (∃) and atomic negations of concepts ( ¬), which do not
+appear on the left-hand-side of axioms.
+• H—An abbreviation of ALC extended with the role hierarchy (owl:
+subPropertyOf relationship).
+• O— An abbreviation of ALC extended with Nominals (enumerated
+classes e.g. owl:oneOf or object value restrictions such as owl:hasValue
+relationship).
+• I— An abbreviation of ALC extended with Inverse roles or proper-
+ties, which allow expressing relationships in opposite directions (e.g.
+owl:hasPart and owl:isPartOf).
+• N— An abbreviation of ALC extended with a Number or cardinality
+restriction. Semantics:≥ n R.C or≤ n R.C
+• D—The data values expressivity (D), which is sometimes attached to
+the algorithm as subscript, denotes the abilities of DL and its family
+of languages to use data values, datatype, and datatype properties to
+further express domain facts.
+– The OWL 2 Proﬁle: The Web Ontology Language version 2 (OWL 2) is
+the formally recommended ontology language for Semantic Web modeling
+and much like its predecessor OWL 1, it allows logical domain modeling
+by deﬁning classes, individuals, their properties and relationships with each
+other or data values, with the addition that OWL 2 ontologies are exclusively
+stored as Semantic Web documents. Speciﬁcally, the current version OWL
+2 is able to provide a wider range of constructs for expressing concepts such
+SWRL Expressiveness Extensions— A Survey 9
+Fig. 2: OWL Evolution and Contextual Relationship with SWRL
+as transitive and inverse properties, cardinality restrictions, as well as
+inheritance, among others. By targeting speciﬁc modeling needs of the web,
+it is thence divided into three sub proﬁles, viz. the ’OWL 2 Expressive Lan-
+guage’ (OWL2EL), ’OWL 2 Query Language’ (OWL2QL), and the ’OWL
+2 Rules Language’ (OWL2RL) [28, 5]. These sub-languages oﬀer diﬀerent
+expressiveness and computational desirability.
+In essence, the web ontology language (OWL-DL) gives a very expressive and
+decidable ontology language and since OWL-DL utilizes the extensive research
+on DL, it serves as the foundation for the current language proﬁles of OWL 2.
+Fig. 2 below summarizes the contextual relationship between the OWL proﬁles
+and SWRL.
+2 The SWRL Expressiveness Extensions
+SWRL extensions are originally deﬁned in [17] as bindings that provide a map-
+ping between variables used in the SWRL rules to objects of a given domain.
+As previously mentioned much of SWRL’s extensions were inspired by their cor-
+responding OWL extensions. This is usually achieved by modifying the OWL’s
+abstract syntax and semantics to adapt to the SWRL canonic mode. This leads
+to various proposals that are beneﬁcial to the advancement of both the OWL and
+SWRL languages. The remainder of this section highlights some of the expres-
+10 A. Lawan and A. Rakib
+siveness extensions designed to address the commonly encountered limitations
+of the classical SWRL.
+2.1 Fuzzy and Probabilistic Extensions — Dealing with
+Uncertainties and Imprecise Knowledge
+Knowledge from domain experts is usually not without doubts and imperfections.
+This imperfect nature of real-world information processing necessitates the long-
+started eﬀorts by the AI community to deal with vague knowledge representation.
+Notable early eﬀorts in the ﬁeld of classical domain modeling have attempted
+to improve the expressivity of Description Logic (DL) to cover uncertainties
+through Fuzzy Logic (FL) as discussed in [42] and probabilistic extensions [34],
+among others. Likewise, SWRL is found to be inadequate in expressing practical
+problems that involve vague or imprecise domain knowledge which is bound
+to be common in ontologies or the Semantic Web as a whole. Moreover, even
+with the success of semantic web in data provisioning, writing business and
+engineering rules using SWRL still remains a challenge. This is due to the fact
+that SWRL, much like other Semantic Web languages, stemmed from classical
+logics (see Figure 2), which are known to be incapable of modeling vague or
+imprecise information.
+As highlighted in [30], other scenarios that require modeling of imprecise
+facts can be found in multimedia processing, ontology alignment, and infor-
+mation fusion, among numerous others. In response, SWRL has since received
+signiﬁcant advancements to handle imprecise domain knowledge. One famous
+uncertainty reasoning techniques involve the combination of fuzzy logic with
+SWRL and another involves extending SWRL formalism with probability theo-
+ries. This section reviews some of these advancements and brieﬂy discusses their
+individual approaches.
+The Fuzzy-SWRL Extension (F-SWRL)
+Expressiveness: By imposing fuzzysets theory — precisely, the ’R-implication’
+of fuzzy logics [22], new semantics were deﬁned by Horrocks et al. for a fuzzy
+extension of SWRL (f-SWRL) [30]. A fuzzy set is deﬁned by its degree of individ-
+ual membership (w) called weighted-degree or truth-value and usually computed
+from a membership distribution function . The fuzzy membership function does
+not only specify whether an element belongs to a given set or otherwise but also
+how much. Analogous to fuzzy sets, f-SWRL rules uses a truth value between ’0
+and 1’ to express the degree of conﬁdence for individual membership in a given
+class or property and also to express weights or importance of each atom in a
+SWRL rule.
+Syntax and Semantics: Class and property deﬁnitions in f-SWRL have the fol-
+lowing form C(x)∗w and P (x,y )∗w, respectively. While a rule in f-SWRL is
+of the form:
+SWRL Expressiveness Extensions— A Survey 11
+Antecedent * wa−→ Consequent * wc. Where w∈ [0, 1].
+For example, the following f-SWRL rule (retained from [30]), declares that ”being
+healthy is more important than being rich to determine if one is happy”:
+Rich(?p)∗ 0.6∧Healthy (?p)∗ 0.8−→Happy(?p)∗ 0.9 (1)
+Where Rich, Healthy, and Happy are fuzzy class URI refs, ?p is an individual
+valued variable and 0.6, 0.8 and 0.9 are the assigned weights of the corresponding
+fuzzy atoms.
+In a nutshell, f-SWRL extends SWRL with fuzzy-based class and property def-
+initions as well as fuzzy rule axioms. The result is that f-SWRL rules are able
+to represent such information that says how much a concept is believed to be
+true and which facts are more important than others when making decisions.
+Users can, therefore, represent vague domain knowledge with f-SWRL rules by
+asserting the degree of conﬁdence or otherwise of a given fact.
+Implementation and Eﬃciency: In assigning a predetermined weight on the con-
+sequent atom, the f-SWRL extension is shown to be suitable for writing fuzzy
+rules with atomic consequents and thereby making rule prioritization. This ab-
+solute form of prioritization, however, becomes a problem whenever new rules
+are introduced in the KB, as then all the existing weight values may have to
+be readjusted. Moreover, the proposal does not present a way of resolving such
+conﬂicts. As such, more support is needed for f-SWRL to deal with non-atomic
+fuzzy rules, i.e. rules with more than one atom in the consequent. Furthermore,
+complete fuzzy-rule declaration needs to be considered in f-SWRL since repre-
+senting uncertainties in domain knowledge requires more than just fuzzy class
+and property deﬁnitions. Based on our evaluation, much of the f-SWRL pro-
+posal is still theoretical as neither implementation eﬀorts nor practical scenarios
+were mentioned. Likewise, the fuzziness of the extension has been critically ques-
+tioned by the authors of [1], asserting that syntax and semantics proposed in
+f-SWRL do not actually solve much of the fuzziﬁcation problem. For an abstract
+literature on fuzzysets theory and fuzzy logics, we refer the interested reader to
+[22].
+The Vague-SWRL Extension Highlighting their argument against f-SWRL’s
+inability to provide a substantial fuzzy extension to SWRL, the Vague-SWRL
+extension was proposed in [40].
+Expressiveness: In this proposal, the authors argues that the use of single-
+membership degree on a fuzzy set, such as the single weight function in f-
+SWRL extension, is insuﬃcient in representing a vague information. Conse-
+quently, based on the theory of Vague sets [14], the authors propose the Vague-
+SWRL as another fuzzy extension of SWRL. Vague Sets are themselves an ex-
+tension of fuzzy sets, where the degree of membership to a set is evaluated using
+two weighted intervals — as opposed to a single degree of membership employed
+12 A. Lawan and A. Rakib
+in fuzzy sets. As such, Vague-SWRL rules uses an added weight value (w2) called
+’a second-degree weight’ denoting further degree of membership to support and
+balance an initial weight (w1). By introducing w2, the proposal promises a more
+accurate representation of imprecise domain knowledge than a single member-
+ship fuzzy class and properties assertions of f-SWRL.
+Syntax and Semantics: As presented in [14], the general form of vague-SWRL
+is written as:
+(vc * fdw) (vcv * sdw) ... ∧ (vp * fdw) (vpv * sdw) ... −→ (vc * w) or (vp * w)
+Where: ’vc’ = vague classes, ’fdw’ = ﬁrst-degree weights, ’vcv’ = vague class
+values corresponding to ’vc’ and ’sdw’ = second-degree weights. Similarly, ’vp’
+= vague properties, ’vpv’ = vague property values and ’w’ = the atomic weights.
+The vague values, also called the membership intervals, are calculated as:
+vcv/vpv = [tv(x), 1−fv(x)]
+And the ’sdw’, also referred to as the ’vagueness’ or second degree of mem-
+bership, is calculated as the diﬀerence:
+w2 = [(1−fv(x))−tv(x)]
+Where: tv (x) is the true membership function of x, fv(x) its false membership
+function, and 0≤tv(x) +fv(x)≤ 1
+Example Case. Consider the following additional information (membership de-
+grees) added to rule (1): ”P is rich with a true value of 0.6 and a false value of
+0.3. Also, P is healthy with a true value of 0.3 and a false value of 0.2” .
+With this additional info, we can represent the parameters:
+vcv(Rich) = [0.6, 0.7] and vpv(isHealthy ) = [0.3, 0.8]
+Hence, the vague-SWRL form of rule (1) can then be written thus:
+[Rich(?p)∗ 0.6][0.3]∧ [Healthy (?P )∗ 0.8][0.1]
+−→Happy(?p)∗ 0.9 (2)
+Here, 0.9 is the degree to which the consequent holds following the evaluation
+of the antecedent.
+Implementation and Eﬃciency: As vague sets subsumes fuzzy sets, vague-SWRL
+ultimately subsume its corresponding f-SWRL rule in terms of expressiveness.
+By comparing rules 1 and 2, it can be seen that unlike f-SWRL, vague-SWRL is
+more than just a conjunction of weighted atoms. The added eﬀort in the form of
+vcv and vpv are calculated to represent the uncertainties in the fuzzy member-
+ship classes Rich, Healthy, and Happy. Moreover, by specifying the upper and
+SWRL Expressiveness Extensions— A Survey 13
+lower bounds of membership intervals (through the true and false values), vague-
+SWRL rules are more justiﬁably accurate in representing imprecise knowledge
+using fuzzy class and properties. Vague-SWRL is also claimed, by the authors, to
+be in ”an acceptable form of the Rule Interchange Format (RIF)”. A compara-
+ble extension, Vague-RuleML[31], is also proposed for the rule markup language
+(Rule ML).
+However, similar to f-SWRL, the Vague-SWRL only represents fuzzy infor-
+mation for class and property memberships, which may be inadequate in repre-
+senting practical uncertainties involved in knowledge domains and the semantic
+web. Also, a fair understanding of vague sets and vague knowledge representa-
+tion is required to eﬃciently model fuzzy information using vague-SWRL rules.
+Hence, there is a need to improve the proposal with richer fuzzy modeling syn-
+taxes to handle imprecise domain knowledge beyond the borders of class and
+property memberships — the SWRL-F extension below gives a good example.
+The SWRL-Fuzzy Extension (SWRL-F) The SWRL-F extension [42] was
+proposed as another Fuzzy Logic (FL) extension to the SWRL formalism. How-
+ever, unlike f-SWRL and vague-SWRL extensions, which were based on the fuzzy
+sets principle, the SWRL-F extension expresses fuzzy reasoning in SWRL rules
+using a ’fuzzy control system’ approach.
+Expressiveness: In this approach, the main ontology remains intact while a fuzzy
+ontology consisting of SWRL-F rule-base is added to model any ambiguous do-
+main knowledge using logical variables. The fuzzy ontology is needed to deﬁne
+inherent fuzzy domain knowledge using fuzzy: sets, terms, variables and fuzzy
+values as entities. These entities were deﬁned as classes with their respective
+object and data properties. Modelling a fuzzy fact requires the use of the fuzzy
+terms to calculate a fuzzymatch for the respective instances.
+Syntax and Semantics: SWRL-F introduces a special object property called
+’fuzzymatch’ for each fuzzy set. The fuzzymatch is used when designing SWRL-
+F rules to match corresponding Fuzzy-Variables with designated Fuzzy-Values
+from each respective fuzzy set. For example, the following SWRL-F rule (adopted
+from [42]) can assert the vague facts; ”Persons with good health status are always
+very happy” and can be written using SWRL-F rule as:
+Person (?p) ∧ hasHealthStatus (?p, ?s)∧
+fuzzymatch (?s,goodHealthStatus )∧ isHappy(?p, ?h)
+−→fuzzymatch (?h,VeryHappy )
+(3)
+Here, the fuzzymatch attribute is used in the antecedent of the rule to calcu-
+late the degree of membership for the ’HealthStatus’ variable (?s) — as employed
+in the fuzzy term ’goodHealthStatus’ denoting the fuzzy set in this instance.
+While used in the Consequent, the fuzzymatch variable allows binding the new
+value ’VeryHappy’ to the fuzzy value ’isHappy’, giving SWRL a chance to express
+the wooly term, ’very happy’.
+14 A. Lawan and A. Rakib
+Implementation and Eﬃciency: In essence, the fuzzy ontology and SWRL-F
+rules are only added where necessary to handle uncertain domain knowledge rep-
+resentation. Furthermore, the authors claim that the new rule language, SWRL-
+F, is supported with an exclusive publicly-available ontology development envi-
+ronment having a test execution engine. However, several attempts at ﬁnding
+the link currently present an empty Prot´ eg´ e wiki page. An apparent limitation
+to the SWRL-F implementation is that some of the current OWL2 constructs
+cannot be utilized in the SWRL-F rules. Moreover, running the SWRL-F rules
+requires a modiﬁed version of theSWRLJessTab in Prot´ eg´ e ontology editor — an
+implementation requirement that may be diﬃcult to domain experts. Moreover,
+using the language to model vague domain knowledge also requires an in-depth
+understanding of fuzzy logic and representation scheme.
+On the other hand, due to its adoption of a well-established approach — the
+fuzzy control system approach, SWRL-F oﬀers a more pragmatic and justiﬁable
+approach to fuzzy extension of SWRL as compared to its siblings, f-SWRL and
+vague-SWRL. The use of the ’fuzzymatch’ attribute also makes SWRL-F suit-
+able for developing semantic web applications with queries that require fuzzy
+inferencing from facts separately stored in the main ontology. In addition, since
+by design the SWRL-F fuzzy ontology is separated from the domain ontology,
+reasoner inferences are thus limited only to the SWRL-F rulebase. This is de-
+sirable nonetheless, as the modularity avoids introducing inconsistencies to the
+main ontology.
+Fuzzy Non-monotonic Extension of SWRL (f-NSWRL) The f-NSWRL
+[39], presents yet another fuzzy SWRL extension for dealing with non-monotonicity
+as well as uncertainties in domain information using SWRL rules.
+Expressiveness: This extension is basically an advancement of the fuzzy-SWRL
+extension (section 2.1) to incorporate a non-monotonic knowledge, speciﬁcally
+the knowledge negation (called classical negation) and Negation as Failure (NAF),
+which involves knowledge modeling based on the absence of positive facts in a
+KB. This is also referred to as Closed World Negation (CWN). Citing the impor-
+tance of expressing classical negation and the NAF in handling rule exceptions,
+the authors asserts the motivations for f-NSWRL extension of SWRL — as a
+non-monotonic as well as a fuzzy extension of the SWRL formalism.
+Syntax and Semantics: In its simplest form, the f-NSWRL uses the ’Not’ and ’¬’
+symbols as operators to extend the original f-SWRL’s fuzzy classes and proper-
+ties deﬁnition. As an example, consider the addition of the following information
+to modify rule 1 in an attempt to determine if a person is happy; ”Person p is
+rich and p is deﬁnitely not hungry but the health status of p is not known” De-
+cision rules based on the above statement can be expressed using f-NSWRL as
+follows:
+Healthy (?p)∗ 0.8∧ (¬Hungry (?p))∗ 0.99
+−→Happy(?p)∗ 0.9 (4)
+SWRL Expressiveness Extensions— A Survey 15
+Healthy (?p)∗ 0.8∧not(Hungry (?p))∗ 0.99
+−→Happy(?p)∗ 0.9 (5)
+Note the diﬀerence in the use of the two operators as highlighted in the two
+equations. While the classical negation (¬) is used to negate the assertion that
+Person (?p) is hungry in rule 4 and the NAF used in 5 to test the absence of an
+assertion that ’p is hungry’. A quick interpretation of the two rules is that rule
+4 simply declares that ’A person must be not hungry and healthy to be happy’.
+Whereas rule 5 declares that ’a person is happy if she is healthy and isnot known
+to be hungry’.
+Implementation and Eﬃciency: Apart from handling negation and uncertainty,
+other notable aspects of the f-NSWRL proposal include a proposed markups in
+’RuleML’ for translating f-NSWRL to other rule languages and also procedures
+to handle rule prioritization — for setting rule precedence in cases of conﬂicting
+consequents. However, the proposal failed to mention the semantics of these
+extensions nor the inference mechanism for implementing a supporting Reasoner.
+We discuss more on speciﬁc Non-monotonic extensions of SWRL in section
+2.2 below.
+The Bayesian Extension of SWRL (Bayes-SWRL) In order to allow mod-
+eling of predictive knowledge and the representation of inherently probabilistic
+domain knowledge (such as Statistical information) on the semantic web, various
+probabilistic extensions were proposed — to the semantic web languages. These
+include among others, the Probabilistic RDF (pRDF) and Probabilistic OWL
+(PR-OWL) [8], Bayes-OWL[10] and Bayes-SWRL [24].
+Expressiveness: While Fuzzy Logic extensions of SWRL focus on representing
+the degree of certainty or otherwise of domain knowledge in SWRL-enabled
+ontologies, probabilistic extensions of SWRL such as Bayes-SWRL are more
+concerned with representing predictive knowledge based on an existing partial
+knowledge in the domain ontology or knowledgebase. Based on the Bayesian
+Networks of probability theory [9] and in line with the corresponding Bayesian
+OWL extension [10], the Bayes-SWRL extends the SWRL formalism with the
+ability to model probabilistic knowledge. This is achieved by combining SWRL
+with the expressive capabilities of the Bayesian Logic Programs thereby enabling
+probability assertions during inference.
+Syntax and Semantics: The Bayes-SWRL extension naturally adopts the origi-
+nal SWRL’s abstract syntax and semantics with the addition of few innovative
+symbols and patterns to represent the probability variable (the p-variable) and
+related terms — such as the Conditional Probability Table (CPT). Similar to
+the fuzzy weights (w) assigned to Vague-SWRL rule atoms, the Bayes-SWRL
+also use a Probability variable to assign probabilities to rules atoms in both the
+16 A. Lawan and A. Rakib
+antecedent and/or consequent atoms. The probability value also ranges from [0,
+1] and is optionally added to the rule atoms, with its values predeﬁned in a
+conditional probability table supplied to the consequent atom in the form of an
+XML ﬁle. In its human readable syntax, Probability values of imprecise atoms
+are attached with an asterisk (*) to the rule atoms. While the CTP ﬁle path
+is attached using the ’@’ symbol (as shown in rule 6 below). In this form, a
+Bayes-SWRL that asserts that ”It might rains with a certain probability, if it is
+cloudy and humid” can be written as:
+Cloudy(?cl) ∗ p(cl) ∧ isHumid(?hm) ∗ p(hm)−→
+Rainfall (?r) ∗ p(r)@”RainfallCPTs.xml ” (6)
+Where: the p-variables, * p(cl), * p(hm) and *p(r), represents the probability
+values for cloudy, humid and rainfall, respectively. Assuming probable rainfall
+chances were calculated, for optimal cloudy and humid conditions, in the sup-
+plied RainfallCPTs.xml ﬁle. A more detailed description of the abstract syntax
+and semantics of Bayes-SWRL can be found in [24].
+Implementation and Eﬃciency: The proposal of Bayes-SWRL is equipped with
+a reasoning algorithm implemented by extending an existing OWL-DL reasoner
+based on the tableaux algorithm, the Pellet reasoner, to interpret the added syn-
+tax based on the deﬁned probabilistic semantics. It is also equipped with a user
+interface for checking rules conﬂict and viewing the inference process, among
+others.
+Consider this: The extension is eﬀective as it is able to provide a well-deﬁned
+syntax and semantics for modeling uncertainties. However, the extension be-
+ing a by-product of BLP and SWRL automatically inherits the constraints of
+both formalisms. Hence for Bayes-SWRL rules to be decidable, the DL-safety
+restriction must be adhered to by its reasoner. Similarly, the BLP precondi-
+tions apply to a Bayes-SWRL rule, such as: ﬁrstly, a consequent atom can only
+be inﬂuenced by a ﬁnite number of random variables — thereby adopting the
+closed world assumption. While this may not pose any serious threat to domain
+modeling, it however, limits the capabilities of Bayes-SWRL to represent NAF.
+Secondly, in the inference relation between atoms, there can be no cycle in the
+dependency graph. Hence expressing relationships is severely limited. Thirdly, a
+probability of any consequent atom can only be inﬂuenced by the probabilities
+of corresponding antecedent atoms in the same rule. Meaning that, probabilities
+deﬁned in previous rules cannot be reused in new rules. Therefore, contrary to
+the non-monotonic nature of the real-world knowledge, especially those found
+in the semantic web, this precondition demonstrates a monotonic limitation of
+Bayes-SWRL knowledge bases. Moreover, while the conditional probability of a
+Bayes-SWRL rule is based on a well-founded semantics, as is the case with pDat-
+alogs [34], the declaration of an arbitrary set of probable states for the ground
+atoms beforehand, poses some close-world expressive limitation for modeling
+continuously evolving knowledge domains.
+SWRL Expressiveness Extensions— A Survey 17
+2.2 Non-monotonic Extensions — Dealing with Negation and
+Removal of Facts, Rules Exclusion and Prioritization
+With the proposed extension of the OWL2 proﬁle to handle negative prop-
+erty assertions, there is a corresponding eﬀort to also extend SWRL with non-
+monotonic operations — notably presented in [33] and [6]. Moreover, since
+SWRL formalism basically involves OWL constructs coupled with rule axioms,
+any OWL extension inherently results in a new SWRL extension. While non-
+monotonic axioms involve constructs that produce knowledge bases conforming
+to the Closed World Assumption (CWA), monotonic constructs generally follow
+the Open World Assumption (OWA), as required in the Semantic Web envi-
+ronment. As such, the semantics of these non-monotonic extensions to SWRL
+have to be carefully modeled to keep the new rules decidable. For brevity of
+scope, we present here only the non-monotonic extensions added to the SWRL
+formalism. For a detailed description of Monotonicity and the applications of
+non-monotonic logic in rules, we refer interested readers to [6].
+The ’not’ operator — Weak Negation or Negation as Failure (NAF)
+Owing to its monotonic background inherited from Description Logics, and the
+OWA of ontologies, the original SWRL formalism does not support negation as
+failure (NAF)— as that will logically violate the open-world protocol. As such,
+both its antecedent and consequent can contain only positive conjunctions of
+atoms or facts.
+Expressiveness: Hence, the NOT operator (also called weak negation) was intro-
+duced to allow for expressing negation of facts. Negation of facts simply means,
+modeling the absence of positive, known or existing facts in a knowledgebase.
+It should be noted here that whenever a negation of membership is intended, a
+strong negation (also called complement) is easily achieved in SWRL using the
+owl:complementOf class description.
+Syntax and Semantics: Abstract deﬁnition of the not operator is depicted in the
+following table:
+Example Case. The following Non-monotonic SWRL rule declares that ”A
+person that does not have a ’spouse property’ is automatically a member of the
+Singles class” :
+Person (?p) ∧ Not(hasSpouse(?p, ?s))−→Single(?p) (7)
+For the complement operator or Strong Negation (as previously discussed in
+f-NSWRL — see section 2.1), using the above example, we can write the rule by
+testing the existence of ’P’ in the married class, as follows:
+Person (?p) ∧ (notMarried (?p))−→Single(?p) (8)
+Where, the ’not’ enclosed in the bracket together with the ’Married’ class name,
+denotes the complementOf relationship for the married class.
+18 A. Lawan and A. Rakib
+SWRL
+Elements
+Pattern Matching (P) Condition Test
+P(x; y)
+Q(x; y)
+(?x P ?y)
+(?x Q ?y)
+S(P) = True
+not(P(x; y))
+not(Q(x; y))
+(?z rdf:type owl:Negative-
+Property)
+(?z rdf:subject ?x)
+(?z rdf:predicate [P or Q])
+(?z rdf:object ?y)
+S(P) = False
+Table 1: Syntax of the Weak Negation (NAF) [6]
+Implementation and Eﬃciency: However, a special Reasoner is required to run
+extensions having the weak negation (NAF) as shown above. On how to express
+the semantics of NAF, the ’non-monotonic inference process’ has been high-
+lighted in [6]. On the other hand, the classical or strong negation can be easily
+achieved in OWL and subsequently in SWRL, using theowl:complementOf class
+description, which can also be employed in the SWRL rules — as shown in rule
+8.
+The Quantiﬁers — Exists, ForAll, and notExists operators The Quan-
+tiﬁers were introduced in SWRL rules to handle incomplete facts, when used
+in the antecedent (body of the rule) and for removing facts, when used in the
+rule’s consequent (head). In this set of expressiveness extensions, two types of
+fact quantiﬁcation were introduced here. First, the Existential quantiﬁers — the
+Exists (∃) and notExists( ∄) used to assert an existence and otherwise respec-
+tively, of at objects in a knowledge base (KB). Secondly, the Universal quantiﬁer
+— ForAll (∀), which generalizes some assertion on group of objects in a KB.
+We discuss the notExist extension here. While the Exists and ForAll quanti-
+ﬁers with their example use cases, will be discussed in section 2.4 as part of the
+SWRL existential extensions.
+Expressiveness of ’notExist’ Quantiﬁer Due to the diﬀerent semantic interpre-
+tations attributed to the antecedent and consequent sides of rule axioms, the
+notExist quantiﬁers can be used to achieve diﬀerent assertion of facts (expres-
+siveness) depending on which side they are placed in a SWRL rule. These asser-
+tions are presented in the following scenarios:
+a. notExists Operator in the Antecedent — Checking for missing facts: To han-
+dle missing information as facts, the ’notExists’ and ’Exist’ quantiﬁers were
+proposed to allow some action to be taken where certain facts are not deﬁned
+in the KB. This is useful because due to the OWA of SWRL KBs, it is not
+always feasible to write rules that, for example, enumerate or test-out for all
+individuals or properties. In such cases, asking for the existence or otherwise
+SWRL Expressiveness Extensions— A Survey 19
+of a particular individual or property oﬀers a simple solution. For example,
+the following rule (9) checks for the absence of participants with spouses in a
+booking register and asserts the status of the register.
+Participant (?p) ∧ hasBooking(?p, ?b)∧
+notExists(hasSpouse(?p, ?s))−→
+bookingStatus(?b, ”SinglesOnly ”) (9)
+b. notExists Operator in the Consequent — Removal of Knowledge: Conversely,
+using the NotExist operator in the consequent of a SWRL rule, results in the
+removal of knowledge. For example, rule 9 above may need to be retracted
+whenever a married participant made a booking and the ’hasSpouse’ property
+get added to the ontology. Instead of deleting the rule manually, a better
+option, would be to change the ’bookingStatus’ information using another
+rule (10), as follows:
+Participant (?p) ∧ hasBooking(?p, ?b)∧
+hasSpouse(?p, ?s)−→
+notExists(bookingStatus(?b, ”SinglesOnly ”))
+∧ bookingStatus(?b, ”Mixed”) (10)
+A clearer example is also presented in the mail list update function shown
+in rule 11, where the ’notExist’ operator is used to test whether a member of a
+workgroup exist in a membership mailing list before adding them to an Alumni
+mail list:
+Workgroup (?g) ∧ Alumni(?a) ∧ hasMember (?g,
+?a)−→notExists(mailListMember (?a, ?g)
+∧ AlumniMailList (?a) (11)
+Syntax and Semantics of the ’notExist’ Quantiﬁer In continuation of the deﬁ-
+nition of the Non-monotonic operators, the Table 2 below shows the notExists
+constructs and is used as is, in the human-readable syntax of SWRL. The se-
+mantics hold that S(P) becomes universally satisﬁable for any unbound elements
+(A, B ... Z) associated to the notExist operator.
+SWRL Elements Pattern Matching
+(P)
+Condition
+Test
+NotExist (A, B, ... Z) (A), (B), ..., (Z) S(P) = U
+Table 2: Syntax of ’notExist’ Extension to SWRL [6]
+20 A. Lawan and A. Rakib
+Implementation and Eﬃciency: As shown in the example rules 9, 10 and 11,
+implementation of the notExists operator is simple and usually depends on the
+side of the inference operator it appears. A notable eﬃcient use of the operator
+is where there are conﬂicting facts in a knowledge base, the use of notExists
+operator help in retraction of a rule to restore consistency. As such, the concept
+of rule’s ’precedence’ and ’rule retraction’ is strongly advised in the inference
+process of [6]. Consequently, this paves the way for our next SWRL extension
+— the dominance and mutex operators in the next section.
+2.3 Rules Ordering and Priority Extensions
+Introduced to deﬁne relationships between rules and their semantics, the ’dom-
+inance’ and ’mutex’ constructs are extensions meant to control the behavior of
+SWRL rules execution.
+Expressiveness: Precisely, the dominance operator is used to specify the order of
+rule execution by assigning a precedence of one rule over another. In contrast, the
+’mutex’ operator is non-symmetric and designed to assert the complete exclusion
+of a rule due to the execution of other rules.
+Syntax and Semantics: As deﬁned in [6], the dominance operator is deﬁned as
+dominance (Rx, Ry), where Rx and Ry are rule names, and with a semantic
+meaning that ”rule Rx has more priority in the execution order than Ry”. Fur-
+thermore, the dominance operator is designed to be transitive, thereby suitable
+for handling the addition of new rules into a rule base.
+As an example, consider the execution of rules 9 and 10 above. We may
+want to run the ’Mixed-Status’ rule (rule 10) ﬁrst to check if there are married
+participants in the knowledge base before asserting the ’Singles’ booking status
+in rule 9. To set this ordering, we can write the dominance operation as follows:
+dominance (Rule10, Rule9) (12)
+Whereas in its syntactic format, the mutex operator is written thus: Mutex
+(Rx, Ry), asserting the fact that ”rule Ry will not be executed in the event that
+ruleRx is already executed”. Continuing to the hypothetical example above, we
+may want to completely skip executing the ’Singles Only’ rule (9) in the event
+that the booking status is explicitly known to be ’Mixed’. This can be achieved
+that through thus:
+Mutex (Rule10, Rule9) (13)
+Implementation and Eﬃciency: However, these extensions requires specially
+modiﬁed Reasoners for inference and are yet to be formally accepted as part
+of standardized SWRL deﬁnition.
+SWRL Expressiveness Extensions— A Survey 21
+2.4 Existential Extensions — Dealing with Quantiﬁcation of
+Individuals
+As explained earlier, owing to DL-Safety restrictions, SWRL-enabled ontologies
+can not introduce new individuals (see section 1.1). Moreover, with SWRL being
+the combination of OWL-DL and DataLog RuleML — which do not allow exis-
+tential quantiﬁcation in its consequent, it becomes even more diﬃcult to assert
+new individuals into a classical OWL/SWRL ontology. However, as the authors
+of [23] puts out,
+”It sometimes becomes necessary during inference and where certain
+conditions are met, to introduce new individuals to an ontology”
+Addition of new individuals to a knowledge base is commonly referred to as
+’existential quantiﬁcation’ and in what follows, we discuss the various SWRL
+extensions proposed for achieving that.
+The XSWRL Extension
+Expressiveness: To achieve existential quantiﬁcation in SWRL, new operators
+were deﬁned and the new extension referred to as extended semantic web rule
+language (XSWRL) [23]. The direct extension deﬁnes new operators to achieve
+the addition of new individuals to existing classes of SWRL ontologies.
+Syntax and Semantics: XSWRL uses similar syntax and semantics of the classi-
+cal SWRL with the only diﬀerence being that rules in XSWRL use an additional
+operator that allows for introducing new individuals. This is achieved through
+the use of ’existentially quantiﬁed variables’ in the rule’s consequent — repre-
+sented by preﬁxing them with an exclamation mark (!). Universally quantiﬁed
+variables are represented with the usual question mark (?), as in the original
+SWRL deﬁnition. As an example, consider the rule assertion that ”All members
+of a project Workgroup should be Engineers” .
+Workgroup (?g)−→Engineer(!e) ∧ hasMember (?g, ?e) (14)
+Implementation and Eﬃciency: From the XSWRL’s prototype implementation,
+presented in [23], it can be understood that by deﬁning the semantics of ’!’ (the
+existential operator) into the SWRL abstract semantics, reasoning over XSWRL
+rules can be achieved using existing DL-Reasoners such as Racer and Fact++.
+However, it remains to be seen of such implementation and whether the exten-
+sion will be practically utilized by the semantic web community. This is because:
+contrary to the classical SWRL, XSWRL rules with non-atomic consequents and
+having joint existential variables cannot be split into multiple rules with atomic
+consequents. This, makes it diﬃcult to assign rule-preference or prioritize rule
+execution of XSWRL rules. Recall, that the concept of DL-Safeness ensures de-
+cidability in SWRL rules by limiting the consequent variables to only those that
+previously occurs in the antecedent. As such, further restrictions must be placed
+22 A. Lawan and A. Rakib
+on the use of the existential variables declared in XSWRL to ensure decidabil-
+ity. To this end, the authors declare the added restriction: ”Do not construct a
+rule, which has existentially quantiﬁed variables, to form acyclic chain between
+its atoms or with atoms from other rules” . Though this may restrict the expres-
+siveness of the XSWRL language, but it ensures that inﬁnite chains are safely
+avoided. Hence, XSWRL rules need to be tracked manually to ensure that their
+executions will not lead to a cyclic chain of existential quantiﬁcation. However,
+this manual restriction, can be overly tedious or impracticable in very large
+ontologies.
+SWRL First Order Logic Extension (SWRL-FOL)
+Expressiveness: In an attempt to extend SWRL towards the expressiveness of
+First-Order Logic, notably to achieve the quantiﬁcation of individuals, a SWRL-
+FOL extension was proposed in [32]. Analogous to the FOL Rule Markup Lan-
+guage 5, the proposal deﬁnes an abstract syntax and semantics for the SWRL-
+FOL extension. It shows how SWRL can be extended, to utilize the expressive
+powers of FOL, by extending the component OWL axioms to include function-
+free FOL assertion axioms.
+Syntax and Semantics: SWRL FOL proposal deﬁnes an abstract syntax of the
+expressive extensions and further provided the model theoretical semantics for
+their interpretations. In their abstract syntax, SWRL-FOL ontologies contain
+sets of OWL axioms, facts, and horn-clause rules with additional FOL axioms or
+assertions. These assertions however, introduces some extensions to the original
+SWRL format, such as the limitless use of ’conjunctions’ and/or ’disjunctions’ in
+the FOL formula and the use of constructs such as negation, ’ForAll’, ’Exists’ ,
+etc. over unary and binary predicates. However, the semantic interpretations
+of these assertions are deﬁned as ’bindings’ which maps every variable to an
+element in the domain. See SWRL built-ins extensions in section 2.6 for more
+details on predicate bindings.
+Example: Consider the Workgroup members assertion in rule 14. An alter-
+native expression using the direct Exists element deﬁned in FOL-SWRL can be
+written as:
+Workgroup (?g)−→∃ mhasMember (?g, ?m) ∧ Engineer(?m) (15)
+Implementation and Eﬃciency: What we noted here is that the proposal in [32]
+is largely theoretical and as the authors of [23] puts out, its practical implemen-
+tation is still open for discussion. This however, is due to the usual concerns
+of decidability and the lack of Reasoners that can achieve inferences over the
+FOL sentences. Nevertheless, considering its extensive deﬁnition and the general
+utilization of FOLs, no doubt the SWRL-FOL extension can help to provide a
+good foundational framework for FOL-based SWRL extensions.
+5 http://ruleml.org/fol/
+SWRL Expressiveness Extensions— A Survey 23
+SWRL Constraints Interchange Format (CIF-SWRL): Extending SWRL
+to Express Fully Quantiﬁed Constraints
+Expressiveness: In their motivation, the authors of CIF-SWRL [26] explains
+that knowledge fusion in an open distributed environments such as the semantic
+web, involves data gathering from various network sources, which also include
+the constraints on how the data can be used. As such, utilizing these constraints
+directly using the SWRL rules can help to achieve existential quantiﬁcations.
+The Constraint Interchange Format (CIF) extension of SWRL (CIF-SWRL)
+is an advancement of the SWRL formalism towards the constraint satisfaction
+problem (CSP). While in most cases, the target is simply to improve the SWRL
+formalism (rule layer) for better domain modeling, in CIF-SWRL extension, the
+objective is to improve SWRL to handle CSPs in the Logic layer of the Semantic
+Web and the aim is to allow the quantiﬁcation of these constraints so that new
+individuals can be introduced into the knowledge base.
+Syntax and Semantics: To allow expressing fully-quantiﬁed constraints using the
+CIF-SWRL rules, the proposal aligns the original features of CIF with the SWRL
+deﬁnition to form a single modeling language. In essence, the extension intro-
+duce constraints — deﬁned as quantiﬁed implications, to solve the problem of
+existential quantiﬁcation in the classical SWRL. These constraints are expressed
+using an interchange format, such as the First-order logic (FOL)-based CIF, to
+form relevant constraint satisfaction problems that serve as inputs to constraint
+solver. To illustrate the CIF/SWRL added syntax, we quote the following rule
+assertion: ”Every workgroup must contain at least 1 member who is a Professor”
+(∀?g∈Workgroup )−→
+(∃?p∈Professor )∧hasMember (?g, ?p) (16)
+Meaning: For all Workgroup g, there exists a Professor p, who is also a
+member of the workgroup. The rule above shows the directly added symbols,
+’ForAll (∀) and Exists ( ∃), which are both subsets of a ’Quantiﬁers’ class —
+deﬁned in the CIF-SWRL expressiveness extension.
+Implementation and Eﬃciency: The CIF-SWRL extension comes about as an
+advancement of an existing CSP, which uses OWL ontology as a data model
+and SWRL rules for expressing constraints. Beside the use of quantiﬁcation
+symbols, CIF/SWRL also claims to introduce nested quantiﬁed implications,
+which supposedly allows for multiple-quantiﬁcation of individuals in a rule. The
+proposal features the technical details of CIF-SWRL extension, including the
+abstract syntax and semantics, with an illustrative application to a use case.
+However, the featured implementation does not fully explain a reasoning strategy
+for inference on CIF-SWRL rules. Other forms of non-monotonic extensions,
+precisely the representation of ’disjunction’ and ’negation’, were also mentioned
+as work-in-progress.
+24 A. Lawan and A. Rakib
+Note: Rule (16) can also be expressed simply in DL (OWL) as:
+Workgroup ⊒∃hasMember.Professor (17)
+The Semantic Web Constraint Language (SWCL) Recognizing the need to im-
+prove the CIF/SWRL extension to handle more than just logical constraints,
+a complimentary extension of CIF-SWRL called the Semantic Web Constraint
+Language (SWCL) was proposed in [21] and subsequently applied in [20]. The ra-
+tionale being that by incorporating other constraint satisfaction problems. such
+as the mathematical constraints, CIF-SWRL will can extend its applicability to
+problem areas beyond simple decision problems. The SWCL is then deﬁned as
+an OWL-based extension for modeling mathematical constraints to solve basic
+optimization problems in the semantic web. It includes the proposal of a Uni-
+ﬁed logic and Constraint problem solver — alleged to be a semantic-web-based
+decision-making framework for implementing case scenarios using the SWCL.
+The Epsilon Existential Extension of SWRL
+Expressiveness: Proposed in [13], the Epsilon extension is another existential
+extension designed to allow quantiﬁcation of individuals into OWL ontologies
+using SWRL rules.
+In this SWRL existential extension, the authors uses a new operator the
+Hilbert’s Epsilon ( ϵ), to denote existential quantiﬁcation. However, the main
+objective of the proposal is to achieve structural computation in OWL and sub-
+sequently, in the SWRL formalism.
+Syntax and Semantics: The epsilon operator is employed to deﬁne a ’terminol-
+ogy constructor’ (ϵXφ(X)), which on inference, is expected to return anonymous
+individuals as ’values of class X’ as results of an existential Formula function
+∃X :φ(X). The syntax of the epsilon extension is deﬁned by simply extending the
+abstract syntaxes of the ’i-objects’ and ’d-objects’ of SWRL to represent the ep-
+silon terminology. While highlighting the limitations of procedural attachments
+such as SWRL built-ins, and the ineﬃciencies involved in using ﬁrst order logic
+extensions, the semantics of the epsilon extension were described in [13] with
+theories and technical case study showing the use of the new operator. However,
+the discussion failed to show the usability of the new operator in SWRL rules
+and no supporting reasoners were mentioned.
+Implementation and Eﬃciency: In order to utilize the epsilon extension, an in-
+depth understanding of the theory of Hilbert’s Epsilon operator seems to be
+inevitable. As no example SWRL rules were presented on how to utilize the new
+operator, implementation of the epsilon extension is still open for discussion.
+Moreover, the new operator seems to only increase the complexity of the SWRL
+formalism in achieving existential quantiﬁcation when compared to the previous
+existential extensions discussed.
+SWRL Expressiveness Extensions— A Survey 25
+In addition, it should be noted that a turn-around fashion of creating new in-
+dividuals in SWRL rules is possible with the use of the followings: (i) the OWL
+class construct owl:someValuesFrom — thereby achieving existential quantiﬁ-
+cation as class assertions. (ii) Alternatively, the SWRL built-in swrlx: make-
+OWLThings (discussed as part of SWRL Builtin extensions in section 2.6), also
+allow direct creation of individuals in SWRL-enabled ontologies. Though, infer-
+ence on the swrlx:makeOWLThings built-in will result in free individuals that
+cannot be classiﬁed into the ontology. (iii) SWRL can also achieve existential
+quantiﬁcation using the restriction owl:someValuesFrom to directly creates new
+individuals into OWL classes. Even though the resulting quantiﬁcation does con-
+form to DL-safeness, such existential formulation using a restriction can be hard
+to implement in practice and has been criticized as being inconvenient.
+2.5 SWRL Extension for Advanced Mathematical Support
+As a semantic web rule language, modeling knowledge for, and across, all types
+of domains should be possible using the SWRL formalism. This includes com-
+plex mathematical equations, typically used in engineering applications. While
+SWRL’s mathematical built-ins support the basic arithmetic operations such
+as addition, subtraction, comparison, string and Boolean operations, etc. There
+is, therefore, a need for extending SWRL to handle complex mathematical and
+engineering computations such as polynomials, integration, diﬀerentiation, sum-
+mation, etc.
+The OpenMath Extension of SWRL
+Expressiveness: To this end, Lopez and others in [36] propose the combination
+of SWRL built-ins with the ’OpenMath’6 model to provide advanced mathemat-
+ical support in SWRL. The OpenMath is an extensible representation standard
+as well as an evolving interchange framework for sharing and publishing math-
+ematical objects and their semantics. It is basically, a markup language and a
+representation standard for mathematical objects.
+The aim of SWRL-Openmath extension is to allow expressing scientiﬁc knowl-
+edge using formulas. Using the functionalities of OpenMath, an additional SWRL
+built-in swrlbext:mathext (with three basic arguments) was designed to extend
+the SWRL built-ins ontology class. In essence, the ’SWRL-OpenMath’ exten-
+sion extends the SWRL formalism with a feature that evaluates and reason over
+mathematical expressions. By using the built-in (swrlbext: mathext) to deﬁne
+functions as instances of a Formula class, the OpenMath extension enables the
+representation of complex math operations such as integration, diﬀerentiation,
+polynomials, etc.
+6 http://www.openmath.org/
+26 A. Lawan and A. Rakib
+Syntax and Semantics: The mathematical expressions are represented using the
+OpenMath XML functions. The function parameters, which are assumed to be
+already deﬁned in the OWL ontology, are then supplied as part of the SWRL
+rules. To allow reuse of the math functions, a Formula class is deﬁned to rep-
+resent the OpenMath expressions as datatype values using a special datatype
+property called hasOMExpression. The result of the expression i.e. the parame-
+ters supplied and the Formula itself, comprises the three arguments deﬁned in
+the built-in extension swrlbext:mathext as described in the proposal.
+Implementation and Eﬃciency: Apart from utilizing complex operators and
+their semantics, the use of OpenMath instead of the classical mathematical op-
+erators also helps to separate the mathematical and problem semantics in writing
+SWRL rules, thereby giving more clarity to rules representation.
+However, the short proposal only gives an overview of the extension with a
+draft of a methodology showing how the combination can be achieved and a men-
+tion of possible implementation using ’Bossam’ and ’Mathematica’. Moreover,
+the implementation details of the extension is unavailable for further analysis. It
+should be noted that, the OpenMath extension introduces a rather complex ap-
+proach to handle formulas in SWRL as compared to the mathematical built-ins
+approach. In addition, the proposal failed to discuss reasoning supports for the
+OpenMath SWRL extension and is curiously silent on the overall decidability of
+the combination.
+2.6 SWRL Built-in Extensions — Addressing SWRL limitations
+through Built-ins
+Discussion on SWRL extensions can never be complete without mentioning the
+SWRL built-ins7. Simply put, SWRL built-ins are procedural attachments used
+to augment the expressive powers of the original SWRL language deﬁnitions.
+More formally, a SWRL built-in is deﬁned as ”a predicate that takes one or
+more variables as arguments and evaluates to true if the argument satisﬁes the
+predicate”. SWRL built-ins consist of the ’core built-in libraries’ for common
+operations involving constraints, lists, string, comparison, Boolean, URIs, and
+date operations — preceded by the namespace qualiﬁer swrlb:. Moreover, SWRL
+built-ins are especially useful as they allow special deﬁnition of domain-speciﬁc,
+arbitrary methods called ’user-deﬁned built-ins’ — an important feature of the
+SWRL formalism that allows users to deﬁne new built-in libraries for special
+tasks. Core built-ins such as the mathematical operators, and built-ins for string
+and date operations were deﬁned in the original SWRL speciﬁcation.
+Implementation: Deﬁning SWRL built-in extension is possible either directly
+in OWL or through their corresponding java implementations made possible by
+the SWRLBuiltInBbridge. The SWRLBuiltInBbridge is a component of the open-
+sourced SWRLTab of the Prot´ eg´ e ontology editor, which allows the manipulation
+7 http://www.daml.org/2004/04/swrl/builtins.html
+SWRL Expressiveness Extensions— A Survey 27
+of SWRL built-ins using Java. User-deﬁned OWL-based built-in deﬁnitions can
+be achieved by simply adding them as new instances to theswrl:Builtin class pre-
+deﬁned in the SWRL deﬁnition ontology. Relevant built-ins are usually grouped
+together in a single OWL ﬁle, which can be imported into any domain ontology
+for utilization. A Java implementation of the built-ins, wrapped in a JAR ﬁle is
+however needed in the Prot´ eg´ e-OWL plugins directory for the Built-in bridge to
+make the necessary run-time linkages. A good example is the SWRL-Inference
+and Query tool, popularly termed as the SWRL-IQ — originally deﬁned as a
+”plugin for Prot´ eg´ e version 3.x that allows users to edit, save, and submit queries
+to an underlying inference engine based on XSB Prolog.” The built-in extension
+(swrl-extension.owl) basically contains user-deﬁned predicates, implemented for
+use in the SWRL Inference and Query Tool (SWRLIQ).
+In what follows, we brieﬂy review some of the most popular as well as stan-
+dardized SWRL built-in extensions, such as the temporal built-ins, the mathe-
+matical built-ins, the semantic web query language (SQWRL), and the Existen-
+tial built-ins of SWRL:
+SWRL Temporal Built-ins
+Expressiveness: Due to the limited temporal support in both OWL and SWRL,
+another notable example in the SWRL expressiveness extensions is the SWRL
+Temporal Built-in Library [7].
+Deﬁned as part of the SWRL-API’s built-in library, the temporal built-ins
+are hierarchically deﬁned in the SWRL temporal ontology. The SWRL temporal
+model is designed to allow easy representation of temporal knowledge in SWRL-
+based ontologies. The temporal ontology provides a standard model for modeling
+the temporal domain facts. As a result, the built-ins allow temporal reasoning
+on OWL ontologies using SWRL rules.
+Syntax and Semantics: The temporal built-ins provide a rich set of temporal
+operators such as before, after, during, duration, contains, overlaps, etc. and are
+normally preceded by the name-space qualiﬁer ’temporal:’. Based on the time
+data they operate, the SWRL temporal built-ins were categorized into basic
+and advanced mode. In the basic mode, SWRL temporal built-ins operates on
+arguments supplied by the XML Schema’s ’date’ and ’dateTime’ data types —
+supplied as xsd:String with values such as second, hour, day, time, week, month,
+year, etc. Whereas in the advanced mode, the SWRL temporal built-ins works
+on time information that is completely encoded using the ’valid-time’ temporal
+model .
+As an example, a rule that asserts the ’Fellow’ membership rank by catego-
+rizing all registered Workgroup members with registration dates before the year
+28 A. Lawan and A. Rakib
+2000 can be written as:
+WorkgroupMember (?m) ∧ hasRegDate(?m, ?rd)
+∧ temporal :before(?rd,′ 2000′)−→
+FellowMembers (?m) (18)
+SWRL-M Built-ins — A Complex Mathematical Built-in Library.
+Expressiveness: Apart from the basic arithmetic operations available in the orig-
+inal SWRL deﬁnition, a SWRL-M built-in extension, was recommended to allow
+SWRL rules to handle more mathematical expressions. Deﬁned as part of the
+SWRL Inference and Query Languages (SWRLIQ) [12], the extension introduces
+complex math operations as an advancement to the core mathematical built-in
+library. It is eﬁned as part of the SWRL Mathematical Ontology and written
+with the preﬁx swrlm: as its pseudonym.
+Syntax and Semantics: Common mathematical operations allowed in SWRLM
+built-in library include among others; the square root operation, swrlm:sqrt(?x,
+a) and the evaluate expressive function, swrlm:eval(?x, ”expression”). The latter
+is designed to support the evaluation of the ontology variable x against standard
+constants and functions such as pi (π), epsilon (ϵ), Lin (ln), etc. For example, a
+SQWRL query that ”returns a random number between 0 and 1” can be written
+as:
+swrlm :eval(?x, ”rand()”)−→sqwrl :select(?x) (19)
+Eﬃciency: The SWRL-M built-in provides a simple and eﬃcient way of dealing
+with complex math operations — especially when compared to the OpenMath
+extension (section 2.5). However, the simplicity also has its price as the SWRL-
+M built-ins collection falls short in representing many advanced mathematical
+expressions, some of which are highlighted in section 2.5.
+The restriction is a classical issue of modeling languages, i.e. the need to
+balance between tractability and degree of expressiveness. And as mathematical
+extensions involving recursive functions in rules usually makes inference non-
+terminating — and hence entailment undecidable, there is the need for careful
+design of built-in functions to ensure that predicates introduced remain decid-
+able.
+SWRLX Built-ins — The SWRL Existentials Built-in Library
+Expressiveness: Considering the need to create new individuals using the clas-
+sical SWRL deﬁnition and without relying on external extensions, the SWRL
+existential built-in (swrlx:makeOWLThings) is deﬁned in [41]. It is deﬁned in the
+SWRLX Ontology and written using the ’swrlx:’ preﬁx. The built-in is designed
+to ease explorative modeling in SWRL. Speciﬁcally, the existential quantiﬁca-
+tions — see section 2.4. Creating new individuals using SWRL built-in can be
+of particular importance, especially in the execution of mapping rules.
+SWRL Expressiveness Extensions— A Survey 29
+Syntax and Semantics: Using the SWRLX built-in model, creating new indi-
+viduals is made possible using the swrlx:makeOWLThings method and which
+has at least one free variable as its argument. The semantics being that the
+swrlx:makeOWLThings will create a new individual of type owl:Thing and binds
+it to the free variable in the method’s argument. In essence, the axiomswrlx:make
+OWLThings(?x, ?y) — ”will cause a new individual to be created and bounded
+to ?x for every value of the matching variable ?y in the rule”.
+Now consider an example SWRLX rule in (20), which creates a new individual
+for every membership ID of the WorkgroupMembers class and then asserts the
+new individual into the ’Editors’ class.
+WorkgroupMember (?m) ∧ hasMemberID (?m,
+?mID)∧ swrlx:makeOWLThings(?ed, ?mID)
+−→Editors(?ed) (20)
+Eﬃciency and Decidability: Creating new individuals using SWRL built-in can
+be of particular importance, especially in the execution of mapping rules. The
+advantage of swrlx:makeOWLThings method over other existential quantiﬁca-
+tions is that it oﬀers a simple and direct method of creating new individuals
+in SWRL-based ontologies. However, as the new individuals created will simply
+be of type ’owl:Thing’, it cannot be further classiﬁed by a reasoner into any
+particular class type. This may result in redundant unbounded individuals in
+the main ontology. As such an eﬃcient and careful use of the built-in requires
+that a class be predeﬁned in the ontology to collate the new individuals created.
+Another safe implementation, as the authors advised, will be to completely avoid
+storing the new individuals into the main ontology. However, SWRL built-ins
+still remains limited in extending the semantic web rule language to represent
+non-conventional domain knowledge. While those already deﬁned, could beneﬁt
+from well-documented constructs with more eﬃcient syntax and semantics.
+In conclusion, SWRL built-ins certainly increase the expressiveness of SWRL
+and the possibility of user-deﬁned SWRL built-ins means that domain-speciﬁc
+extensions can always be deﬁned to extend SWRL’s expressive powers. Other
+built-ins not expanded in our discussion here, includes the query extension built-
+ins such as the OWL-Axioms: the T-Box, A-Box, and R-Box built-in libraries,
+which allows querying knowledge stored in the: terminology box, the assertions
+box and the Relations sets of OWL ontologies. Note: special query built-ins were
+grouped together to form the Semantic Query Web Rule Language (SQWRL)
+built-ins [29]. Thus to improve their usability, syntax of these built-in extensions
+need to be improved with well-deﬁned semantics within the DL-safety restriction.
+3 Decidability of SWRL Expressiveness Extensions
+From the foregoing review of the various expressiveness extensions added to
+SWRL, one may be interested in asking the question, ”What then, could be the
+30 A. Lawan and A. Rakib
+largest decidable extension of the semantic web rule language?” While an obvious
+answer could be the DL-Safe extensions, there is still the need to evaluate which
+assemblage of these extensions can still remain decidable. Where the combination
+is no longer DL-safe, then what restrictions could be imposed for the combination
+to remain decidable. This is particularly important in achieving inference and
+to ensure usability of these extensions.
+In practical terms, Decidability refers to the ability of a Reasoner to clas-
+sify and achieve inference over a given piece of ontology within a ﬁnite time.
+While basic SWRL rules can be kept decidable through the DL-Safety restric-
+tion, most of the SWRL expressiveness extensions can hardly be kept decidable
+by employing similar restriction. Such extensions that work within the fringes
+of decidability, such as the existential extensions, need to be carefully tailored
+to ensure that their usage do not cause inconsistencies to the resulting ontology.
+For example, the XSWRL extension [23], which adds new individuals using ex-
+istentially quantiﬁed variables is clearly non Dl-safe and therefore, undecidable.
+This is because, unbounded variables are bound to be introduced into the ontol-
+ogy, possibly creating anonymous individuals or cyclic chains in rule execution.
+As such for the XSWRL extension to be decidable, there must not be any chain
+of existentials (whether cyclic or acyclic) in rule executions. In what follows,
+we brieﬂy discuss the conditions needed to maintain the decidability of all the
+reviewed SWRL extensions:
+Decidability of Non-monotonic SWRL Extensions: As the authors of [6] de-
+scribed, decidability issues involving unbound variables can be resolved through
+careful management of their syntax or semantics during the inference process.
+For example, in the case of the ’not’ Operator — negation as failure (see Table
+1). Here, decidability is achieved by controlling the appearance of the unbound
+variable in the consequent of the SWRL rule. In essence, the unbound variable
+(?z), whose inference can result in anonymous negative property assertions from
+the new elements not(P(x; y)) and not(Q(x; y)), was deliberately introduced so
+as not to use the bounded variables ’?x’ or ’?y’ in the consequent of the extended
+SWRL syntax. In eﬀect, while the negation of the object or datatype property
+assertions P or Q holds, the resulting unbound variable (?z) that hold this mo-
+mentary value will not appear in any other case or rule atoms and therefore the
+knowledge base remains decidable.
+Similarly, in order to preserve the decidability of the main ontology while us-
+ing the proposed NotExists ( ∄) quantiﬁer (see Table 2), the unbounded variable
+introduced is semantically deﬁned to match all the individual IDs available in
+the ontology. In other words, the free variable is interpreted to be ’universally
+satisﬁable’. This condition ensures that the execution of the operator does not re-
+sult in any modiﬁcation of the existing ontology and therefore remains decidable.
+Other forms of the non-monotonic SWRL extensions, such as the ’Mutex’ and
+’Dominance’ operators, do not have a direct consequence on the content of the
+ontology and therefore may not aﬀect its decidability or otherwise. However, the
+Mutex and Dominance operators, which controls and prioritizes the sequence of
+SWRL Expressiveness Extensions— A Survey 31
+rule executions resp., can be used to control the Decidability of SWRL ontologies
+during the inference process. This is because, by enabling the Reasoner to block
+and/or schedule rule execution plan, they mimic the feature of the inference
+process. As such, undecidable rule fragments can be dominated or muted where
+necessary to achieve consistency.
+Decidability of Fuzzy SWRL Extensions: Theoretically, the decidability of f-
+SWRL extension is not debatable considering that the extension simply intro-
+duces weighted values (see section 2.1) to justify the importance of certain facts
+over others. Speciﬁcally, the class assertion, property assertion and rules axioms
+of SWRL were extended to show the degree of conﬁdence of such assertions. As
+such, f-SWRL ontology — and by extension the Vague-SWRL ontology, can be
+assumed decidable as long as their OWL class and property axioms conform to
+the DL-safety restrictions. While the semantics of the fuzzy axioms, such as class
+and property inclusion axioms may have diﬀerent interpretations from the origi-
+nal SWRL, the concepts introduced in most of the fuzzy-based SWRL extensions
+reviewed, do not seem to invalidate the DL-Safeness principle and can therefore,
+be expected to remain decidable. This can be seen from the fact that no new
+concepts or anonymous individuals are expected from these extensions nor the
+interpretation of their syntax — which in most cases is closely similar to the
+original SWRL. For example, the comparable SWRL-F extension (see section
+2.1) introduces the concept of fuzzy ontology as a separate entity to maintain
+consistency. As such its inference has no direct inﬂuence to the consistency of
+the main ontology. Inherently, the Decidability of this extension also follows the
+DL-Safety restriction of the SWRL rules.
+Decidability of SWRL First Order Logic (FOL) Extensions: FOL-based lan-
+guages are generally undecidable and logical formalisms extending FOL, such
+as the SWRL-FOL, are usually so — unless where they are restricted by some
+semantic or syntactic completeness theorems. The SWRL FOL extension(see sec-
+tion 2.4) introduces assertion axioms that contain ﬁrst-order formulae. However,
+the restriction is that quantiﬁed variables must be bound to their corresponding
+OWL typed quantiﬁers — meaning that no ’free’, ’anonymous’ or ’unbounded’
+variables should exists in the rules. In such cases, the decidability of SWRL-
+FOL extension can also be said to be inherent in the DL-safety restriction of
+the component SWRL ontology. As the authors of SWRL introductory paper
+[17], expressed regarding the semantic interpretation of FOL assertions; ”An on-
+tology is consistent if-and-only-if it is satisﬁed by at least one interpretation”
+Moreover, neither n-ary predicates nor functions were directly included in the
+SWRL-FOL abstract syntax as they do not ﬁt with OWL and by extension the
+SWRL paradigm.
+Decidability of SWRL Built-in Extensions: Built-in extensions basically means
+that the extension utilizes the abstract syntax and semantics of the SWRL rule
+language. As such, poses no decidability issues as long as the extensions are used
+within the DL-safety limits.
+32 A. Lawan and A. Rakib
+Most of the SWRL mathematical and temporal extensions were added as
+built-in predicates to the original SWRL deﬁnition in order to avoid the de-
+cidability and complexity overheads. Other cases, where major extensions were
+added, such as the ’OpenMath’ extension discussed in section 2.5, the func-
+tionalities were strategically added based on a distinct separation between the
+mathematical and problem semantics. This is possible considering the fact that
+the mathematical functions operates on existing domain knowledge as input.
+Moreover, as the OpenMath extension also uses the built-in ( swrlbext: mathext)
+to deﬁne functions as instances of the Formula class, which are then solved us-
+ing a constraint solver. Due to the modularity, the main ontology is thus free of
+the inconsistencies that may arise during math operations. Hence the extension
+basically follows the decidability of basic SWRL built-ins, the DL-safety.
+4 Discussion and Summary
+As categorically summarized in Table 3, various extensions to SWRL syntax and
+semantics have been proposed and justiﬁed as necessary expressiveness exten-
+sions of the rule language. While the paper present them as six categories for clar-
+ity, the extensions can be basically summarized into four categories, viz. the (i)
+Uncertainty management extensions — comprising of the fuzzy and probabilis-
+tic extensions, (ii) the Non-monotonic extensions — comprising of the negation,
+quantiﬁers, rules ordering and prioritization, as well as the existential extensions,
+(iii) the Advanced mathematical extension featuring the SWRL-OpenMath ex-
+tension, and lastly, (iv) the SWRL Built-in extensions.
+In the fuzzy extension category, we discussed the SWRL-F, Vague-SWRL,
+F-SWRL, and FNSWRL, all of which were aimed at extending SWRL to enable
+the representation of uncertainties or incomplete information. The extensions ba-
+sically involve the use of fuzzy logic principles, speciﬁcally the fuzzy and vague
+sets, to extend the description logic of the SWRL formalism. Their similarity is
+apparent in their use of the fuzzy weight to denote the degree of membership
+for individual instances of the fuzzy class or property within a SWRL axiom.
+An exception to this similarity is the ’F-SWRL extension’ — which introduces
+a fuzzymatch operator for representing uncertainties based on the principles of
+fuzzy control system. A probabilistic extension of the SWRL formalism, ’Bayes-
+SWRL’, was also discussed as another uncertainty-handling or predictive model-
+ing extension of SWRL. Bayes-SWRL uses the Bayesian Networks of probability
+theory to manage predictive knowledge modeling using SWRL rules. See section
+2.1 for details.
+Various non-monotonic expressiveness extensions of SWRL have been geared
+towards solving the classical negation and the negation as failure (NAF). The
+negation extensions were included here only for completeness as the issues have
+been thoroughly addressed both in the mainstream OWL and the SWRL’s ab-
+stract syntaxes. It is safe to assume that these numerous proposals with their
+justiﬁcations lead to the advancement of the abstract deﬁnitions to handle
+SWRL Expressiveness Extensions— A Survey 33
+the knowledge negation. Other expressiveness extensions discussed in the non-
+monotonic category include the existential extensions — introducing existential
+operators with syntax such as: the exclamation mark ’!’ in the ’X-SWRL ex-
+tension’, the existential ( ∃) and Universal ( ∀) quantiﬁers in section 2.2, the
+’ϵ’ operator in the SWRL epsilon extension, and the ’makeOWLThing’ operator
+proposed in the SWRLX built-in deﬁnition. All these extensions were recognized
+to allow a safe creation of individual instances to an OWL class or property, ex-
+cept the ’makeOWLThing’ built-in — where the resulting instance is beyond the
+inference of existing OWL reasoners.
+As domain knowledge is ever-evolving, there is sometimes the need to control
+the execution of rules or even retract some facts based on new found information.
+These challenges were addressed through rules ordering (using the ’dominance’
+operation), rule exclusion (using the ’mutex’ operation) and facts removal, using
+the notExists operator ( ∄). These extensions (See sections 2.2-2.4), which obvi-
+ously entails the essence of non-monotonicity, were thence summarized in Table
+3 as non-monotonic extensions of SWRL.
+Advanced mathematical extensions of the SWRL formalism through built-ins
+were also discussed. The category introduces a special built-in extension based
+on the OpenMath language syntax and semantics. The ’SWRL-OpenMath’ ex-
+tension involves the use of OpenMath functionalities to enable expressing math-
+ematical formulas and scientiﬁc equations in SWRL. Another more classical
+approach in this categoryis the ’SWRLM extension’, which introduces advanced
+math operations, beyond those in the core SWRL deﬁnition. SWRLM extension
+handle operations such as the square-root (swrlm:sqrt), natural log (swrlm:ln),
+etc. Another important built-in extension is the SWRL Temporal extension,
+which do not directly falls under any of the above four categories, was also dis-
+cussed to highlight how time-related domain information and temporal facts can
+be expressed using SWRL rules. See sections 2.5-2.6 for details. We present a
+compacted summary of these extensions and their component syntax and se-
+mantics in Table 3 below.
+Table 3: Table of Summary for SWRL Extensions
+SWRL
+Extension
+Added Syntax Added Semantics Extension
+Type
+Fuzzy-SWRL
+(f-SWRL)
+Fuzzy class assertion:
+C(x) * w.
+Fuzzy property asser-
+tion: P(x,y) * w.
+Where: w∈ [0, 1].
+Introduces a truth value
+’w’, to specify degree of
+conﬁdence for individual
+membership in a Class or
+Property.
+Fuzzy
+Extension
+34 A. Lawan and A. Rakib
+Vague-SWRL Introduces a second-
+degree weight, w2 to
+f-SWRL syntax.
+Denote second degree of
+membership:
+w and w2 speciﬁes the
+upper and lower bounds
+of membership intervals
+in a Class or Property.
+Fuzzy
+Extension
+SWRL
+Fuzzy (SWRL-F)
+Introduce a fuzzy match-
+ing operator:
+fuzzymatch(?x, ’fuzzy-
+value’)
+Matches corresponding
+fuzzy variables with
+designated fuzzy values
+from fuzzy sets.
+Fuzzy
+Extension
+Fuzzy Non-
+monotonic
+SWRL (f-
+NSWRL)
+Fuzzy weight (w), ’Not’
+and ’¬’ operators.
+Same as the F-SWRL
+and Negation extensions.
+Fuzzy-Non-
+monotonic
+Extension.
+Bayes-SWRL Probability weight (the
+p-variable, p) Class as-
+sertion:
+C(x) * px.
+Property assertion:
+P(x, y) * pxy.
+Where: p [0, 1].
+The p-variable ( p)
+matches the probability
+of Class or Property as-
+sertions with predeﬁned
+values in a conditional
+probability table (CPT).
+Probabilistic Ex-
+tension
+Negation The ’not’ and ’¬’ opera-
+tors
+Negation of existing con-
+cepts and asserting neg-
+ative facts
+Non-monotonic
+Extension
+SWRL Quanti-
+ﬁers
+Exists (∃X) operator Asserts new instances of
+the quantiﬁed variable x.
+Non-monotonic
+notExists ( ∄X) operator
+in antecedent
+Check for missing facts.
+notExists ( ∄X) operator
+in consequent
+Removal of Knowledge
+forAll (∀X) Group-wise assertions
+Dominance Dominance operator:
+dominance(Rx,R y),
+R = rule identiﬁer
+Implies: Rule Rx has
+more priority in the ex-
+ecution order than Ry
+Rules
+Ordering
+(P riority)
+SWRL Expressiveness Extensions— A Survey 35
+Mutex Mutex operator:
+Mutex(Rx,R y), R
+= rule identiﬁer
+Implies: RuleRy will not
+be executed in the event
+that Rx is already exe-
+cuted
+Rule
+Exclusion
+Extended SWRL
+(XSWRL)
+Existential operator’!’
+e.g. existentially quanti-
+ﬁed variable (!x)
+Creates new individuals
+that satisfy the variable,
+x.
+Non-monotonic
+Existential
+Extension
+SWRL-FOL/
+CIF-SWRL
+The ’ForAll (∀)’ and ’Ex-
+ists (∃)’ operators
+Imposes ﬁrst order logic
+(FOL) quantiﬁcation op-
+erations on the SWRL
+variables
+FOL
+Extensions
+Epsilon Exten-
+sion
+The terminology con-
+structor ϵXφ(X)
+Creates new individuals
+as ’values of’ class X.
+Quantiﬁcation
+extensions
+SWRL Open-
+Math
+The math built-in:
+swrlbext :mathext
+Uses the functionalities
+of OpenMath to create
+additional built-ins
+Advanced Math
+Ext.
+SWRL Temporal Duration operations,
+Allen’s Temporal in-
+tervals, add/subtract
+operations e.g.
+temporal:before(T1, T2)
+Implements temporal
+operations as predicates
+on valid-time data
+Built-in Exten-
+sions
+SWRLM Complex Mathematical
+operations (evaluate,
+square-root, natural log)
+e.g. swrlm : eval(?area,
+”width * height”, ?width,
+?height)
+Implements mathemati-
+cal functions as predi-
+cates
+Built-in Exten-
+sions
+SWRLX Existential Built-
+in e.g. swrlx:make-
+OWLThings(?x, ?y)
+Creates new individuals
+of type owl : T hing
+Built-in Exten-
+sions
+5 Conclusion
+In this paper, we presented the SWRL formalism, discussed its expressive limita-
+tions and then reviewed the expressiveness extensions proposed to manage those
+limitations. The review discussed the various fuzzy and probabilistic extensions
+of SWRL, non-monotonic extensions, existentials, advanced mathematical ex-
+tensions, as well as the SWRL built-in extensions. We undertaken this review
+of common SWRL expressiveness extensions with the aim of asserting SWRL’s
+36 A. Lawan and A. Rakib
+overall expressivity and further highlighted its level of acceptance within the
+semantic web community. From the foregoing, it is evident that much of the
+available SWRL extensions have been directed towards solving three major is-
+sues, namely the uncertainties in domain knowledge, the non-monotonicity, and
+the representation of mathematical knowledge.
+Based on our observation, usability of SWRL rules and its expressiveness exten-
+sions may be limited due to the following reasons: (i) Lack of readily-available
+reasoners that can draw inference on the new extensions within decidable portion
+of the language, (ii) Modeling real-world problems using SWRL is still at the
+research stage, with little large-scale developmental eﬀorts, (iii) the availability
+of alternative rule and query languages such as SPARQL and RuleML that are
+able to achieve (usually in a turnaround fashion), some of the current limitations
+of SWRL. Though the RuleML is originally not designed to be a rule language,
+however, its adoption may have caused much decline to the use of SWRL.
+In future works, we would like to further evaluate the practicalities of the
+many theoretical extensions reviewed and further validate the inference/decidability
+of the implemented SWRL extensions. Another research gap identiﬁed is the
+’need for standardization’— as some of the extensions can only be useful in lo-
+calized application domains while few others require more justiﬁed syntax and
+semantics. It is hoped that-with the continuous development eﬀorts on SWRL
+expressive powers and usability, it can evolve into a comprehensive and complete
+ontology rule language for the semantic web.
+Acknowledgement. This work was partially supported by a Grant received
+through the CFFRC scheme, Govt. of Malaysia as project number CFFRCPLUS-
+CropB1-001. We also thank Dr. Natasha Alechina for her valuable and construc-
+tive comments on earlier drafts of the manuscript.
+Bibliography
+[1] Agarwal, S., Hitzler, P.: Modeling fuzzy rules with description logics. CEUR
+Workshop Proceedings 188(5) (2005)
+[2] Antoniou, G., van Harmelen, F. (eds.): Semantic Web Primer - Second
+Edition. MIT Press, Cambridge, Massachusetts London, England (2008)
+[3] Baader, F., Calvanese, D., McGuinness, D.L., Nardi, D., Patel-Schneider,
+P.F. (eds.): The Description Logic Handbook: Theory, Implementation, and
+Applications. Cambridge University Press, New York, NY, USA (2003)
+[4] Berners-Lee, T.: Semantic Web and Linked Data (2009), http://www.w3.
+org/2009/Talks/0204-campus-party-tbl/
+[5] Boris, M., Bernardo, C.G., Horrocks, I., Zhe, W., Achille, F., Carsten, L.:
+OWL 2 Web Ontology Language Proﬁles ( Second Edition ). W3C Recom-
+mendation (December), 1–43 (2012)
+[6] Calero, J.M.A., Ortega, A., Perez, G.G.M., Blaya, J.A.B., Skarmeta,
+A.F.G.: A Non-monotonic Expressiveness Extension on the Semantic Web
+Rule Language. Journal of Web Eng . . . 11(2)(0), 93–118 (2012), http:
+//dl.acm.org/citation.cfm?id=2230897
+[7] Connor, M.J.O.: A Method for Representing and Querying Temporal In-
+formation in OWL. Communications in Computer and Information Science
+127 CCIS,(January 2011), 97–110 (2011)
+[8] Da Costa, P.C.G., Laskey, K.B., Laskey, K.J.: Pr-owl: A bayesian ontology
+language for the semantic web. In: Proceedings of the 2005 International
+Conference on Uncertainty Reasoning for the Semantic Web - Volume 173.
+pp. 23–33. URSW’05, CEUR-WS.org, Aachen, Germany, Germany (2005),
+http://dl.acm.org/citation.cfm?id=2889849.2889852
+[9] Darwiche, D.: Bayesian networks. Communications of the ACM 53(12), 80–
+90 (2010)
+[10] Ding, Z., Peng, Y., Pan, R.: BayesOWL: Uncertainty modeling in semantic
+web ontologies. Studies in Fuzziness and Soft Computing 204, 3–29 (2006)
+[11] Eiter, T., Ianni, G., Lukasiewicz, T., Schindlauer, R., Tompits, H.: Combin-
+ing answer set programming with description logics for the semantic web.
+Artif. Intell. 172(12-13), 1495–1539 (Aug 2008), http://dx.doi.org/10.
+1016/j.artint.2008.04.002
+[12] Elenius, D., Riehemann, S.: Swrl-iq user manual (2012), http://
+protegewiki.stanford.edu/images/5/57/SWRL-IQ_manual.pdf
+[13] Elenius, D., Stehr, M.o.: Rules and Computation on the Seman-
+tic Web, https://pdfs.semanticscholar.org/717c/fc3f88953e05e\
+0b8d03d381d5fa50429f919.pdf
+[14] Gau, W.L., Buehrer, D.J.: Vague sets. IEEE transactions on systems, man,
+and cybernetics 23(2), 610–614 (1993)
+[15] Horn, A.: On Sentences Which are True of Direct Unions of Algebras. J.
+Symb. Log. 16(1), 14–21 (1951)
+38 A. Lawan and A. Rakib
+[16] Horrocks, I., Patel-Schneider, P.F., Bechhofer, S., Tsarkov, D.: Owl rules:
+A proposal and prototype implementation. Web Semant. 3(1), 23–40 (Jul
+2005), http://dx.doi.org/10.1016/j.websem.2005.05.003
+[17] Horrocks, I., Patel-schneider, P.F., Bechhofer, S., Tsarkov, D.: OWL rules: A
+proposal and prototype implementation. Web Semantics: Science, Services
+and Agents on the World Wide Web 3(1), 23–40 (jul 2005), http://www.
+sciencedirect.com/science/article/pii/\S1570826805000053
+[18] Horrocks, I., Patel-Schneider, P.F., Boley, H., Tabet, S., Grosof, B., Dean,
+M., et al.: Swrl: A semantic web rule language combining owl and ruleml.
+W3C Member submission 21, 79 (2004)
+[19] Kifer, M., Brook, S.: Requirements for an Expressive Rule Language on
+the Semantic Web. W3C Workshop on Rules Languages (April) (2005),
+http://www.w3.org/2004/12/rules-ws/paper/34/
+[20] Kim, H.J., Kim, W., Lee, M.: Semantic web constraint language and its ap-
+plication to an intelligent shopping agent. Decision Support Systems 46(4),
+882–894 (2009)
+[21] Kim, W., Lee, M., Hong, J., Wang, T., Kim, H.: Merging Mathematical
+Constraint Knowledge with the Semantic Web using a Semantic Web Con-
+straint Language. Iconceptpress.Com 2003(October 2009) (2003), http:
+//www.iconceptpress.com/download/paper/100618194339.pdf
+[22] Klir, G.J., Yuan, B.: Fuzzy Sets and Fuzzy Logic: Theory and Applications.
+Prentice-Hall, Inc., Upper Saddle River, NJ, USA (1995)
+[23] Li, W., Tian, S.: XSWRL, an extended semantic web rule language
+and prototype implementation. Expert Systems with Applications 38(3),
+2040–2045 (mar 2011), http://linkinghub.elsevier.com/retrieve/
+pii/\S0957417410007694
+[24] Liu, Y., Chen, S., Li, S., Wang, Y.: Bayes-SWRL: A probabilistic extension
+of SWRL. Proceedings - 9th International Conference on Computational
+Intelligence and Security, CIS 2013 1, 702–706 (2013)
+[25] McGuinness, D.L., Van Harmelen, F., et al.: Owl web ontology language
+overview. W3C recommendation 10(10), 2004 (2004)
+[26] McKenzie, C., Gray, P., Preece, A.: Extending SWRL to express fully-
+quantiﬁed constraints. Lecture Notes in Computer Science (including
+subseries Lecture Notes in Artiﬁcial Intelligence and Lecture Notes in
+Bioinformatics) 3323 LNCS, 139–154 (2004), http://link.springer.com/
+chapter/10.1007/978-3-540-30504-0{_}11
+[27] Mei, J., Bontas, E.P.: Reasoning paradigms for swrl-enabled ontologies
+(2005)
+[28] Motik, B., Grau, B.C., Horrocks, I., Wu, Z., Fokoue, A., Lutz, C.:
+OWL 2 Web Ontology Language Proﬁles (2009), http://www.w3.org/TR/
+owl2-profiles/
+[29] O’Connor, M., Das, A.: Sqwrl: A query language for owl. In: Proceedings of
+the 6th International Conference on OWL: Experiences and Directions - Vol-
+ume 529. pp. 208–215. OWLED’09, CEUR-WS.org, Aachen, Germany, Ger-
+many (2009), http://dl.acm.org/citation.cfm?id=2890046.2890072
+SWRL Expressiveness Extensions— A Survey 39
+[30] Pan, J.Z., Stoilos, G., Stamou, G., Tzouvaras, V., Horrocks, I.: f-swrl: a
+fuzzy extension of swrl pp. 28–46 (2006)
+[31] Paschke, A., Boley, H.: Rule markup languages and semantic web rule lan-
+guages. In: Rule Markup Languages and Semantic Web Rule Languages,
+pp. 1–24. IGI Global (2010)
+[32] Patel-Schneider, P.F.: A proposal for a swrl extension towards ﬁrst-
+order logic. W3C Member Submission, April (2005), http://www.w3.org/
+Submission/SWRL-FOL/
+[33] Patel-Schneider, P.F., Hayes, P., Horrocks, I., Harmelen, F.: A proposal for
+a swrl extension to ﬁrst-order logic. Proposal, DARPA DAML Program
+(2004), http://www.daml.org/2004/11/fol/proposal
+[34] Predoiu, L.: Probabilistic Models for the Semantic Web — A Survey. Inter-
+national Journal of Approximate Reasoning pp. 288–307 (2007)
+[35] Rosati, R.: Semantic and computational advantages of the safe integration
+of ontologies and rules. Lect. Notes Comput. Sci. (including Subser. Lect.
+Notes Artif. Intell. Lect. Notes Bioinformatics) 3703 LNCS, 50–64 (2005)
+[36] S´ anchez-Maci´ an, A., Pastor, E., de L´ opez Vergara, J.E., L´ opez, D.: Extend-
+ing swrl to enhance mathematical support. In: International Conference on
+Web Reasoning and Rule Systems. pp. 358–360. Springer (2007)
+[37] Shen, G., Huang, Z., Zhu, X., Wang, L., Xiang, G.: Using description log-
+ics reasoner for ontology matching. In: Intelligent Information Technology
+Application, Workshop on. pp. 30–33. IEEE (2007)
+[38] Tim Berners-Lee, J.H., Lassila, O.: The Semantic Web. Scientiﬁc American
+Magazine (may 2011)
+[39] Wang, X., Ma, Z.M., Xu, C., Cheng, J.: Nonmonotonic fuzzy rules in the
+semantic web. In: 2009 Sixth International Conference on Fuzzy Systems
+and Knowledge Discovery. vol. 2, pp. 275–279 (Aug 2009)
+[40] Wang, X., Ma, Z., Yan, L., Meng, X.: Vague-SWRL: a fuzzy extension of
+SWRL. International Conference on Web Reasoning and Rule Systems pp.
+232–233
+[41] Wiki, R.: Swrl existentials, http://wiki.ruleml.org/index.php/SWRL
+[42] Wlodarczyk, T.W., Rong, C., O’Connor, M., Musen, M.: Swrl-f: A fuzzy
+logic extension of the semantic web rule language. In: Proceedings of the
+International Conference on Web Intelligence, Mining and Semantics. pp.
+39:1–39:9. WIMS ’11, ACM, New York, NY, USA (2011),http://doi.acm.
+org/10.1145/1988688.1988735

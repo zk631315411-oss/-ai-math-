@@ -1,0 +1,559 @@
+OntoM athP RO Ontology:
+A Linked Data Hub for Mathematics
+Olga Nevzorova1,2, Nikita Zhiltsov 1, Alexander Kirillovich1, and
+Evgeny Lipachev1
+1 Kazan Federal University,
+Kremlyovskaya 18 Str., 420008 Kazan, Russia
+{onevzoro,nikita.zhiltsov,alik.kirillovich,elipachev}@gmail.com
+2 Research Institute of Applied Semiotics of Tatarstan Academy of Sciences,
+Baumana 20 Str., 420111 Kazan, Russia
+Abstract. In this paper, we present an ontology of mathematical knowl-
+edge concepts that covers a wide range of the ﬁelds of mathematics and
+introduces a balanced representation between comprehensive and sensi-
+ble models. We demonstrate the applications of this representation in
+information extraction, semantic search, and education. We argue that
+the ontology can be a core of future integration of math-aware data
+sets in the Web of Data and, therefore, provide mappings onto relevant
+datasets, such as DBpedia and ScienceWISE.
+Keywords: Ontology engineering, mathematical knowledge, Linking Open
+Data
+1 Introduction
+Recent advances in computer mathematics [4] have made it possible to formalize
+particular mathematical areas including the proofs of some remarkable results
+(e.g. Four Color Theorem or Kepler’s Conjecture). Nevertheless, the creation of
+computer mathematics models is a slow process, requiring the excellent skills
+both in mathematics and programming. In this paper, we follow a diﬀerent
+paradigm to mathematical knowledge representation that is based on ontology
+engineering and the Linked Data principles [6]. OntoMath P RO ontology1 intro-
+duces a reasonable trade-oﬀ between plain vocabularies and highly formalized
+models, aiming at computable proof-checking.
+OntoMath P RO was ﬁrst brieﬂy presented as a part of our previous work [22].
+Since then, we have elaborated the ontology structure, improved interlinking
+with external resources and developed new applications to support the utility
+of the ontology in various use cases. In summary, our key novel contributions in
+the current paper are:
+– new links with external resources, such as DBpedia and ScienceWISE (Sec-
+tion 2.4);
+1 http://ontomathpro.org
+arXiv:1407.4833v2  [cs.AI]  11 Aug 2014
+2 Nevzorova et al.
+– a concept-based mathematical formula search mashup (Section 3.2);
+– experimental results on using the ontology in the learning process (Sec-
+tion 3.3).
+1.1 Motivation
+The advent of the Web of Data [8] has opened many promising technologies to
+publish heterogeneous data from diﬀerent content providers as a single inter-
+connected cloud of objects. We argue that the beneﬁts of having an ontological
+model for mathematics and publishing mathematical knowledge as Linked Data
+include uniﬁcation of the terminology for mathematicians, the convenient rep-
+resentation for applications in text mining and search, assistance in learning
+about mathematics, and the possibility of predicting unknown links between
+mathematical concepts.
+Interoperability. Organizing scientiﬁc knowledge is utterly important for
+distributed teams working on large research projects. For example, it is illus-
+trated by the emergence of ScienceWISE project [1] and its ontology 2 for physi-
+cists in CERN. Since OntoMath P RO has better coverage than Wikipedia re-
+garding the developing vocabulary and particularly object properties, it can
+serve as the main repository for deﬁnitions of mathematical concepts in the Web
+of Data. It means that mathematicians may unambiguously refer to the ontology
+concepts via URIs on discussion groups, blogs, and trendy Q&A sites, such as
+MathOverﬂow3. For this purpose, we provide a URI lookup service as well as a
+URI dereferencing service (Section 2.2).
+Convenient format for mashups . The integrated representation of math-
+ematical knowledge in a machine-readable format (RDF) may boost the devel-
+opment of new handy services, i.e., Semantic Web agents, for mathematicians.
+Such services could be run atop the ontology as well as datasets, modeled with
+the help of the ontology. In Section 3, we present our demo applications in text
+mining and mathematical formula search, which exploit the ontology as a rich
+linguistic resource.
+Learning. From the learner’s perspective, the ontology gives the helpful con-
+text for conceiving a mathematical term, including the deﬁnition, related con-
+cepts with respect to non-trivial relations, such as logical dependency and associ-
+ation. Besides, we argue that the ontology can facilitate educational assessment
+of students. In Section 3.3, we describe our experiments on usingOntoMath P RO
+as a tool for measuring the eﬀectiveness of the course on numerical analysis.
+Discovering hidden links . The ontological model generally deﬁnes not
+only concepts from the domain of interest, but also relations between them
+and axioms (e.g. transitivity or cardinality of relations). Thus, ontologies may
+enable inference over knowledge bases of facts. OntoMath P RO has a rich set of
+relations between mathematical concepts. We expect that existing link prediction
+techniques (e.g. [9,23,28]) along with reasoning mechanisms (e.g. [24]) may reveal
+2 http://sciencewise.info/ontology/
+3 http://mathoverflow.net/
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 3
+compelling hidden relationships between known concepts in mathematics. Such
+discovered highly probable relations may guide further research in the bleeding
+edge of mathematics, highlighting the most prospective directions.
+1.2 Related W ork
+To put our research into the context, we summarize the most relevant previ-
+ous works for representing mathematical knowledge in this section. For a more
+comprehensive overview of services, ontological models and languages for math-
+ematical knowledge management on the Semantic Web and beyond, we refer the
+interested reader to C. Lange’s survey [19].
+Symbolic notation. The semantic layer of Mathematical Markup Language
+(MathML) [3,14] – Content MathML – as well as OpenMath Content Dictionar-
+ies [10] are extensible collections of deﬁnitions of symbols. Basically, they suﬃce
+high school and sophomore level education: arithmetics, set theory, calculus, al-
+gebra, etc. Each symbol has its own URI. In comparison, OntoMath P RO does
+not contain deﬁnitions of symbols and could be easily integrated with Content
+MathML/OpenMath dictionaries.
+High-level ontologies. Next, we overview ontologies for representing high-
+level structures in the mathematical knowledge: OMDoc [17,18], MathLang’s
+Document Rhetorical aspect (DRa) Ontology [16], Mocassin Ontology [26]. These
+models enable making closely related assertions for the particular ﬁelds of math-
+ematics, i.e., theories. Comparing to them, OntoMath P RO rather speciﬁes the-
+ories themselves.
+Open Mathematical Documents (OMDoc), an XML-based language, is inte-
+grated with MathML/OpenMath and adds support of statements, theories, and
+rhetorical structures to formalize mathematical documents. OMDoc has been
+used for interaction between structured speciﬁcation systems and automated
+theorem provers. The OMDoc OWL Ontology 4 is based on the notion of state-
+ments. Sub-statement structures include deﬁnitions, theorems, lemmas, corollar-
+ies, proof steps. The relation set comprises of partonomic (whole-part), logical
+dependency, and verbalizing properties. The paper [11] presents an OMDoc-
+based approach to author mathematical lecture notes and expose them as Linked
+Data.
+The MathLang DRa Ontology characterizes document structure elements
+according to their mathematical rhetorical roles that are similar to the ones
+deﬁned in the statement level of OMDoc. This semantics focuses on formalizing
+proof skeletons for generation of proof checker templates.
+The Mocassin Ontology encompasses many structural elements of the state-
+of-the-art models. However, this model is more oriented on representing struc-
+tural elements that occur in real scholarly papers on mathematics. Our previous
+work [26] demonstrates its utility in the information extraction scenario.
+T erminological vocabularies. The general-purpose DBpedia dataset [2]
+contains, according to our estimates, about 7,800 concepts (including 1,500 con-
+4 Available at http://kwarc.info/projects/docOnto/omdoc.html
+4 Nevzorova et al.
+cepts with labels in Russian) from algebra, 46,000 (9,200) concepts from geom-
+etry, 30,000 (4,300) concepts from mathematical logic, 150,000 (28,000) from
+mathematical analysis, and 165,000 (39,000) concepts on theory of probability
+and statistics. Concepts are linked to DBpedia categories representing the ﬁelds
+of mathematics. Although there is a skos:broader relation between categories,
+there is no taxonomic (ISA) relationship between the concepts themselves.
+A SKOS-based adaptation of Mathematics Subject Classiﬁcation5 is exposed
+as a linked dataset [20]. OntoMath P RO ontology overlaps with this dataset in
+case of modeling hierarchy of ﬁelds, but it is signiﬁcantly richer for representing
+terms and their interactions.
+The Online Encyclopedia of Integer Sequences [25] is a knowledge base of
+facts about numbers. Given a sequence of integers, this service 6 returns the
+information about its name, general formula, implementation in programming
+languages, successive numbers, references, and other relevant links.
+Thesauri and ontologies . Hence, let us consider domain-speciﬁc resources,
+providing a more rich set of relations. [15] presents a formal ontology of math-
+ematics for engineers that covers abstract algebra and metrology. Cambridge
+Mathematical Thesaurus [29] contains a taxonomy of about 4,500 entities in 9
+languages from the undergraduate level mathematics, connected with logical de-
+pendency referencedBy and associative relationships seeAlso. This resource has
+been developed in education purposes and covers only bachelor level mathemat-
+ics.
+The ScienceWISE project ontology [1] gives over 2,500 mathematical deﬁ-
+nitions connected with ISA-, whole-part, associative, and importance relation-
+ships. The sources of deﬁnitions are Wikipedia, Encyclopedia of Science, and the
+engaged research community. The project focuses on achieving a consensus of
+opinion among mathematicians about given deﬁnitions.
+The Ontology on Natural Sciences and Technology [12] contains 55,000 de-
+scriptions of scientiﬁc terms in Russian, covering the mathematical terminology
+on high school and freshman-sophomore university levels. The ontology is meant
+for applications of text analysis, and deﬁnes thesaurus-like relations, such as
+ISA, whole-part, asymmetric association, and symmetric association.
+Due to the lack of space, we do not cover related works on semantic data
+analysis for mathematical texts, which are given in [7,21].
+2 OntoM athP RO Structure
+In this section, we elaborate the modeling principles, the development workﬂow,
+the ontology structure, and links to external terminological resources.
+2.1 Modeling Principles
+Even though mathematics is the most exact science, modeling this domain is
+hard, due to:
+5 http://www.ams.org/msc/
+6 http://oeis.org
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 5
+– abstractness, i.e., many deﬁnitions are conventionally given in mathematical
+notation elements or formulas;
+– duality, i.e., there might be equivalent deﬁnitions for terms depending on
+which foundations of mathematics are used (set theory or geometry) – this
+aggravates asserting logical dependency relations between concepts;
+– emergence of novel terms , i.e., developing, not commonly used parts of the
+vocabulary in the professional community.
+To tackle these issues, we come up with the following modeling principles.
+1. Only classes, no individuals . First, OntoMath P RO is geared to be a lin-
+guistic resource for text processing. Therefore, the ontology does not contain
+individuals. The latter can be found in applications, e.g. concrete occurrences
+of named entities in texts. For example, while modeling mathematical num-
+bers like π ore as individuals is natural, we model them as classes, because,
+in our case, individuals can be occurrences of these numbers in texts.
+2. ISA vs. whole-part. Existing classiﬁcation schemes, such as MSC or UDC7,
+model hierarchies with respect to whole-part relation. Unlike them, our on-
+tology posits the ISA semantics for hierarchies of mathematical knowledge
+objects, and preserves the same for ﬁelds and sub-ﬁelds. The reason is that
+there are only classes instead of individuals in OntoMath P RO, we express
+the whole-part semantics through ISA relation taking into account its in-
+terpretability in terms of the set theory. Thus, we assume that a ﬁeld of
+mathematics is a set of closely related statements. For example, fractal ge-
+ometry is a sub-set of geometry.
+3. V alidating classes. We deal with the developing vocabulary. To avoid coin-
+ing a rare terminology, we require a reference from a refereed publication (i.e.,
+an article or a textbook) for a term to be added to the ontology.
+4. V alidating relations. Establishing correct relation instances is hard and
+requires high-level competence. Therefore, we basically rely on the opinions
+of experienced experts involved in the development. The exceptions include
+the logical dependency and solves relations that can be validated using ref-
+erences to refereed sources (see our explanation in Section 2.3).
+5. URI naming convention. Since the ontology is bilingual (Russian/English)
+and our experts had started adding terms with Russian labels and trans-
+lated them to English afterwards, we choose using surrogate URIs, e.g.
+http://ontomathpro.org/ontology/E1 for a concept “Field of mathemat-
+ics”8.
+6. Multiple inheritance. Multiple inheritance with respect to ISA-relationships
+is permitted. For example, class E1892 Diﬀerential Equation is a sub-class
+of both E1891 Equation and E2688 Element of Diﬀerential Equations.
+7. Synset as labels . Synonyms are represented by labels of the same class.
+For example, E1226 Cauchy’s Inequality has labels “Cauchy’s inequality”
+and “Inequality of arithmetic and geometric means”.
+7 http://www.udcc.org/
+8 the similar convention was adopted in CIDOC CRM Ontology [13]
+6 Nevzorova et al.
+We have worked with seven practicing mathematicians as domain experts
+for four months. The terminological sources include freely available materials,
+such as classical textbooks, Wikipedia articles, and real scholarly papers, along
+with personal experience of the experts. During the development, we used a
+collaborative tool WebProtege9 [31].
+2.2 Concepts
+Each concept is represented as an OWL class in the ontology. Each class has a
+textual explanation or hyperlink to its external deﬁnition, Russian and English
+labels. All the metadata information, including adjacent properties, per each
+class can be seen on our URI dereferencing service10. To facilitate ﬁnding the URI
+for a given class (e.g. for adding a link to it on a webpage), this service features
+a URI lookup function. In future, we are going to add collecting backlinks per
+each class from HTTP referrers. It will allow us to display relevant webpages
+and discussions about the concept.
+Fig. 1. A taxonomy of the ﬁelds of mathematics in OntoM athP RO
+We distinguish two hierarchies of classes with respect to ISA-relationship:
+a taxonomy of the ﬁelds of mathematics (Figure 1) and a taxonomy of mathe-
+matical knowledge objects, i.e., elements of particular theories (Figure 2). In the
+taxonomy of ﬁelds, most fundamental ﬁelds, such as geometry and analysis, have
+been elaborated thoroughly. For example, there have been deﬁned speciﬁc sub-
+ﬁelds of geometry: analytic geometry, diﬀerential geometry, fractal geomentry
+9 http://webprotege.stanford.edu/
+10 according to the Linked Data principles, it is available on the ontology’s URI:
+http://ontomathpro.org/ontology
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 7
+and others. The ontology covers a wide range of the ﬁelds of mathematics, such
+as number theory, set theory, algebra, analysis, geometry, mathematical logic,
+discrete mathematics, theory of computation, diﬀerential equations, numerical
+analysis, probability theory, and statistics.
+There are three types of top level concepts in the taxonomy of mathematical
+knowledge objects: i) basic metamathematical concepts, e.g. E847 Set, E1227
+Operator, E1324 Map, etc; ii) root elements of the concepts related to the par-
+ticular ﬁelds of mathematics, e.g. E2406 Element of Probability Theory or E3140
+Element of Numerical Analysis; iii) common scientiﬁc concepts: E339 Problem,
+E449 Method, E1936 Statement, E1988 Formula, etc. Most concepts are inher-
+ited from the root elements of the ﬁelds of mathematics (type ii).
+Fig. 2. A taxonomy of mathematical knowledge objects in OntoM athP RO
+In total, OntoMath P RO contains 3,449 classes.
+2.3 Relations
+OntoMath P RO deﬁnes four types of object properties:
+– a directed relation between a mathematical knowledge object (E24) and a
+ﬁeld of mathematics (E1) ( P3 belongs to and its inverse P4 contains ), e.g.
+E68 Barycentric Coordinates P3 belongs to E14 Metric Geometry;
+– a directed relation of logical dependency between mathematical knowledge
+objects ( P1 deﬁnes and its inverse P2 is deﬁned by ), e.g. E39 Christoﬀel
+Symbol P2 is deﬁned by E213 Connectedness. This relation can be validated
+with providing a reference to the relevant deﬁnition in a refereed publication.
+The P2 is deﬁned by relation instance is established, if the deﬁnition of the
+ﬁrst concept (“subject” in the triple) explicitly refers to the second concept
+(“object”);
+8 Nevzorova et al.
+– a symmetric transitive associative relation between mathematical knowl-
+edge objects ( P5 see also ), e.g. E660 Chebyshev Iterative Method P5 see
+also E444 Numerical Solution of Linear Equation Systems. The semantics of
+this relation is equivalent to rdfs:seeAlso, which is widely used in the LOD
+datasets for individuals;
+– a directed relation between a method and a task (P6 solves and its inverseP7
+is solved by), these properties are deﬁned on E449 Method and E339 Problem
+classes. This relation can also be validated using references to refereed articles
+or textbooks.
+In total, OntoMath P RO contains 3,627 ISA property instances, and 1,139
+other property instances.
+2.4 Links to Other Datasets
+Although external links are no part of the ontology, we describe the subsets
+that have been mapped onto existing Linked Data resources. An alignment of
+OntoMath P RO with DBpedia 11 is based on the following features:
+– class and resource labels ( rdfs:label property);
+– explicit links to Wikipedia, i.e., during the development of the ontology,
+some deﬁnitions were imported from Wikipedia and refer to it. We compare
+these references with foaf:primaryTopic and rdfs:labels property values in
+DBpedia.
+For interlinking, we only use DBpedia resources that belong to the Mathemat-
+ics category and its subcategories (e.g. Algebra, Geometry, Mathematical logic,
+Dynamical Systems) up to 5 levels with respect to skos:broader property. After
+the linking has been accomplished, we generate triples connecting the classes of
+the OntoMath P RO with the resources from DBpedia by using skos:closeMatch
+property. The alignment with DBpedia has resulted in 947 connections with 907
+the ontology classes (some classes were linked with several DBpedia resources).
+An alignment with ScienceWISE Ontology 12 only used class labels. As a
+result, this mapping comprises 347 connections. The mapping ﬁles are available
+on GitHub13.
+3 Applications
+In this section, we describe the applications, which exploit diﬀerent aspects of
+OntoMath P RO.
+11 SPARQL endpoint: http://dbpedia.org/sparql
+12 http://data.sciencewise.info/openrdf-sesame/repositories/SW
+13 https://github.com/CLLKazan/OntoMathPro
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 9
+3.1 Information Extraction
+In our previous work [22], we have developed a semantic publishing platform for
+scientiﬁc collections in mathematics that analyzes the underlying semantics in
+mathematical scholarly papers and eﬀectively builds their consolidated ontology-
+based representation.
+Thus, every paper in the collection is dissected into a semantic graph of
+instances of the supported domain models with the help of NLP techniques, such
+as noun phrase recognition and entity resolution. Along with textual fragments,
+the platform is capable to understand the meanings of mathematical notation
+symbols and interpret them as ontology instances.
+The corpus of publications we experimented with consists of 1,330 articles
+of the “Proceedings of Higher Education Institutions: Mathematics” (PHEIM)
+journal in Russian. The current RDF dataset14 – PHEIM dataset – contains more
+than 850,000 triples including the descriptions of 1,330 articles, 17,397 formulas,
+43,963 variables, and 66,434 textual occurrences of mathematical entities from
+the ontology.
+3.2 Concept-based F ormula Search
+Approach. Our demo application 15 supports a use case of searching mathe-
+matical formulas in the published PHEIM dataset that are relevant to a given
+entity. The user input supported by the application is close to a keyword search:
+our system is agnostic to a particular symbolic notation used in the papers to
+denote mathematical concepts, and the user is able to ﬁlter query suggestions
+by keywords. This feature makes our application diﬀerent from a wide range
+of mathematical retrieval systems that require the input in the L ATEX syntax
+(e.g. [27,33,35]). Such approaches usually suﬀer from ambiguous mathematical
+notations. However, it’s worth mentioning (uni)quation [32], a formula search
+system that is robust to basic formula transformations including changes of
+variables.
+Another rationale behind the concept-based search input interface is its cross-
+language capabilities, i.e., even though the indexed document collection is in
+Russian, the user still can search using keywords in English.
+There have been a few eﬀorts to enable a keyword search for retrieving math-
+ematical content. A computational engine WolframAlpha [34] can handle key-
+word queries, generating a summary for a mathematical concept. However, the
+engine does not provide the similar functionality for documents in scientiﬁc col-
+lections. MCAT Math Retrieval System [30] applies an SVM classiﬁer to detect
+descriptions of mathematical expressions and extends the TF-IDF ranking base-
+line for formula search in MathML documents. Unlike this tool, our solution is
+more powerful, because it resolves the lexical meanings of symbols in terms of
+14 is exposed via our SPARQL endpoint: http://cll.niimm.ksu.ru:8890/sparql, the
+graph IRI is http://cll.niimm.ksu.ru/pheim
+15 http://cll.niimm.ksu.ru/mathsearch
+10 Nevzorova et al.
+OntoMath P RO ontology, and, therefore, enabling reasoning with respect to the
+ontology relations (e.g. ISA). Additionally, our search interface supports ﬁltering
+by the document structure context, i.e., a particular segment of the document
+(e.g. a theorem or a deﬁnition) that contains the relevant formula.
+Fig. 3. Query interface of the mathematical formula search demo application
+Demo. The application supplies the following search scenario. The user en-
+ters keywords in the search box (Figure 3) and may choose a related concept
+suggestion. The suggestions are loaded from OntoMath P ROontology as well as
+the DBpedia part aligned with the ontology.
+Fig. 4. A search result page
+Then, the user clicks the “Get instances” button and gets a list of search
+results (Figure 4). The hit descriptions are represented as table rows with the
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 11
+contextual information. Speciﬁcally, the application provides a symbolic inter-
+pretation of the chosen concept, the relevant formula, in which the notation
+element occurs, and the context, i.e., the document part, which contains the
+formula. Providing notation examples is instructive, because the same concept
+may be expressed in diﬀerent documents using diﬀerent symbols depending on
+the authors’ writing style. Additionally, the user can reﬁne the context of search
+results selecting proper checkboxes standing for particular document parts.
+Finally, the user can examine the paper, which contains the relevant formula
+after clicking on the “Details” button (Figure 5). This screen provides the rel-
+evant formula, the matched concepts as well as the related article information
+including links to its metadata page and PDF.
+Fig. 5. A search result details page
+We would like to note that the current search result set does not cover all
+the concepts deﬁned in OntoMath P RO ontology. The reason is twofold: i) the
+data set is quite limited; ii) many named entities are usually not expressed in a
+symbolic notation (e.g. theorems or the ﬁelds of mathematics).
+From the engineering perspective, our demo application is a lightweight
+mashup that consumes the published RDF data set. It is written in JavaScript
+and queries our SPARQL endpoint.
+3.3 Education
+In this subsection, we describe our experiments on ontology-based assessment
+of the competence of students, who attended a course on numerical analysis
+instructed by one of the authors for 3-year undergraduate students at our uni-
+versity.
+Most conventional approaches to assessment of students still tend to evaluate
+how much a student knows about the subject. However, problem-based learning
+is proven to be a more eﬀective approach [5]. For a practicing mathematician,
+an ability of ﬁnding a method for solving a concrete task is crucial. The pro-
+ﬁcient solver must realize relationships between particular methods, tasks and
+12 Nevzorova et al.
+other mathematical concepts, i.e., “know how to conceive a holistic image of the
+discipline”16. We propose to consider an ontology as a close approximation to
+such an image.
+For our experiments, we extracted a small fragment ofOntoMath P RO ontol-
+ogy (Figure 6). It contains taxonomies of tasks and solving methods for systems
+of linear equations (numerical analysis) as well as relationships between them.
+We added a few relevant concepts that were not deﬁned in the ontology due to
+questionable deﬁnitions, e.g. “a task of solving a system of linear equations with
+the coeﬃcient matrix of order m*m, case m> 100”. However, such concepts are
+useful for testing pragmatic competence.
+Concerning the course coverage, only a few methods from the fragment were
+out of its scope. There is an assumption that students may have studied them
+during their research work.
+The experiment participants are 25 students who attended the course and
+had high overall grades. They are 3-year undergraduate students (who have not
+yet passed the exam on the course), 1- and 2-year master students, and Ph.D.
+students. Each participant is given a list of classes and asked to link them using
+only two relationships (ISA and P6 solves ).
+Then, we stated a hypothesis that the participants’ results have to correlate
+with their experience. We use standard performance measures for classiﬁcation
+tasks, such as precision (P), recall (R), and F-score = 2 · P ∗R
+P +R.
+Fig. 6. A part of the correct solution for the interlinking task, the arrows mean P6
+solves relation instances
+We emphasize the importance of applying a reasoning mechanism during the
+calculation of experimental results. For the evaluation, we materialize all facts
+that might be acquired after reasoning. For example, a relationship P6 solves
+is inherited through both the taxonomies of methods and task. Thus, if the
+participant links correctly more speciﬁc classes, it results in lower recall, but
+does not aﬀect precision.
+16 translated from the Russian Federal Standard for Higher Education on mathemat-
+ics for master students, Section 5.2: http://www.edu.ru/db-mon/mo/Data/d_10/
+prm40-1.pdf
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 13
+T able 1. Average results of interlinking ontology concepts from a course on numerical
+analysis for diﬀerent groups of students. P means precision, R – recall, F – F-score.
+Group of students ISA T asks ISA Methods P6 solves T otal
+P R F P R F P R F P R F
+3-year undergraduates 1.00 1.00 1.00 0.76 0.59 0.67 0.46 0.27 0.34 0.69 0.50 0.58
+1-year masters 1.00 1.00 1.00 0.79 0.63 0.70 0.43 0.26 0.32 0.70 0.52 0.59
+2-year masters 1.00 1.00 1.00 0.65 0.55 0.59 0.51 0.37 0.41 0.63 0.52 0.56
+Ph.D. candidates 1.00 1.00 1.00 0.86 0.63 0.71 0.61 0.23 0.33 0.82 0.50 0.62
+Table 1 shows the results of the interlinking done by the participants. As
+expected, establishing links in the simplistic taxonomy of tasks have been done
+well by all participants. The reconstruction of a slightly complex taxonomy of
+methods has signiﬁcantly lower performance values and correlates with the back-
+ground of participants. Again as expected, classiﬁcation of P6 solves relations
+turns out to be the hardest part. Interestingly, the performance values for this
+subtask correlates less with the level of participants: Ph.D. students give less
+complete results, than not so experienced participants. A possible explanation
+comes from the fact that Ph.D. students have chosen their speciﬁc directions of
+research, which might not overlap with systems of linear equations as a sub-ﬁeld
+of numerical analysis. That’s why they classify tasks and methods very well,
+but prefer to keep in mind relationships about solution methods that are only
+relevant to their area of expertise.
+Finally, we may conclude that the proposed approach could be used for eval-
+uation of the competence of students.
+4 Conclusion
+We present OntoMath P RO, an OWL ontology that is geared to be the hub of
+mathematical knowledge in the Web of Data. Relying on this representation
+model, we are going to create an ecosystem of datasets and mashups around the
+ontology to beneﬁt mathematicians from diﬀerent backgrounds – from under-
+graduate students to experts. In this paper, we describe the ﬁrst steps towards
+it. In particular, interlinking with other Linked Data datasets, the applications
+in information extraction, semantic search of mathematical formulas, learning
+are discussed.
+We emphasize that although the ontology has achieved maturity, it is the
+result of ongoing work. We share the sources with the Semantic Web commu-
+nity and organize the further collaborative development of the ontology and its
+applications on the project page ontomathpro.org to engage our colleagues and
+mathematicians from elsewhere.
+As a future research work, we plan to study topic fusion in educational math-
+ematical documents, such as lecture notes and textbooks, through occurrences
+of concepts from diﬀerent taxonomies of the ontology. Additionally, we will ad-
+dress applications of ontology reconstruction in learning purposes (as described
+14 Nevzorova et al.
+in Section 3.3), and are going to extend this approach on other ﬁelds of knowl-
+edge.
+Acknowledgments. This work was funded by the subsidy allocated to Kazan
+Federal University for the state assignment in the sphere of scientiﬁc activities.
+The authors would like to thank V. Solovyev, A. Kayumova, I. Kayumov, P.
+Ivanshin, E. Utkina, and M. Matvejchuk, who have contributed to the ontol-
+ogy, as well as the students at Kazan Federal University, who took part in the
+experiments. The authors are also very grateful to A. Elizarov for his support,
+E. Khakimova (University of Virginia) for the assistance in writing the related
+work section, and three anonymous reviewers for their valuable suggestions.
+References
+1. Aberer, K., Boyarsky, A., Cudr-Mauroux, P., Demartini, G., Ruchayskiy, O. Sci-
+enceWISE: A Web-based Interactive Semantic Platform for Scientiﬁc Collabora-
+tion. In: 10th International Semantic Web Conference (ISWC 2011 - Demo) (2011)
+2. Auer S. et al. Dbpedia: A Nucleus for a Web of Open Data. The semantic web.
+Springer Berlin Heidelberg. pp. 722-735 (2007)
+3. Ausbrooks, R. et al. Mathematical Markup Language (MathML) Version 3.0. W3C
+Candidate Recommendation of 15 December 2009. World Wide Web Consortium.
+Vol. 13. (2009)
+4. Barendregt, H., Wiedijk, F. The Challenge of Computer Mathematics. Philosoph-
+ical Transactions of the Royal Society A: Mathematical, Physical and Engineering
+Sciences, 363 (1835), pp. 2351–2375. (2005)
+5. Barrows, H. S. A Taxonomy of Problembased Learning Methods. Medical educa-
+tion. Vol. 20. No. 6. pp. 481–486 (1986)
+6. Berners-Lee, T. Linked Data – Design Issues (2006) http://www.w3.org/
+DesignIssues/LinkedData.html
+7. Biryaltsev, E.V., Elizarov, A.M., Zhiltsov, N.G., Lipachev, E.K., Nevzorova, O.A.,
+Solovyev, V.D. Methods for analyzing semantic data of electronic collections in
+mathematics. Automatic Documentation and Mathematical Linguistics. Vol. 48.
+No. 2. pp. 81-85 (2014)
+8. Bizer, C., Heath, T., Berners-Lee, T. Linked Data – The Story So Far. International
+journal on semantic web and information systems. Vol. 5. No. 3. pp. 1-22. (2009)
+9. Bordes, A. et al. Translating Embeddings for Modeling Multi-relational Data. Ad-
+vances in Neural Information Processing Systems. pp. 2787–2795. (2013)
+10. Buswell S. et al. The Open Math Standard. Version 2.0. Technical report, The
+Open Math Society, 2004. http://www.openmath.org/standard/om20. (2004)
+11. David, C., Kohlhase, M., Lange, C., Rabe, F., Zhiltsov, N., Zholudev, V. Publishing
+Math Lecture Notes as Linked Data. In: ESWC Proceedings, pp. 370–375 (2010)
+12. Dobrov, B., Loukachevitch, N. Development of Linguistic Ontology on Natural
+Sciences and Technology. In: Proceedings of Linguistic resources and Evaluation
+conference (LREC 2006), pp. 1077-1082 (2006)
+13. Doerr M. The CIDOC conceptual reference module: an ontological approach to
+semantic interoperability of metadata. AI magazine. Vol. 24. No. 3. pp. 75–92
+(2003)
+OntoM athP RO Ontology: A Linked Data Hub for Mathematics 15
+14. Elizarov, A.M., Lipachev, E.L., Malakhaltsev, M.A. Web Technologies for Mathe-
+maticians: The Basics of MathML. A Practical Guide. Moscow: Fizmatlit (2010)
+[In Russian]
+15. Gruber, T., Olsen, G. An Ontology for Engineering Mathematics. KR. – 1994,
+pp.258-269.
+16. Kamareddine, F., Wells, J. B. Computerizing Mathematical Text with MathLang.
+Electronic Notes in Theoretical Computer Science. V. 205. pp. 5-30 (2008)
+17. Kohlhase, M. OMDoc – An Open Markup Format for Mathematical Documents
+[Version 1.2]. Number 4180 in LNAI. (2006)
+18. Lange, C. Enabling Collaboration on Semiformal Mathematical Knowledge by Se-
+mantic Web Integration. Vol. 11. IOS Press (2011)
+19. Lange, C. Ontologies and Languages for Representing Mathematical Knowledge
+on the Semantic Web. Semantic Web. Vol. 4. No. 2. pp. 119–158 (2013)
+20. Lange, C., Ion, P., Dimou, A., Bratsas, C., Sperber, W., Kohlhase, M., Antoniou, I.
+Bringing Mathematics to the Web of Data: the Case of the Mathematics Subject
+Classiﬁcation. In: The Semantic Web, 9th Extended Semantic Web Conference
+(ESWC), LNSC, vol. 7295, pp. 763-777, Springer (2012)
+21. Nevzorova, O.A., Birialtcev E.V., Zhiltsov, N.G. Mathematical text collections:
+Annotation and Application for Search Tasks. Scientiﬁc and Technical Information
+Processing. Vol. 40. No. 6, pp. 386-395 (2013)
+22. Nevzorova, O., Zhiltsov, N., Zaikin, D., Zhibrik, O., Kirillovich, A., Nevzorov, V.,
+Birialtsev, E. Bringing Math to LOD: A Semantic Publishing Platform Prototype
+for Scientiﬁc Collections in Mathematics. 12th International Semantic Web Con-
+ference, Sydney, NSW, Australia, October 21-25, 2013, Proceedings, Part I. Vol.
+8218. Springer Berlin Heidelberg. pp 379-394 (2013)
+23. Nickel, M., Tresp, V., Kriegel, H. P. A Three-way Model for Collective Learning
+on Multi-relational Data. In: Proceedings of the 28th International Conference on
+Machine Learning. pp. 809–816 (2011)
+24. Sirin, E. et al. Pellet: A Practical OWL-DL Reasoner. Web Semantics: science,
+services and agents on the World Wide Web. Vol. 5. No. 2. pp. 51-53 (2007)
+25. Sloane, N. The On-line Encyclopedia of integer sequences. Notices of the AMS,
+50(8):912 (2003)
+26. Solovyev, V., Zhiltsov, N. Logical Structure Analysis of Scientiﬁc Publications in
+Mathematics. In: Proceedings of the International Conference on Web Intelligence,
+Mining and Semantics (WIMS’11), pp. 21:1–21:9. ACM (2011)
+27. Springer LaTeX Search, http://www.latexsearch.com
+28. Sutskever, I., Salakhutdinov, R., Tenenbaum, J. B. Modelling Relational Data
+using Bayesian Clustered Tensor Factorization. NIPS. pp. 1821-1828 (2009)
+29. Thomas, R. Millenium Mathematics Project – Bringing Mathematics to Life.
+MSOR Connections. Vol. 4. No. 3. (2004)
+30. Topic, G., Kristianto, G.Y., Nghiem, M.-Q., Aizawa, A. The MCAT Math Re-
+trieval System for NTCIR-10 Math Track. In: Proceedings of the 10th NTCIR
+Conference.– 2013.
+31. Tudorache, T., Vendetti, J., Noy, N. F. Web-Protege: A Lightweight OWL Ontol-
+ogy Editor for the Web. OWLED. Vol. 432 (2008)
+32. (uni)quation, http://uniquation.com
+33. Wikipedia Formula Search, http://shinh.org/wfs
+34. WolframAlpha, http://www.wolframalpha.com
+35. Wolfram Formula Search, http://functions.wolfram.com/formulasearch

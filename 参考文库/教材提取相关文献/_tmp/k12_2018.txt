@@ -1,0 +1,335 @@
+
+--- PAGE 1 ---
+An Automatic Knowledge Graph Construction System for
+K-12 Education
+PengheChen YuLu* VincentW.Zheng
+AdvancedInnovationCenter SchoolofEducational AdvancedDigitalSciences
+forFutureEducation Technology,Facultyof Center
+BeijingNormalUniversity Education Singapore
+chenpenghe@bnu.edu.cn BeijingNormalUniversity vincent.zheng@adsc.com.sg
+luyu@bnu.edu.cn
+*CorrespondingAuthor
+XiyangChen XiaoqingLi
+AdvancedInnovationCenter AdvancedInnovationCenter
+forFutureEducation forFutureEducation
+BeijingNormalUniversity BeijingNormalUniversity
+chenxiyang@bnu.edu.cn lixiaoqing8507@bnu.edu.cn
+ABSTRACT knowledge proficiency examination. Our Smart Learning
+Motivated by the pressing need of educational applica- Partner(SLP)issuchanewgenerationeducationplatform,
+tions with knowledge graph, we develop a system, called developedbyBeijingNormalUniversity,thatofficiallyserves
+K12EduKG,toautomaticallyconstructknowledgegraphsfor morethan15,000localprimaryandmiddleschoolstudents
+K-12 educational subjects. Leveraging on heterogeneous inBeijing. TobettersupportSLPservices,weproposethis
+domain-specific educational data, K12EduKG extracts edu- K12EduKGsystemwhichcanautomaticallybuildknowledge
+cationalconceptsandidentifiesimplicitrelationswithhigh graphs for different K-12 subjects by consisting of subject
+educationalsignificance. Morespecifically,itadoptsnamed conceptsasnodesandconceptrelationsasedges.
+entityrecognition(NER)techniquesoneducationaldatalike
+Comparedtogenericknowledgegraphs,educationalknowl-
+curriculumstandardstoextracteducationalconcepts,andem-
+edgegraphconstructionfacestwomajorchallenges: firstly,
+ploysdataminingtechniquestoidentifythecognitiveprereq-
+thedesirededucationalconceptentitiesaremoreabstractthan
+uisiterelationsbetweeneducationalconcepts. Inthispaper,
+realworldentitieslikePERSON,ORGANIZATION,LOCA-
+we present details of K12EduKG and demonstrate it with a
+TION.Secondly,thedesiredrelationsaremorecognitiveand
+knowledgegraphconstructedforthesubjectofmathematics.
+implicit,socannotbederivedfromtheliteralmeaningsoftext
+likegenericknowledgegraphs. Inthispaper,wetrytotackle
+AuthorKeywords
+thesetwochallengeswiththisproposedK12EduKGsystem.
+KnowledgeGraph,EducationalConcept,K-12Education,
+Morespecifically,forabstracteducationalconceptextraction,
+OnlineLearning
+weutilizespecialdatasourceslikecurriculumstandardsfrom
+theeducationdomain. Inaddition, weutilizestudents’per-
+INTRODUCTION
+formancedatacollectedfromourSLPeducationplatformto
+Knowledgegraphisacorecomponentofnewgenerationon-
+identifyrelationsthroughdataminingtechniques.
+lineeducationplatformsforintelligenteducation. Different
+from traditional massive open online course (MOOC) plat- The proposed K12EduKG system endeavors to tackle the
+formsfocusingonlearningresourcesprovision,newgenera- abovechallenges,anditprincipallymakesthefollowingkey
+tiononlineeducationplatformstargetonintelligentpersonal- contributions:
+izededucationalservices,suchasautomaticlearningobstacle
+diagnosis, personalized learning resource recommendation, • Weproposeanovelbutpracticalsystemtoconstructknowl-
+subjectconceptandrelationvisualization,andconcept-level edgegraphsspecificallyfork-12educationalsubjects.
+Permissiontomakedigitalorhardcopiesofallorpartofthisworkforpersonalor • Weemploynamedentityrecognition(NER)techniquesto
+classroomuseisgrantedwithoutfeeprovidedthatcopiesarenotmadeordistributed extracteducationalconcepts,andproposeassociationrule
+forprofitorcommercialadvantageandthatcopiesbearthisnoticeandthefullcitation
+miningalgorithmstoidentifyprerequisiterelationsamong
+onthefirstpage.CopyrightsforcomponentsofthisworkownedbyothersthanACM
+mustbehonored.Abstractingwithcreditispermitted.Tocopyotherwise,orrepublish, theconcepts.
+topostonserversortoredistributetolists,requirespriorspecificpermissionand/ora
+fee.Requestpermissionsfrompermissions@acm.org.
+• We demonstrate an exemplary case with constructing a
+L@S2018,June26–28,2018,London,UnitedKingdom
+knowledgegraphforthesubjectofmathematics
+©2018ACM.ISBN978-1-4503-5886-6/18/06...15.00
+DOI:https://doi.org/10.1145/3231644.3231698
+--- PAGE 2 ---
+Table1.Sequencelabelingexample
+Educational
+Knowledge y O O B-CP I-CP O ...
+Graph
+x Apply the Pythagorean theorem in ...
+Relation Educational
+Identification Concepts • ImplicitRelationIdentificationModule: themainobjective
+ofthismoduleistoidentifytheimplicitrelationsbetween
+Data Collection educationalconcepts. Differentfromtraditionalrelations
+(Teaching & Learning Data) derived mainly based on the literal meanings of text, we
+focusontheimplicitrelationswitheducationalsignificance
+Relation Type thatcandirectlyaidthecognitiveprocessoflearning. To
+Selection
+achievethisobjective,dataoflearnerscanbeutilized,based
+Educational Relation Identification on which latest data mining and machine learning tech-
+niquescanbeemployedtoconductthealgorithmsandmod-
+els. Thekeyoutputsofthismoduleareimplicitrelations
+Choose Subject Concept
+or Course Extraction thatinterlinkeducationalconcepts.
+Finally,theextractededucationalconceptsandidentifiedre-
+Data Collection lationswouldformulateaneducationalknowledgegraphthat
+Data
+(Educational Material Preprocessing canbeusedforavarietyofapplicationsforbothlearnersand
+Data)
+teachers. Inthefollowingtwosections,wewillelaborateour
+Educational Concept Extraction
+currentdesignforthesetwomodulesrespectively.
+Figure1.SystemArchitectureofK12EduKG
+CONCEPTEXTRACTION
+RELATEDWORK Educationalconceptextractionontextdatacanberegarded
+Intheeducationdomain,afewstudieshavebeenconducted as a word sequence labeling problem. Specifically, given a
+on knowledge graph construction recently. Chaplot and word sequence such as “Apply the Pythagorean theorem in
+Koedinger use educational data to induce the prerequisite ...",themainobjectiveistoannotateeachwordwithalabel
+relationsamongmultipleunitsinacourse[2],andLiangetal. specifyingwhetherthewordbelongstoaneducationalconcept.
+recoversprerequisiterelationsfromcoursedependencies[4]. We define three labels: 1) B-CP, which means “beginning
+Another group of researchers utilize the observed relations ofaconcept”; 2)I-CP,whichmeans“insideaconcept”; 3)
+amongcoursestocreateadirecteduniversalconceptgraph[8, O,whichmeans“outsideaconcept”. Bydenotinganinput
+5]. Differentfromthosesystems,oursystemtriestoconstruct word sequence of length T as x={x ,x ,...,x }, and the
+1 2 T
+knowledgegraphonsubjectconceptsratherthancourses,and sequence’slabelsasy={y ,y ,...,y },wecanillustratethe
+1 2 T
+theobjectiveistoaidteachingandlearningratherthanfind- idealconceptextractionresultsforagivenwordsequencewith
+ing course dependencies. In addition, we utilize students’ Table1.
+performancedataratherthancoursedescriptionstoidentify
+Giventheinputwordsequencex,ConditionalRandomField
+relations.
+(CRF) [7]isanundirectedgraphicalmodeltofindthebest
+outputsequenceythatlabelseachwordinx. Amongdifferent
+SYSTEMOVERVIEW CRFmodels,wechoosetheonewithalinear-chainstructure
+Figure 1 illustrates the architecture of K12EduKG system,
+because our input and output word sequences have similar
+whichconsistsoftwomodules: ConceptExtractionModule
+chainstructureinnature. Thislinear-chainCRFmodelwith
+andRelationIdentificationModule. Generaldescriptionsof itsparameterΛ ={λ ,λ ,...}canbedefinedasfollows:
+1 2
+thesetwomodulesaregivenasfollows.
+• EducationalConceptExtractionModule: themainobjec- 1 T
+P (y|x)= exp(∑∑λ f (y ,y,x,t)), (1)
+tiveofthismoduleistoextracteducationalconceptsforany Λ Z k k t−1 t
+x t=1 k
+given subjects. Different from generic knowledge graph
+construction, thedatasourcesaremainlyfromeducation wheret representsthepositioninwordsequence,and f ()is
+k
+domain,typicallyincludingthecurriculumstandards,text- thefeaturefunctionthatcomputethevalueforthekthfeature
+booksandcoursemanuals. Suchdatamaybeintheformat
+ofeachword.Inanutshell,thosefeaturefunctionsmainlycap-
+ofprintedtext,soastepofconvertingdataintomachine-
+turethestatetransitionfromy toy andtheobservationof
+t−1 t
+encoded text is usually needed. With the produced data,
+sequencexatpositiont. Parametersλ determinetheweights
+k
+anumberofinformationextractiontechniquescanbeem-
+ofdifferentfeatures,andZ isthenormalizationconstant.
+x
+ployedtorecognizeeducationalconcepts,duringwhichthe
+unique characteristics and properties of educational data Using the above model defined by (1), for any given word
+willbeleveraged. Thekeyoutputsofthismodulewouldbe sequencex, wecanpredictitslabelsequencey∗ bysolving
+theextractededucationalconcepts. thefollowingoptimizationproblemdefinedby(2). Inaddi-
+tion,modelinferenceandlearningaresolvedbythemethods
+--- PAGE 3 ---
+mentionedin [7].
+y∗=argmaxP (y|x), (2) 0.8
+Λ
+y
+0.7
+RELATIONIDENTIFICATION 0.6
+Asmentionedearlier,themaintaskofthismoduleistoidentify
+theimplicitrelationsofeducationalconcepts. Intheeducation 0.5
+domain,thereareanumberofrelationscriticaltobothteach- 0.4
+ersandlearners,suchascausalrelation,progressiverelation
+andinclusionrelation. Inthiswork,wemainlyfocusonthe 0.3
+prerequisiterelationwhichisanimportantoneforteaching
+0.2
+andlearning. Itisalsoatypicalimplicitrelationthathardto 10 20 30 40 50 60 70 80 90
+Portion of data for Training (%)
+bederivedfromtheliteralmeaningsofeducationaltextdata.
+Inthiswork,wemainlyadoptthetechniqueofprobabilistic
+associationruleminingtoidentifyrelations. Associationrule
+mining is a simple, yet effective data mining technique for
+discovering interesting relations hidden in large databases.
+Withtwokeymeasures,supportandconfidence,bydefining
+twokeyparameters,minsuppandminconf,associationrules
+canbedefinedusingequation(3). Moredetailscanbefound
+in[1].
+supp(X⇒Y)≥minsuppANDconf(X⇒Y)≥minconf. (3)
+Fromtheperspectiveofprerequisiterelation,ifconcepts isa i
+prerequisiteofconcepts ,learnerswhodonotmasters very j i
+likelydonotmasters ,andlearnerswhomasters mostlikely j j
+master s. From the perspective of association rule mining, i
+sucharelationbetweenconcepts andconcepts isdeemed i j
+toexistwhenthefollowingpairofassociationrulescanbe
+identifiedsimultaneously:
+S ⇒S ANDS ⇒S , (4)
+j i i j
+where S and S means learners do not master concepts s i j i
+ands respectively,and S andS meanslearnershavemas- j i j
+teredconceptss ands respectively. Hence,wecandetermine i j
+the prerequisite relations between concepts based on learn-
+ers’conceptmasterythroughestimatingtheinterestingnessof
+thosecorrespondingassociationrules.
+In order to infer learners’ mastery on concepts, one natural
+and feasible approach is to derive from learners’ academic
+performancesofrelatedquizzesorexams.However,sinceaca-
+demicperformancemaybeaffectedbyuncertaineventslike
+slipping(i.e.,makinganerrordespitemasteringtheconcept)
+andguessing(i.e.,givingarightanswerdespitenotknowing
+theconcept),learners’masteryonconceptsisactuallyprob-
+abilistic. Hence,weadoptamodifiedversionofassociation
+ruleminingmethodtoidentifyrelations, namelytheproba-
+bilisticassociationruleminingtechniques[6,3]whichisan
+extensionoftheassociationruleminingforhandlingthedata
+uncertainties. Probabilisticassociationruleisdefinedas:
+P(Sj⇒Si)=P(supp(Sj⇒Si)≥minsuppANDconf(Sj⇒Si)≥minconf).
+(5)
+Substituting the deterministic value in equation 4 with this
+probabilisticone,withdefininganewparameterminprob,we
+canhavetherequirementasequation6anduseittoidentify
+erocS-1F/llaceR/noisicerP
+B-CP_P
+B-CP_R
+B-CP_F1
+I-CP_P
+I-CP_R
+I-CP_F1
+Figure2.ConceptExtractionResults
+theprerequisiterelations.
+P(Sj⇒Si)≥minprobANDP(Si⇒Sj)≥minprob. (6)
+EXEMPLARYCASEANDSYSTEMEVALUATION
+Todemonstratethedesignedsystemandalgorithms,webuild
+a specific knowledge graph for the subject of mathematics.
+Specifically,themathconceptextractionisfirstlyconducted,
+andthentheprerequisiterelationsareidentified.
+ConceptExtraction
+Dataset
+Toconducttheconceptextractionformathematics,wechoose
+theChinesecurriculumstandardsofmathematicspublishedby
+theministryofeducationasthemaindatasource,whichisan
+officialandauthorizeddescriptiononallthekeyinformation
+ofthissubject. Theentirecurriculumstandardsconsistof135
+pagesand58,473Chinesewordsintotal.
+Evaluation
+Asdefinedinsection4,B-CP,I-CPandOareusedtolabel
+the word sequences, and we adopt precision, recall and F1-
+scoreasthemetricstoevaluate. Thegroundtruthismanually
+labeledbytwodomainexperts. Givenadatasetconsisting
+of245sentencescontaining5827words,werandomlysplit
+themintotrainingexamplesandtestexamples. Toevaluate
+the model performance with a varying number of training
+examples,weincreasethenumberoftrainingexamplesfrom
+10%to90%.Allexperimentsarerepeated20timestocompute
+theaverageperformance.
+Duetospacelimitation,weillustrateexperimentalresultsof
+bothB-CPandI-CPinFigure2. Fromthefigure,wecansee
+that the F1-Score of B-CP and I-CP achieves 0.77 and 0.6
+respectivelywhen60%dataareusedfortraining. Suchresults
+show a higher difficulty in I-CP extraction, and it is partly
+becausethecorrectI-CPlabelingrequiresthecorrectB-CP
+labelinginadvance.
+RelationIdentification
+Dataset
+Toconducttheprerequisiterelationidentificationtask,we
+utilizestudents’performancedatacollectedbyourSLPplat-
+form. Inthisplatform,eachcoreconceptisassociatedwith
+aunittestcontainingmultiplequestions. Thus,thescorerate
+--- PAGE 4 ---
+Table2.AUCwithDifferentParameterPairs
+Physics Chinese Politics
+minsupp
+AUC Biology English Geography
+400 600 800 1000 1200 1400
+Chemistry Mathematics History
+0.3 0.623 0.690 0.645 0.483 0.510 0.477
+0.4 0.689 0.756 0.722 0.518 0.525 0.478
+minconf 0 0 . . 5 6 0 0 . . 8 9 6 5 8 3 0 0 . . 9 87 5 4 3 0 0 . . 9 83 5 8 4 0 0 . . 6 8 2 0 3 3 0 0 . . 5 6 5 9 9 2 0 0 . . 4 5 9 4 3 6 R N a u t m io b n e a r l Geometry Inte L r i s n e e c s ting Se L g i m ne e nt
+Parallel
+0.7 0.836 0.836 0.836 0.840 0.840 0.688 Lines
+Sys I t n e e m qu o a f l i L t i i n e e s ar Syst E e q m ua o t f io L n in s ear Angle
+0.8 0.850 0.850 0.850 0.853 0.858 0.756 Sampling &
+Data Anlysis
+0.9 0.735 0.735 0.735 0.735 0.747 0.682
+Figure3.DemonstrativeKnowledgeGraphofMath
+ofastudentoneachconceptcanbeeasilyobtainedandused
+indetail. Furthermore,K12EduKGwillbedeployedonour
+asameasureofstudentperformance. Toconductthisexperi-
+SLP platform soon to better serve the 15,000 local primary
+ment,werandomlyselect9mathematicalconceptswiththeir
+andmiddleschoolstudentsaswellastheteachersinBeijing.
+correspondingtestresultsasastudycasetoinvestigatethepre-
+requisiterelations. Thecorrespondingunittestsareanswered
+Acknowledgement
+by4,488studentsfrom31middleschoolsinBeijing.
+ThisresearchispartiallysupportedbytheNationalNatural
+Evaluation Science Foundation of China (No. 61702039), and the Hu-
+The ground truth of the prerequisite relations between se- manitiesandSocialSciencesFoundationoftheMinistryof
+lected9conceptsareannotatedmanuallybytwodomainex- EducationofChina(No. 17YJCZH116).
+perts. IfaprerequisiterelationexistsfromconceptAtocon-
+ceptB,wecallitapositiverelation,andifnorelationexists, REFERENCES
+wecallitanegativerelation. Apositiverelationisdetermined 1. RakeshAgrawal,RamakrishnanSrikant,andothers.
+onlyifbothexpertsannotateit. Finally,weobtained13posi- 1994.Fastalgorithmsforminingassociationrules.In
+tiverelationsand59negativerelationsbetweentheselected9 Proc.20thint.conf.verylargedatabases,VLDB,Vol.
+concepts. 1215.487–499.
+Consistenttothenormalwaysusedineducationaldatamin- 2. DevendraChaplotandKennethRKoedinger.2016.
+ing[3],scorerateofconceptsaretreatedastheprobabilityof Data-drivenAutomatedInductionofPrerequisite
+learners’masteryontheconcepts.Hence,foreacheducational StructureGraphs.InProceedingsoftheEducational
+concept,estimatedprobabilisticknowledgestatesarederived DataMining(EDM).
+usingtheperformancedataof4,488students. Thedatacanbe
+3. YangChen,Pierre-HenriWuillemin,andJean-Marc
+regardedas4,488transactionsinassociationrulemining. For
+Labat.2015.DiscoveringPrerequisiteStructureofSkills
+eachprerequisiterelationcandidate,weadoptequation(5)to
+throughProbabilisticAssociationRulesMining.In
+calculateitspositiveprobabilityandequation(6)toidentify
+Proceedingsofthe8thInternationalConferenceon
+therelations,whichismainlyaffectedbythethreeparameters
+EducationalDataMining(EDM’15).117–124.
+minsupp,minconf andminprob.
+4. ChenLiang,JianboYe,ZhaohuiWu,BartPursel,and
+Toevaluatetheperformanceofthisprobabilisticassociation
+CLeeGiles.2017.RecoveringConceptPrerequisite
+ruleminingalgorithm,weuseAreaUnderROCcurve(AUC)
+RelationsfromUniversityCourseDependencies.InAAAI
+asthemainmetrics. Inthisexperiment,wesetminprobas0.7,
+ConferenceonArtificialIntelligence.
+andTables2summarizetheAUCvaluesfordifferentpairsof
+minsuppandminconf. Basedontheexperimentalresults,we 5. HanxiaoLiu,WanliMa,YimingYang,andJaime
+canobservethattheminconf andminsupppair(0.6,600)has Carbonell.2016.Learningconceptgraphsfromonline
+asignificanthigherAUCvalue. educationaldata.JournalofArtificialIntelligence
+Research55(2016),1059–1090.
+Byintegratingidentifiedrelationswithextractedconcepts,we
+canconstructtheknowledgegraphofagivensubject. InFig- 6. LiwenSun,ReynoldCheng,DavidWCheung,and
+ure3,wepresentasimplified,yetdemonstrativeknowledge JiefengCheng.2010.Mininguncertaindatawith
+graphwithidentifiedconceptsandrelationsonmathematics probabilisticguarantees.InProceedingsofthe16thACM
+subject. SIGKDDinternationalconferenceonKnowledge
+discoveryanddatamining.ACM,273–282.
+CONCLUSIONS
+7. CharlesSutton,AndrewMcCallum,andothers.2012.An
+To automatically construct the domain-specific knowledge
+introductiontoconditionalrandomfields.Foundations
+graph for education, we developed this novel system
+andTrends®inMachineLearning4,4(2012),267–373.
+K12EduKG.Morespecifically,weelaboratedhowNERand
+dataminingtechniqueswereemployedonheterogeneousedu- 8. YimingYang,HanxiaoLiu,JaimeCarbonell,andWanli
+cationaldatatoconducteducationalconceptextractionandre- Ma.2015.Conceptgraphlearningfromeducationaldata.
+lationidentification.Inaddition,wealsoutilizedthesubjectof InACMInternationalConferenceonWebSearchand
+mathematicsasanexemplarycasetodemonstrateK12EduKG DataMining.ACM,159–168.

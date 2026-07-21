@@ -1,0 +1,762 @@
+Human Evaluation of Procedural
+Knowledge Graph Extraction from Text
+with Large Language Models
+Valentina Anita Carriero[0000−0003−1427−3723],
+Antonia Azzini[0000−0002−9066−1229], Ilaria Baroni[0000−0001−5791−8427],
+Mario Scrocca[0000−0002−8235−7331], and Irene Celino[0000−0001−9962−7193]
+Cefriel – Politecnico di Milano, viale Sarca 226, 20126 Milano, Italy
+name.surname@cefriel.com
+Abstract. Procedural Knowledge is the know-how expressed in the
+form of sequences of steps needed to perform some tasks. Procedures
+are usually described by means of natural language texts, such as recipes
+or maintenance manuals, possibly spread across different documents and
+systems, and their interpretation and subsequent execution is often left
+to the reader. Representing such procedures in a Knowledge Graph (KG)
+can be the basis to build digital tools to support those users who need
+to apply or execute them.
+In this paper, we leverage Large Language Model (LLM) capabilities and
+propose a prompt engineering approach to extract steps, actions, objects,
+equipment and temporal information from a textual procedure, in order
+to populate a Procedural KG according to a pre-defined ontology. We
+evaluate the KG extraction results by means of a user study, in order to
+qualitatively and quantitatively assess the perceived quality and useful-
+ness of the LLM-extracted procedural knowledge. We show that LLMs
+can produce outputs of acceptable quality and we assess the subjective
+perception of AI by human evaluators.
+Keywords: Knowledge Engineering· Knowledge Extraction· Ontology
+· Large Language Models· Procedural Knowledge · Knowledge Graphs
+1 Introduction
+Procedural Knowledge (PK) is knowing how to perform some tasks. Such knowl-
+edge is usually expressed in the form of sequences of steps needed to achieve an
+overall goal, as in the case of recipes and maintenance activities. Making PK ex-
+plicitisnottrivial:identifyingallactionstobeperformed,andsplittingtheminto
+separate steps including all relevant information (e.g., the needed equipment),
+is often subject to interpretation and commonsense. Moreover, even when doc-
+umented, this is usually done in an unstructured format, by means of natural
+language, across heterogeneous documents and systems. This makes it hard to
+access procedures for those who need to execute them, leading to partial or poor
+arXiv:2412.03589v1  [cs.AI]  27 Nov 2024
+2 Valentina Anita Carriero et al.
+compliance with processes and best practices. As argued in [40], formally repre-
+senting such procedures as Knowledge Graphs (KGs) can be the basis to build
+digital tools that provide automatic support to the users, and foster procedural
+knowledge documentation, reuse, and interoperability.
+However, developing high-quality KGs is time-consuming: making this task
+evenpartiallyautomaticmaybeagamechanger.LargeLanguageModels(LLMs)
+– probabilistic models trained on huge natural language corpora – exhibit re-
+markable capabilities in natural language processing and generation. LLMs have
+recently gained significant attention to support different tasks of the whole
+knowledge engineering process, as emphasized in the report of the Dagstuhl
+Seminar 22372 [15] and the LM-KBC Challenge1.
+In this paper, we leverage LLM capabilities for extracting PK from text;
+differently from other extraction tasks like entity recognition or relation extrac-
+tion, identifying procedural steps (the actual sentences describing actions to be
+performed) is a potentially more ambiguous task: as we will show in our exper-
+iments, different human annotators may produce different yet valid outcomes,
+thus precluding the existence of a definitive ground truth for such task.
+Our contribution is therefore twofold. On the one hand, we experiment differ-
+ent prompting strategies to employ LLMs for extracting PK from unformatted
+textual descriptions, and generating a valid KG thereof according to a predefined
+procedural ontology. On the other hand, we evaluate the knowledge extraction
+outcomes by means of a user study, in order to evaluate the (perceived) qual-
+ity and usefulness of the resulting KG, comparing it to human annotation and
+assessing the user-acceptance of the LLM-produced results on such a subjective
+task; we also evaluate a potential bias in human evaluation with respect to AI.
+All materials, code, results of this work are available on GitHub2.
+The paper is organised as follows: after introducing the state of the art in
+Section 2, we better define the problem and the data we used in Section 3; then
+we report the findings of a preliminary study in Section 4 which led us to the
+definition of our research questions in Section 5; Section 6 describes our itera-
+tive prompt engineering process, and the results of our proposed prompt-based
+pipeline; in Section 7 we describe our human evaluation design and we present
+and discuss our quantitative and qualitative findings in Section 8; Section 9
+concludes the paper with some future work.
+2 Related Work
+Our work is at the intersection of the LLM application to Knowledge Engineering
+and its result assessment from a human point of view. Therefore, we take into
+account several aspects from the state of the art, as explained in the following.
+1 Cf. https://lm-kbc.github.io/
+2 Cf. https://github.com/cefriel/procedural-kg-llm
+Human Evaluation of Procedural KG Extraction with LLMs 3
+2.1 LLMs for Knowledge Engineering and Knowledge Extraction
+As reported in [1], LLMs provide a powerful tool for mapping natural language
+to formal language, a fundamental activity in knowledge engineering. Existing
+efforts in unifying LLMs and KGs are summarized in [38,37]. The LM-KBC
+challenge explores how to build disambiguated knowledge bases from LLMs,
+given a subject and a relation (see, among others, [47,50]).
+Several recent works cover the use of LLM prompting to address specific
+knowledgeengineeringtasks,likeontologyengineering[49,8,5,19],ontologylearn-
+ing [11,2], named entity recognition and linking [21,9,43], knowledge graph con-
+struction including mapping generation [25,18]; some works specifically focus on
+benchmark, metrics and evaluation of such methods [31,12].
+Specifically on (procedural) knowledge extraction, several studies (including
+[53,52,51]) investigate some extraction and reasoning tasks on procedures, such
+astherelationbetweenastepandtheprocedure’sgoal,andthetemporalrelation
+between steps. Other works focus on the business process management domain:
+a corpus of business processes annotated by humans with activities, gateways,
+actors, and flow information [4] is exploited in [3] for extracting, from such pro-
+cesses, activities and their participants, using an LLM; an activity recommender
+to support business process modeling is introduced in [44]. A semi-structured
+dataset of repair manuals related toMac Laptopsis annotated with the required
+tools and the parts that are disassembled during the process, along with two
+methods for extracting them [33]. The procedures included in the dataset focus
+on opening the device and removing/repairing a broken component. Reusing
+such datasets as-is was not applicable for our experiments, since they did not
+fully covered our requirements, e.g., by taking into account only actions related
+to repairs [33], and by missing annotations about objects and tools [4] (cf. Sec-
+tion 3). Micrographs storing relevant entities and actions from technical support
+web pages are created in [22]. A prompting-based pipeline to extract a list of
+ordered steps from a procedure expressed as a numbered/bullet/indented list
+is proposed in [41]; differently, we give as input a text with no formatting and
+include additional descriptive sentences that the LLM needs to discard.
+2.2 Evaluation of Generative AI
+The evaluation of Generative AI and specifically LLMs is an open research prob-
+lem, in that it is not easy to objectively assess the generated (natural language)
+output [26]. In the area of text annotation, different approaches exist [6,45],
+because LLMs are expected to act like human annotators [29]. Indeed, among
+other things, they can be employed for fact checking [35] or to identify claims
+and sub-claims in text entailment [20].
+The approach to assess LLM outputs can combine human and LLM an-
+notations [24], and several authors propose to use LLMs to perform also the
+evaluation task: by simulating human feedback via LLMs [10], by employing a
+(LLM) debate method [7], or by making LLMs adopt a human-like comparative
+evaluation approach [48].
+4 Valentina Anita Carriero et al.
+While a unified approach to the assessment of natural language generation
+has not yet emerged, some work started to propose evaluation frameworks [13],
+also focusing on the definition of evaluation metrics for specific tasks like summa-
+rization [27]. We based our human evaluation approach on these works, as well
+as on general usability methods. It is important to note that a holistic evalua-
+tion should not only assess the quality of the LLM outcome, but also the human
+interaction experience with the LLM [23].
+2.3 Human Bias on (Generative) AI
+Finally, whenever involving humans in the evaluation of an artificial system, the
+subjectiveperceptionandthepotentialcognitivebiasesofusersmustbecarefully
+considered. Indeed, some studies suggest that human attitudes towards AI are
+largely negative [34]. In the area of Generative AI, several concerns emerge in
+relation to the creativity potential of such models [28], especially in the context
+of art [39,32] and music [54].
+In our work, we also investigate the potential bias of human subjects against
+LLMs that play the role of annotators, by applying an A/B testing approach,
+as done by [17]: they performed several experiments on how people judge hu-
+mans and machines differently, in several scenarios (e.g., natural disasters, labor
+displacement, policing, privacy, algorithmic bias); they demonstrate that people
+tend to favour humans or machines in different scenarios, revealing the biases in
+human-machine interaction.
+3 Problem Definition and Data
+As mentioned in the introduction, our goal is to build a knowledge graph out of
+textual descriptions of procedures. Our vision is therefore to extract procedural
+knowledge (PK) from those documents, and to build a knowledge graph (KG)
+according to an ontology. This KG can then be used by different downstream ap-
+plications to facilitate the access and use of such procedures by human operators.
+Examples of such applications could be (KG-empowered) search applications or
+intelligent assistant: we expect the users to feel the need to be helped to find a
+specific procedure (or a part thereof) and to be guided step-by-step in its ex-
+ecution, for example by being informed about the action they have to perform
+(e.g., turning off a switch), the equipment they may need to use (e.g., wear-
+ing protective gloves) or the time it may take to perform a specific step (e.g.,
+approximately 15 minutes).
+In order to fulfill such requirements, the procedural KG extracted from text
+should (1) preserve the intended meaning of the original document and (2) con-
+tain enough information to guide a user in correctly executing the procedure.
+The extracted KG should therefore be evaluated, respectively, on the basis of
+its quality and usefulness (cf. Section 7). Based on this scenario, we define a
+simple ontology and we identify a general-purpose dataset to be used in our
+LLM-powered PK extraction and KG building experiments.
+Human Evaluation of Procedural KG Extraction with LLMs 5
+Fig.1: Ontology used in the experiments.
+Ontology. We reuse existing ontologies when applicable, namely: P-Plan
+[14] and K-Hub [42], that address plans and related concepts, FRAPO, one of
+the SPAR ontologies3, and the Time Ontology4, while creating a few new classes
+and properties when needed (po:). Specifically, as depicted in Figure 1, a proce-
+dure is represented by the classp-plan:Plan and is linked to itsp-plan:Steps
+(po:hasStep), which are sequentially ordered (property p-plan:precededBy
+and its inversekhub-proc:nextStep). Each step is then linked to itsfrapo:E-
+quipment, if any, via the propertyfrapo:usesEquipment, and with the action(s)
+to be performed while executing it (po:hasAction), along with the direct object
+of the action (po:hasDirectObjectOfAction). The information about the time
+needed for executing the step is represented by the classtime:TemporalEntity.
+Input procedures.For our experiments, we use as a reference dataset Wiki-
+How, one of the largest online databases of PK, which includes how-to articles
+on multiple domains. We reuse the JSON dataset built by [52], crawled from
+the WikiHow website5, and focus on atomic procedures, that do not include
+methods/parts as sub-procedures. Out of each selected procedure, we build an
+unformatted text (also partially removing punctuation), by concatenating (i)
+procedure title, representing the overall goal, (ii) general procedure description,
+(iii) headline of each step, (iv) description of each step. Thus, we also include
+in the text irrelevant sentences, which are supposed to be discarded during the
+extraction phase. In total, we used four procedures randomly selected from Wik-
+iHow, one as working example for our prompt engineering phase, and three for
+our method replication and human assessment. Such procedures are diverse with
+respect to both complexity and topic:how to clean a computer monitor(working
+example), how to fix a rubbing door, how to make honey glazed parsnips, andhow
+to plant a bare root tree.
+4 Preliminary Study
+In a preliminary formative study, we wanted to kick-start the LLM-powered pro-
+cedure extraction from text, by identifying the best performing prompt chain-
+ing [46] to execute the task. We evaluated both the prompt instructions and
+3 Cf. http://www.sparontologies.net/
+4 p-plan: http://purl.org/net/p-plan#
+khub-proc: https://knowledge.c-innovationhub.com/k-hub/procedure#
+frapo: http://purl.org/cerif/frapo/
+time: http://www.w3.org/2006/time#
+5 Cf. https://github.com/zharry29/wikihow-goal-step
+6 Valentina Anita Carriero et al.
+the LLM outputs ourselves, but we also wanted to involve human evaluators
+outside our research team to get an external assessment. Employing the same
+procedural texts described in Section 3 and a prompting approach similar to the
+one described in 6, we extracted the procedural knowledge from text according
+to the predefined ontology; the procedure annotation task was explained (both
+to the human evaluators and the LLM) as a verbatim extraction from the text
+of the relevant sentences explaining the procedure steps and the identification
+of specific parts of those steps (e.g., action, tools). Then, we involved a group of
+people to judge the annotation of each procedure (n=24, 8 evaluators for each
+procedure; 79% male, 21% female; aged between 20 and 60); each participant
+was asked to first manually perform the entire extraction (generating a semi-
+structured representation, not the final RDF format) and then to evaluate the
+LLM results on the same procedure and to give us suggestions on how to im-
+prove the process. The results of this study were partially unexpected and were
+very useful to design the experiment described in this paper. Our preliminary
+observations were as follows.
+Humans highly disagree in annotating procedural knowledge.The
+number of annotated steps, tools, and actions varied quite a lot, thus the level
+of agreement of people in executing such a task was very low (no significant
+inter-rateragreementindicator).Thissuggeststhat not all annotation/extraction
+tasks are equal: in our case, the step identification is quite different from an entity
+recognitionorrelationextractiontask,becauseitinvolvestheextractionofentire
+sentences, thus our goal is somehow more “subjective” and it is not amenable to
+have an actual “ground truth”. This also means thatthe LLM can be considered
+as “yet another annotator”.
+Humans tend to adjust the task regardless of the instructions and
+example. Analysing their annotations, we realised that humans did not closely
+followed the given instructions (opposed to the LLM “obedient” execution) based
+on what they consider more useful, using their creativity or reasoning. In some
+cases, new steps that were absent from the input procedure were introduced;
+some actions were inferred by the participants; some users tended to rephrase or
+summarise the text of the step, to make it clearer based on their interpretation,
+even if we asked for verbatim extraction of sentences. Moreover, some partici-
+pants were quite critical with respect to the prompt instructions, commenting
+that they were too long and not immediate. This suggests that the prompt can
+be less detailed andleaves room for the more generative capabilities of the LLM,
+as humans do the same.
+Humans are highly critical when evaluating the LLM.Also in the
+evaluation of LLM results, performed through a list of Likert-scale ratings on
+various aspects of the generated output, there was no agreement between the
+participants (computed as Krippendorff’s alpha metrics [16]), as they directly
+compared their work with that of the LLM which was quite different. Some eval-
+uators assigned very low scores, which means that the LLM is still not perceived
+by some as “good enough” to solve the task. This suggests that thoseevaluations
+Human Evaluation of Procedural KG Extraction with LLMs 7
+may have been influenced by a bias on AIand that this hypothesis was worth
+being tested.
+5 Research Questions
+Our goal is to create a procedural knowledge graph by extracting structured
+knowledgefromunstructuredtext;wewouldliketoapplyLLMstothe procedural
+knowledge extraction task and assess their results from a human point of view,
+taking into consideration the findings of our preliminary study.
+Our research questions are formulated as follows:
+RQ1 What is the quality of the extracted procedural knowledge (graph) as perceived
+by human evaluators?In this respect, we would like to understand if people
+judge the LLM-extracted knowledge as correctly representing the meaning
+of the original text and what influences their evaluation.
+RQ2 What is the usefulness of the extracted procedural knowledge (graph) as per-
+ceived by human evaluators? In this respect, we would like to assess the
+“fitness for use” of the output of the LLM extraction, when people are ex-
+plained its potential downstream use.
+RQ3 Do human evaluators show any systematic bias if they are told that the ex-
+traction task was executed by a LLM rather than an expert human annota-
+tor? In this respect, we would like to check any difference in people judgment
+about the extracted procedural knowledge (graph).
+RQ4 Qualitatively, are there any differences in the way human annotators and
+the LLM extract explicit knowledge and infer implicit knowledge from the
+text? In this respect, we would like to assess if the LLM behaves like human
+annotators in interpreting and extracting procedural knowledge.
+6 Prompt Engineering Solution
+The expected result for each procedure was an ordered list of sentences sum-
+marizing the steps extracted from the text, with their respective actions, direct
+objects, equipment items, and temporal information, expressed in RDF accord-
+ing to the given ontology. We tested different prompting approaches, as detailed
+below, and in an initial phase we manually evaluated the LLM results, finding
+an agreement between us with majority voting to decide whether each result
+was qualitatively satisfactory; the prompting approach that revealed to yield
+the best results was then used in the subsequent human evaluation experiment
+(cf. Section 7).
+Prompting approach.We tested different prompting approaches on the work-
+ing procedure (cf. Section 3) to find the best solution. Initially, we tried with a
+single prompt with zero/one/few-shot and we found that one prompt was not
+enough to achieve an acceptable result and a correct RDF, while giving one
+example in the prompt (one-shot learning) was the best trade-off between zero-
+shot and few-shots; then, as demonstrated in [46], we tried a Chain-of-Thought
+8 Valentina Anita Carriero et al.
+(CoT) prompting approach, i.e. decomposing the global problem into intermedi-
+atesteps(prompts)andsolveeachofthemsequentially,becausethissignificantly
+improves the ability of LLMs to perform complex reasoning tasks, including com-
+monsense. We tested our prompts with or without the definitions of the entities
+to be extracted, and found that very short definitions worked better in obtain-
+ing a more accurate result than both longer definitions and no definition at all.
+Moreover, allowing the LLM to generate the step sentence descriptions gave bet-
+ter results in the extraction of steps as opposed to strictly report the verbatim
+sentence from the text without modifications, as in the preliminary experiment
+(cf. Section 4). After multiple refinement iterations, we came up with a CoT
+prompting approach decomposed in 2 steps, both applying a one-shot learning.
+Each step is associated with a different agent playing a different role.
+P1: generate steps descriptions and annotations.In this prompt, the LLM
+is given the role of “expert in information extraction with a special background
+in procedures” and is asked to generate a semi-structured output, composed of
+a list of sentences describing the procedure steps, each including the performed
+action(s), its direct object(s), the used equipment, and any execution time infor-
+mation (if any). Each piece of information to be included in the semi-structured
+output is explained as follows:
+–an action is defined as “the verb or phrasal verb or idiomatic expression that
+represents an action to be performed”,
+–the direct objectof the action is defined as “the noun or pronoun being acted
+upon by the verb of the action”,
+–the equipment is an “item that is needed to perform the action”,
+–the time is “any temporal information relevant to perform the action”.
+It is further specified in the prompt that each generated step may include one
+or more actions, and that the direct object of each action cannot be considered
+an equipment itself. Finally, we asked the LLM to include also possibly implicit
+equipment that is not mentioned in the text, if relevant to perform the action.
+By asking the LLM to generate a list of steps from an input procedure, that
+summarizes the input and contains a specific subset of information, we managed
+to leverage its generative capabilities. The prompt also includes an example of
+procedure with its respective output (see Figure 2). The example is crucial to
+showtheLLMnotonlyhowtogeneratethesemi-structuredoutput,butalsohow
+to produce the annotations that are preliminary to the RDF KG construction.
+P2: generate the ontology-based knowledge graph of the procedure.In order
+to obtain the intended output – i.e. a KG of the procedure, linked to its steps,
+actions, direct objects, equipment and temporal information, according to the
+givenontology–weassigntotheLLMthenewroleof“expertinknowledgegraph
+construction, with a special background in ontologies on procedural knowledge”,
+and we ask it convert the semi-structured output of the first prompt into RDF
+formatted in Turtle syntax (similarly to [12]). Rather than providing the entire
+ontology to be used, we showed the language model an example translation from
+its initial output to RDF, so that the LLM could find in the example all classes
+and properties to be used, and how they needed to be mapped to the annotation.
+Human Evaluation of Procedural KG Extraction with LLMs 9
+Fig.2: Example procedure and output provided in promptP1.
+While designingP2, we started by providing the whole ontology, asking the
+LLMtotranslateitsinitialoutputtoTurtleaccordingtosuchontology.However,
+relevant triples were missing: many inverse relations included in the ontology
+were never used, and the procedure was linked only to the first step. Moreover,
+additional and very specific instructions would have been needed in the prompt
+for defining all prefixes and how to design local names, to prevent ambiguous
+individuals. Instead, by showing an example on how to map the textual list
+of steps and annotations to Turtle, we avoid possible errors in complying with
+ontological constraints, with a greater guarantee of the final KG to be complete.
+Moreover, this method may be particularly useful when we work with multiple,
+and possibly large, ontologies, that would exceed the context window of the
+LLM.
+Results. For our experiments, we use the GPT 4o model, and rely on the
+LangChain framework6. We also tested with GPT 3.5 Turbo model, however, we
+obtained worse results than GPT 4o, with respect to bothP1 and P2. Specif-
+ically, GPT 3.5 Turbo tended to collapse some objects and equipment items
+instead of keeping them separate as in the example (e.g.bucket filled with water
+in place ofbucket and water), and it did not always comply with the provided
+template, as opposed to GPT 4o. The results of both prompts are available on
+GitHub. All produced KGs are valid RDF in Turtle syntax. Properties’ domains
+and ranges are correctly used, and individuals are typed flawlessly. The LLM
+perfectly mimics our conventions for local names. The KGs generated withP2
+are complete, meaning that they include all entities that have been extracted in
+P1, thus addressing all requirements we defined. Therefore, we use the results of
+P1 in our user experiment.
+6 Cf. https://www.langchain.com/
+10 Valentina Anita Carriero et al.
+Fig.3: Illustration of the Chain of Prompt for Procedural KG extraction, along
+with an example of extracted step.
+7 Experiment Design
+In order to test our hypotheses, we extracted PK from 3 procedure texts applying
+the prompting approach described in Section 6. Then, we setup a crowdsourcing
+campaign to collect feedback from human evaluators as follows.
+Input to the human evaluator.Each participant was given the annota-
+tion instructions (corresponding to the promptP1, including an example of the
+expected input-output), the procedure text and the extracted semi-structured
+PK as generated by the LLM.
+Expected output. Each participant was presented with a form (imple-
+mented with Microsoft Forms) and asked to perform two tasks (presented in
+two following pages in the form): (1) a short manual annotation exercise, to get
+familiar with the task and to provide feedback on the task itself, and (2) the as-
+sessment of the LLM annotation, according to the evaluation criteria explained
+in the following.
+Instructions. For the manual annotation task, participants were given ex-
+actly the same instructions included in theP1 prompt used with the LLM; it
+is worth noting that, as explained in Section 6, the second promptP2 always
+yielded a correct RDF representation of the semi-structured output of the first
+prompt, therefore we gave the participants the LLM results in response toP1,
+to avoid the need for people to understand and validate Turtle. For the LLM
+assessment, participants were asked to express their evaluation with a set of
+Likert-scale ratings according to our evaluation dimensions.
+Evaluation dimensions.All quantitative evaluation items were expressed
+as statements to be assessed on a 1 to 5 Likert scale of agreement (from strongly
+Human Evaluation of Procedural KG Extraction with LLMs 11
+Table 1: Evaluation items used to assess the manual annotation task.
+I found this task very easy.
+I am confident that my output is correct.
+I found the instructions provided for this annotation task very clear.
+disagree to strongly agree); we also asked for free-text feedback to also collect
+some more qualitative feedback. Regarding the manual annotation task per-
+formed by the participants, we asked feedback about the task difficulty and the
+instructions clarity, as per the items in Table 1. Regarding the LLM output as-
+sessment, we collected ratings about three main dimensions:perceived quality,
+intended as the perceived value of the knowledge extraction,perceived compar-
+ative quality, intended as the value compared to what the evaluator would have
+done on the same task, andperceived usefulness, intended as the characteristics
+of the output to be used as intended; the respective items are listed in Table 2.
+Additionally, we also asked some profiling question, to collect user characteris-
+tics, to check their possible influence on the answers.
+Experimental setting.For each of the procedures used in the experiment,
+we set up two crowdsourcing campaigns on the Prolific platform7 [36], in a A/B
+testing with a between-subject design: in one campaign, we told the participants
+that the annotations they were evaluating were performed by a LLM, while
+the other group was said that the annotations were produced by an experienced
+human annotator. Each campaign involved 30 respondents, accounting for a total
+of n=180 participants in 6 campaigns. The inclusion criteria were: age between
+20 and 60, residence in Europe, fluency in English and the use of a desktop for
+the study execution, while, to implement an A/B testing, the exclusion criterion
+was the participation to the other five experimental campaigns. No inclusion
+or exclusion criteria were imposed on other personal characteristics (gender,
+nationality, etc.).
+8 Human Assessment and Discussion
+In this section, we summarise and discuss the results and main findings of our
+quantitative and qualitative evaluation with the crowdsourcing participants.
+Human Evaluators.As explained before, we involved 180 participants from
+the Prolific crowdsourcing platform, between June and July 2024. Excluding
+participants who revoked the consent to register demographic data, the others
+were aged between 20 and 60, 37% male, 63% female; their employment status
+was 14% student, 47% employed and 39% unemployed. There was no significant
+difference between the 6 groups that were involved in the 6 campaigns, in terms
+of demographic and profiling characteristics.
+Perceived Quality.The overall distribution of the ratings given by the
+human evaluators on the quality-related dimensions are displayed in the first 7
+7 Cf. https://www.prolific.com/
+12 Valentina Anita Carriero et al.
+Table 2: Evaluation items used to assess the LLM output. Items marked with *
+are expressed on a reversed scale.
+Dimension Item
+Quality (Q1) The annotator was accurate in rephrasing and extracting the
+procedure from the text
+Quality (Q2) The steps identified and rephrased by the annotator are rele-
+vant to the task to be executed
+Quality (Q3) The steps identified and rephrased by the annotator provide
+sufficient details to execute the procedure
+Comparative Quality
+(CQ1)
+I would have identified a different set of equipments from those
+suggested by the annotator *
+Comparative Quality
+(CQ2)
+I would have identified a different set of actions from those
+suggested by the annotator *
+Comparative Quality
+(CQ3)
+I would have identified a different set of direct objects of action
+from those suggested by the annotator *
+Comparative Quality
+(CQ4)
+I think that the annotator missed some important parts of the
+procedure in their processing *
+Usefulness (U1) Following only the instructions identified by the annotator
+would make it easier to execute the procedure (with respect
+to the original text)
+Usefulness (U2) Following only the instructions identified by the annotator
+would make it quicker to execute the procedure (with respect
+to the original text)
+Usefulness (U3) I believe that an automatic system providing information for
+executing a procedure could use the extraction from this an-
+notator as an input
+Usefulness (U4) The instructions identified by the annotator don’t include the
+proper information to support procedure execution *
+Usefulness (U5) I think I would correctly execute the original procedure based
+only on the instructions identified by the annotator
+boxplots in Figure 4 and the first 7 rows in Table 3. On the 1-5 Likert scale, the
+human judgement is generally positive (median value is always 4). We tested
+with ANOVA the possible variability of the ratings with respect to the 3 dif-
+ferent procedures, but we did not find any strongly significant difference, which
+means that the results are not dependent on the different input. With respect
+to perceived quality, i.e. assessment of the extracted knowledge accuracy and
+relevance, we notice that the evaluators gave generally high scores and those
+scores are quite positively correlated (r between 0.56 and 0.64). With respect to
+perceived comparative quality, i.e. assessment of the extracted knowledge quality
+with respect to what the evaluator would have done on the same task, the par-
+ticipants were still positive, but slightly less generous in their ratings and those
+scores are a bit less positively correlated (r between 0.26 and 0.59); this means
+that the participants still think that the quality of the extracted knowledge is
+Human Evaluation of Procedural KG Extraction with LLMs 13
+Fig.4: Distribution of human ratings on the evaluation items (cf. Table 2).
+quite high, but some of them suppose that they could have done a better job,
+confirming the findings of our preliminary study (cf. Section 4).
+We can therefore conclude that, in relation to our research questionRQ1,
+on average, human evaluators judge the extracted knowledge as correctly repre-
+senting the meaning of the original text.
+Perceived Usefulness.The overall distribution of the ratings given by the
+human evaluators on the usefulness items are displayed in the last 5 boxplots in
+Figure 4 and the last 5 rows in Table 3. On the 1-5 Likert scale, the human judge-
+ment ratings are generally lower that the quality-related items (median value is
+always 3) and the scores are weakly or moderately correlated (r between 0.15
+and 0.62). Those results indicate that the evaluators were more doubtful when
+they had to judge the usefulness; this may be due to an unclear explanation
+or an imprecise understanding of the intended use of the procedural knowledge
+extracted from the text. Indeed, when asked to assess their manual annotation
+and the clarity of the instructions they gave central-range scores (average val-
+ues between 2.84 and 3.19 on a 1-5 scale, cf. items in Table 1): this may have
+negatively impacted their interpretation of the “fitness for use” of the extracted
+knowledge.
+Therefore, in relations to our research questionRQ2, we cannot conclude
+that the procedural knowledge extracted from text is perceived as highly useful
+by our evaluators.
+Potential bias about AI. As explained in Section 7, we performed an
+A/B testing to check for any difference in people judgment, if they are told
+that the extraction task was executed by a LLM rather than an expert human
+annotator; in other words, we tested for any indication of a systematic bias
+about humans vs. machines. For each of the evaluation items, we applied the
+Kruskal-Wallis test [30] on the two groups (LLM vs. human annotator) to check
+for any difference. We run the test on the entire dataset (n=90 for each group),
+14 Valentina Anita Carriero et al.
+Table 3: Distribution of evaluation scores by the human participants (n=180)
+on the items (cf. Table 2).
+Evaluation ItemAverageMedian Std dev
+Q1 3,94 4 0,88
+Q2 4,16 4 0,79
+Q3 3,82 4 0,97
+CQ1 3,83 4 1,15
+CQ2 3,71 4 1,18
+CQ3 4,02 4 1,09
+CQ4 3,55 4 1,29
+U1 2,90 3 1,09
+U2 3,04 3 1,17
+U3 3,35 3 1,06
+U4 3,39 3 1,18
+U5 3,31 3 1,13
+and the data displays only a few statistically significant differences between the
+two groups, in relation to items Q2, Q3, CQ1, CQ4 and U4 (p-values of the
+Kruskal-Wallis test between 0.007 and 0.04); in all those cases, the evaluators
+gave lower ratings to the LLM with respect to the expert human annotator. This
+result, even if not emerging on all items, seems to confirm the considerations out
+of our preliminary study.
+In relations to our research question RQ3, therefore we cannot conclude
+that there is any systematic bias about LLMs, but a slight tendency of human
+evaluators to be more forgiving towards people than towards machines.
+Qualitative comparison between human and LLM knowledge ex-
+traction. From a qualitative comparison between the annotations produced by
+human annotators and the knowledge extracted by the LLM, it emerges that
+both humans and LLMs benefit from the possibility to rephrase/simplify the
+original text of the procedure in order to generate instructions that are more
+concise anduseful from their point of view, even if this leads to a greater vari-
+abilityoftheoutput.However,evenwhendifferentlyrephrased,thevastmajority
+of annotators detected the same steps as the LLM. Humans tended to rephrase
+also some verbs (e.g.turn on in place ofpreheat, prune instead of nip off) or
+some objects (e.g.packaging instead ofcontainer). Furthermore, we noticed that
+both humans and the LLM took advantage of the option to include in their an-
+notations implicit equipment items (e.g. inferringscrewdriver to check if screws
+are tight) – increasing variability again. However, the LLM is more compliant
+to the given instructions, since it only extracted implicit equipment, while some
+human annotators introduced also implicit time indications when they consider
+it relevant to execute the procedure.
+In relations to our research questionRQ4, we can conclude that the ex-
+traction of both explicit and implicit knowledge from procedural texts shows
+Human Evaluation of Procedural KG Extraction with LLMs 15
+multiple similarities between the LLM and the human annotators, with the only
+difference that humans are less likely to strictly follow the given instructions.
+9 Conclusions
+In this paper, we provided our results in the use of LLMs to extract procedural
+knowledge from textual descriptions, in order to build procedural knowledge
+graphs, adopting a suitable prompt chaining approach. Moreover, we performed
+an extensive human evaluation study to assess the LLM output in terms of its
+perceived quality and usefulness. We showed that the evaluators rated quite
+positively the quality of the extracted PK, while they were more doubtful about
+its usefulness; moreover, we highlighted that in some cases, people tend to be
+more critical towards an AI system rather than another human annotator: even if
+we did not find evidence of a systematic bias, this phenomenon is worth exploring
+in future LLM evaluation studies. Finally, we qualitatively studied the ability of
+both humans and LLMs to extract explicit and implicit knowledge from text,
+coming to the conclusion that, in extraction tasks where a definitive ground
+truth does not exist, an LLM displays abilities similar to those of people.
+All in all, we believe that LLMs are a promising technology to address this
+complex task, still the human intervention – through a human-in-the-loop ap-
+proach – is very likely required to verify that the generated output is “good
+enough” to be used in real settings, especially when compliance is critical, like
+for example in the support to execute industrial procedures.
+Our future work will be oriented towards a broader and more systematic
+evaluation of the proposed prompting approach, extending the assessment to in-
+dustrial procedures in multiple formats (e.g. PDF or spreadsheets documents),
+addressing the challenge of extracting more complex cases of procedures (e.g.
+sub-procedures, optional or alternative steps, identification of additional enti-
+ties), extending the approach to include fine-tuning or retrieval-augmented gen-
+eration with the support of background knowledge, and comparing and bench-
+marking the outcomes of different LLMs.
+Acknowledgements. This work is partially supported by the PERKS project, co-
+funded by the European Commission (Grant id 101120323). The authors would like to
+thank all the participants to the human assessment reported in this paper.
+References
+1. Allen, B.P., Stork, L., Groth, P.: Knowledge Engineering Using Large Lan-
+guage Models. TGDK (2023).https://doi.org/10.4230/TGDK.1.1.3, publisher:
+Schloss-Dagstuhl - Leibniz Zentrum für Informatik
+2. Babaei Giglou, H., D’Souza, J., Auer, S.: Llms4ol: Large language models for on-
+tology learning. In: Proceedings of ISWC 2023. pp. 408–427. Springer (2023)
+3. Bellan, P., Dragoni, M., Ghidini, C.: Extracting business process entities and re-
+lations from text using pre-trained language models and in-context learning. In:
+Proceedings of EDOC 2022. pp. 182–199. Springer (2022)
+16 Valentina Anita Carriero et al.
+4. Bellan, P., Dragoni, M., Ghidini, C., van der Aa, H., Ponzetto, S.P.: Process ex-
+traction from text: Benchmarking the state of the art and paving the way for future
+challenges. arXiv preprint arXiv:2110.03754 (2021)
+5. Bischof, S., Filtz, E., Parreira, J.X., Steyskal, S.: Llm-based guided generation
+of ontology term definitions. In: Proceedings of EKAW 2024 - Industry Track.
+Springer (2024)
+6. Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J.D., Dhariwal, P., Nee-
+lakantan, A., Shyam, P., Sastry, G., Askell, A., et al.: Language models are few-shot
+learners. Advances in neural information processing systems33, 1877–1901 (2020)
+7. Chan, C.M., Chen, W., Su, Y., Yu, J., Xue, W., Zhang, S., Fu, J., Liu, Z.: Chateval:
+Towards better llm-based evaluators through multi-agent debate. arXiv preprint
+arXiv:2308.07201 (2023)
+8. Ciroku, F., de Berardinis, J., Kim, J., Meroño-Peñuela, A., Presutti, V., Simperl,
+E.: Revont: Reverse engineering of competency questions from knowledge graphs
+via language models. Journal of Web Semantics p. 100822 (2024)
+9. Ding, N., Xu, G., Chen, Y., Wang, X., Han, X., Xie, P., Zheng, H.T., Liu,
+Z.: Few-nerd: A few-shot named entity recognition dataset. arXiv preprint
+arXiv:2105.07464 (2021)
+10. Dubois, Y., Li, C.X., Taori, R., Zhang, T., Gulrajani, I., Ba, J., Guestrin, C., Liang,
+P.S., Hashimoto, T.B.: Alpacafarm: A simulation framework for methods that learn
+from human feedback. Advances in Neural Information Processing Systems 36
+(2024)
+11. Fathallah, N., Das, A., De Giorgis, S., Poltronieri, A., Haase, P., Kovriguina, L.:
+Neon-gpt: A large language model-powered pipeline for ontology learning. In: Pro-
+ceedings of ESWC 2024 - Special Track on Large Language Models for Knowledge
+Engineering (2024)
+12. Frey, J., Meyer, L.P., Arndt, N., Brei, F., Bulert, K.: Benchmarking the Abilities of
+Large Language Models for RDF Knowledge Graph Creation and Comprehension:
+How Well Do LLMs Speak Turtle? (2023), arXiv:2309.17122
+13. Fu, J., Ng, S.K., Jiang, Z., Liu, P.: Gptscore: Evaluate as you desire. arXiv preprint
+arXiv:2302.04166 (2023)
+14. Garijo, D., Gil, Y.: Augmenting PROV with plans in P-PLAN: scientific processes
+as linked data. In: Kauppinen, T., Pouchard, L.C., Keßler, C. (eds.) Proceedings of
+LISC2012 Workshop - co-located with ISWC 2012. CEUR Workshop Proceedings,
+vol. 951. CEUR-WS.org (2012)
+15. Groth, P., Simperl, E., van Erp, M., Vrandečić, D.: Knowledge Graphs and
+their Role in the Knowledge Engineering of the 21st Century (Dagstuhl Semi-
+nar 22372). DROPS-IDN/v2/document/10.4230/DagRep.12.9.60 (2023). https:
+//doi.org/10.4230/DagRep.12.9.60, publisher: Schloss-Dagstuhl - Leibniz Zen-
+trum für Informatik
+16. Hayes, A.F., Krippendorff, K.: Answering the call for a standard reliability measure
+for coding data. Communication methods and measures1(1), 77–89 (2007)
+17. Hidalgo, C.A., Orghian, D., Canals, J.A., De Almeida, F., Martin, N.: How humans
+judge machines. MIT Press (2021)
+18. Hofer, M., Frey, J., Rahm, E.: Towards self-configuring knowledge graph construc-
+tion pipelines using llms-a case study with rml. In: Proceedings of KGCW 2024 co-
+located with ESWC2024. CEUR Workshop Proceedings, vol. 3718. CEUR-WS.org
+(2024)
+19. Hoseini, S., Burgdorf, A., Paulus, A., Meisen, T., Quix, C., Pomp, A.: Towards
+llm-augmented creation of semantic models for dataspaces. In: Proceedings of SDS
+2024 Workshop co-located with ESWC 2024 (2024)
+Human Evaluation of Procedural KG Extraction with LLMs 17
+20. Kamoi, R., Goyal, T., Rodriguez, J.D., Durrett, G.: Wice: Real-world entailment
+for claims in wikipedia. arXiv preprint arXiv:2303.01432 (2023)
+21. Kumar, A., Pandey, A., Gadia, R., Mishra, M.: Building Knowledge Graph using
+Pre-trained Language Model for Learning Entity-aware Relationships. In: Proceed-
+ings of 2020 IEEE International Conference on Computing, Power and Communi-
+cation Technologies (GUCON). pp. 310–315 (2020).https://doi.org/10.1109/
+GUCON48875.2020.9231227
+22. Kumar, A., Gupta, N., Dana, S.: Constructing Micro Knowledge Graphs from
+Technical Support Documents. In: Proceedings of ESWC 2021 - Satellite Events.
+pp. 249–253. Lecture Notes in Computer Science, Springer International Publish-
+ing, Cham (2021)
+23. Lee, M., Srivastava, M., Hardy, A., Thickstun, J., Durmus, E., Paranjape, A.,
+Gerard-Ursin, I., Li, X.L., Ladhak, F., Rong, F., et al.: Evaluating human-language
+model interaction. arXiv preprint arXiv:2212.09746 (2022)
+24. Li, M., Shi, T., Ziems, C., Kan, M.Y., Chen, N.F., Liu, Z., Yang, D.: Coannotating:
+Uncertainty-guided work allocation between human and large language models for
+data annotation. arXiv preprint arXiv:2310.15638 (2023)
+25. Li, X., Hughes, A.J., Llugiqi, M., Polat, F., Groth, P., Ekaputra, F.J., et al.:
+Knowledge-centric prompt composition for knowledge base construction from pre-
+trained language models. In: KBC-LM/LM-KBC@ ISWC (2023)
+26. Liu, Y., Iter, D., Xu, Y., Wang, S., Xu, R., Zhu, C.: G-eval: Nlg evaluation using
+gpt-4 with better human alignment. arXiv preprint arXiv:2303.16634 (2023)
+27. Liu, Y., Fabbri, A.R., Liu, P., Zhao, Y., Nan, L., Han, R., Han, S., Joty, S., Wu,
+C.S., Xiong, C., et al.: Revisiting the gold standard: Grounding summarization
+evaluation with robust human evaluation. arXiv preprint arXiv:2212.07981 (2022)
+28. Magni, F., Park, J., Chao, M.M.: Humans as creativity gatekeepers: Are we biased
+against ai creativity? Journal of Business and Psychology pp. 1–14 (2023)
+29. Marreddy, M., Oota, S.R., Gupta, M., Flek, L.: Large language
+models are human-like annotators. https://sites.google.com/view/
+lllms-as-human-like-annotators/ (2024), tutorial at KR 2024
+30. McKight, P.E., Najab, J.: Kruskal-wallis test. The corsini encyclopedia of psychol-
+ogy pp. 1–1 (2010)
+31. Mihindukulasooriya, N., Tiwari, S., Enguix, C.F., Lata, K.: Text2KGBench: A
+Benchmark for Ontology-Driven Knowledge Graph Generation from Text. In: Pro-
+ceedings of ISWC 2023, Part II. pp. 247–265. Springer-Verlag (2023)
+32. Millet, K., Buehler, F., Du, G., Kokkoris, M.D.: Defending humankind: Anthro-
+pocentric bias in the appreciation of ai art. Computers in Human Behavior143,
+107707 (2023)
+33. Nabizadeh, N., Kolossa, D., Heckmann, M.: Myfixit: an annotated dataset, anno-
+tation tool, and baseline methods for information extraction from repair manuals.
+In: Proceedings of LREC 2020. pp. 2120–2128. European Language Resources As-
+sociation (2020)
+34. Neudert, L.M., Knuutila, A., Howard, P.N.: Global attitudes towards ai, machine
+learning & automated decision making. Oxford Commission on AI and Good Gov-
+ernance (2020)
+35. Ni, J., Shi, M., Stammbach, D., Sachan, M., Ash, E., Leippold, M.: Afacta: Assist-
+ing the annotation of factual claim detection with reliable llm annotators. arXiv
+preprint arXiv:2402.11073 (2024)
+36. Palan, S., Schitter, C.: Prolific.ac — a subject pool for online experiments. Journal
+of Behavioral and Experimental Finance17, 22–27 (2018)
+18 Valentina Anita Carriero et al.
+37. Pan,J.Z.,Razniewski,S.,Kalo,J.C.,Singhania,S.,Chen,J.,Dietze,S.,Jabeen,H.,
+Omeliyanenko,J.,Zhang,W.,Lissandrini,M.,Biswas,R.,deMelo,G.,Bonifati,A.,
+Vakaj,E.,Dragoni,M.,Graux,D.:LargeLanguageModelsandKnowledgeGraphs:
+Opportunities and Challenges. DROPS-IDN/v2/document/10.4230/TGDK.1.1.2
+(2023). https://doi.org/10.4230/TGDK.1.1.2
+38. Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., Wu, X.: Unifying Large Language
+Models and Knowledge Graphs: A Roadmap. IEEE Transactions on Knowledge
+and Data Engineering pp. 1–20 (2024)
+39. Ragot, M., Martin, N., Cojean, S.: Ai-generated vs. human artworks. a percep-
+tion bias towards artificial intelligence? In: Extended abstracts of the 2020 CHI
+conference on human factors in computing systems. pp. 1–10 (2020)
+40. Rula, A., Calegari, G.R., Azzini, A., Bucci, D., Baroni, I., Celino, I.: Eliciting
+and curating procedural knowledge in industry: Challenges and opportunities. In:
+Proceedings of (Qurator 2022). CEUR Workshop Proceedings, vol. 3234. CEUR-
+WS.org (2022)
+41. Rula, A., D’Souza, J.: Procedural Text Mining with Large Language Models. In:
+Proceedings of the 12th Knowledge Capture Conference 2023. pp. 9–16. K-CAP
+’23, Association for Computing Machinery, New York, NY, USA (2023).https:
+//doi.org/10.1145/3587259.3627572
+42. Rula, A., Re Calegari, G., Azzini, A., Baroni, I., Celino, I.: K-hub: a modular on-
+tology to support document retrieval and knowledge extraction in industry 5.0. In:
+Proceedings of ESWC 2023. Lecture Notes in Computer Science, Springer (2023)
+43. Shi, S., Xu, Z., Hu, B., Zhang, M.: Generative multimodal entity linking. In: Pro-
+ceedings of LREC-COLING 2024. pp. 7654–7665. ELRA and ICCL (2024)
+44. Sola, D., van der Aa, H., Meilicke, C., Stuckenschmidt, H.: Activity recommenda-
+tion for business process modeling with pre-trained language models. In: European
+Semantic Web Conference. pp. 316–334. Springer (2023)
+45. Su, H., Kasai, J., Wu, C.H., Shi, W., Wang, T., Xin, J., Zhang, R., Ostendorf, M.,
+Zettlemoyer, L., Smith, N.A., et al.: Selective annotation makes language models
+better few-shot learners. arXiv preprint arXiv:2209.01975 (2022)
+46. Wei, J., Wang, X., Schuurmans, D., Bosma, M., Xia, F., Chi, E., Le, Q.V., Zhou,
+D., et al.: Chain-of-thought prompting elicits reasoning in large language models.
+Advances in neural information processing systems35, 24824–24837 (2022)
+47. Yang, D., Wang, X., Celebi, R.: Expanding the Vocabulary of BERT for Knowledge
+Base Construction (2023).https://doi.org/10.48550/arXiv.2310.08291
+48. Yuan, P., Feng, S., Li, Y., Wang, X., Pan, B., Wang, H., Li, K.: Batcheval: Towards
+human-like text evaluation. arXiv preprint arXiv:2401.00437 (2023)
+49. Zhang, B., Carriero, V.A., Schreiberhuber, K., Tsaneva, S., González, L.S., Kim, J.,
+de Berardinis, J.: Ontochat: a framework for conversational ontology engineering
+using language models. In: Proceedings of ESWC 2024 - Special Track on Large
+Language Models for Knowledge Engineering (2024)
+50. Zhang, B., Reklos, I., Jain, N., Peñuela, A.M., Simperl, E.: Using Large Language
+Models for Knowledge Engineering (LLMKE): A Case Study on Wikidata (2023).
+https://doi.org/10.48550/arXiv.2309.08491
+51. Zhang, L.: Reasoning about Procedures with Natural Language Processing: A
+Tutorial (May 2022).https://doi.org/10.48550/arXiv.2205.07455, publication
+Title: arXiv e-prints ADS Bibcode: 2022arXiv220507455Z
+52. Zhang, L., Lyu, Q., Callison-Burch, C.: Reasoning about Goals, Steps, and Tem-
+poral Ordering with WikiHow. Proceedings of the 2020 Conference on Empiri-
+cal Methods in Natural Language Processing (Jan 2020).https://doi.org/10.
+18653/v1/2020.emnlp-main.374
+Human Evaluation of Procedural KG Extraction with LLMs 19
+53. Zhou, Y., Shah, J., Schockaert, S.: Learning Household Task Knowledge from Wik-
+iHow Descriptions. In: Espinosa-Anke, L., Declerck, T., Gromann, D., Camacho-
+Collados, J., Pilehvar, M.T. (eds.) Proceedings of SemDeep-5 2019 Workshop. pp.
+50–56. Association for Computational Linguistics, Macau, China (2019),https:
+//aclanthology.org/W19-5808
+54. Zlatkov, D., Ens, J., Pasquier, P.: Searching for human bias against ai-composed
+music.In:InternationalConferenceonComputationalIntelligenceinMusic,Sound,
+Art and Design (Part of EvoStar). pp. 308–323. Springer (2023)

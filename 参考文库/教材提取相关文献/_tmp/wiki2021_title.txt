@@ -1,0 +1,19 @@
+Pages: 12
+Dang FR, Tang JT, Pang KY et al. Constructing an educational knowledge graph with concepts linked to Wikipedia.
+JOURNAL OF COMPUTER SCIENCE AND TECHNOLOGY 36(5): 1200–1211 Sept. 2021. DOI 10.1007/s11390-020-
+0328-2
+Constructing an Educational Knowledge Graph with
+Concepts Linked to Wikipedia
+Fu-Rong Dang1,+, Jin-Tao Tang1,+, Senior Member, CCF, Kun-Yuan Pang1
+Ting Wang1,∗, Senior Member, CCF, Sha-Sha Li1, and Xiao Li2
+1College of Computer Science and Technology, National University of Defense Technology, Hunan 410073, China
+2Information Center, National University of Defense Technology, Hunan 410073, China
+E-mail: 8mimixi8@163.com; {tangjintao, pangkunyuan, tingwang, shashali, xiaoli}@nudt.edu.cn
+Received January 11, 2020; accepted August 18, 2020.
+Abstract To use educational resources efficiently and dig out the nature of relations among MOOCs (massive open
+onlinecourses),aknowledgegraphwasbuiltforMOOCsonfourmajorplatforms: Coursera,EDX,XuetangX,andICourse.
+This paper demonstrates the whole process of educational knowledge graph construction for reference. And this knowledge
+graph, the largest knowledge graph of MOOC resources at present, stores and represents five classes, 11 kinds of relations
+and 52779 entities with their corresponding properties, amounting to more than 300000 triples. Notably, 24188 concepts
+are extracted from text attributes of MOOCs and linked them directly with corresponding Wikipedia entries or the closest
+entries calculated semantically, which provi

@@ -1,0 +1,112 @@
+
+--- PAGE 1 ---
+Automatic Construction of Concept Maps from Unstructured Text
+by Saima Gul
+Submitted to the Graduate School of Engineering and
+Natural Sciences
+in partial fulfillment of the requirements for the degree of
+Doctor of Philosophy
+Sabancı University
+May, 2022
+--- PAGE 2 ---
+Automatic Construction of Concept Maps from Unstructured Text
+APPROVEDBY:
+Prof.Yu¨celSaygın .......................................
+(ThesisSupervisor)
+Prof.Hu¨snu¨ Yenigu¨n .......................................
+Assoc.Prof.KemalKılıc¸ .......................................
+Assoc.Prof.TevfikAytekin .......................................
+Asst.Prof.RahimDehkharghani .......................................
+DATEOFAPPROVAL: ........................................
+--- PAGE 3 ---
+© SaimaGul2022
+AllRightsReserved
+--- PAGE 4 ---
+TomyLateFather”MirzaAbdulQuddous”
+withlove
+--- PAGE 5 ---
+Acknowledgments
+AllthepraisesandthankstoAllah,themostmercifulandthemostbeneficent.
+I want to express my most profound appreciation to my thesis advisor, Professor Yucel
+Saygin,forhiscontinuoussupportinvariousformsthroughoutthisjourney.Histechnical
+guidance and encouragement played the most crucial role in attaining this milestone of
+my life. Also, I convey my sincere thanks to the committee members and my mentors
+ProfessorHusnuYenigunandAssociateProfessorKemalKilic.Theyhavealwaysbeena
+sourceofinspirationformeduringmyPh.D.StudiesatSabanciUniversity.Theirvaluable
+suggestionsandfeedbacknotonlyimprovedmyresearchwork.Besides,thecoursesthey
+taught me enhanced my overall abilities and skills. I am also grateful for the helpful
+commentsandforthevaluabletimeoftheotherjurymembersAssoc.Prof.TevfikAytekin
+andAsst.Prof.RahimDehkharghani.
+Moreover, I am sincerely grateful to my friend and co-author of one of my papers
+Stefan Rabiger for his technical guidance and valuable advice regarding evaluations of
+my methods. He helped me learn many useful lessons, which are extremely helpful for
+conductingqualityresearch.
+Furthermore, without the financial support of the Higher Education Commission of
+Pakistan, and Balochistan University of Information Technology, Engineering & Mana-
+gementSciences(BUITEMS)Quetta,Icouldnoteventhinkaboutperusingmydoctorate
+studies at Sabanci University. I am highly thankful for their financial grant and their fa-
+ith in me regarding completing this goal. Many thanks go to all the people at Sabanci
+Universityforprovidingtheirassistanceindifferentroles.
+Mylovedoneshavealwaysbeenthesourceofenergyandenthusiasmwhilefacingthe
+challengesoflife. Iamdeeplyindebtedto theepitomeofthisenergy, indeed myParents,
+my late Father, Mirza Abdul Quddous, and my mother, Fatima Bibi. They are the true
+meanings of love and kindness for me. I firmly believe that without their unparalleled
+support,Icouldnothaveachievedanythinginmylife.
+iv
+--- PAGE 6 ---
+I am so thankful to my beautiful and kind sisters, Sanum Gul, Saba Gul, and Ruba
+Gul, for their unconditional support and help. Their assistance and love made my life
+easierandmyobjectiveachievable.Iextendspecialthankstomymother-in-law,Mumtaz
+Bibi,forbeingsolovingandsupportiveandtakingcareofmyfamilyinmyabsence.
+Finally, I am highly indebted to my family, my husband, Mohammad Yaqoob Khan,
+and my kids, Safa Khan and Ahmed Demir Khan suffered greatly during this long and
+tiring journey. Living with a spouse pursuing a doctorate degree is probably more tiring
+than doing the actual Ph.D. He helped me in any possible way he could. His patience,
+encouragementandunwaveringassistancesustainedmethisfar.
+Thankyou,everyone.
+v
+--- PAGE 7 ---
+Automatic Construction of Concept Maps from Unstructured Text
+SaimaGul
+ComputerScienceandEngineering
+Ph.D.Thesis,2022
+ThesisSupervisor:Prof.Yu¨celSaygın
+Keywords:Conceptextraction,Keywordextraction,Knowledgebase,Unsupervised
+learning,DBpedia,DocumentDifficultyPrediction
+Abstract
+Acquiring knowledge about a topic is a complex process that requires an individual
+to gradually understand all concepts related to this topic. The learning experience for in-
+dividuals can be enhanced by visualizing the key characteristics that serve as a guide for
+learning. Equipping learners with a concept map that orders concepts, represented as no-
+des, to be studied according to their prerequisite order, indicated by direct edges, helps
+themstayontrack.However,existingalgorithmsforautomaticprerequisitedetectionare
+tooinaccurate,whichreduceslearners’trustinsuchmapsasoneassumestheprerequisite
+relation to be completely reliable. In this work we propose to replace prerequisite rela-
+tions with less authoritative coverage relations, as they indicate only that one concept is
+broaderand related toanotherone. Sincemostofthe prerequisitesofagiven conceptare
+less difficult than the concept itself, we argue that combining the coverage relation with
+concept’s difficulty scores encodes similar semantics as the prerequisite relation. Howe-
+ver,duetothecoveragerelationbeinglessauthoritative,potentiallyinaccuratelydetected
+coverage relations may be ignored by learners.Such relations are considered more like
+recommendations instead of facts. In turn, this change in perception about the reliability
+oftheedgesintheresultingconceptmapcreateslessfrustrationforlearners.Further,two
+additional aspects, the unstructured nature and the abundance of the learning materials
+shouldalsobeconsideredfordevisingasalablemethodforconceptmap’sconstruction.
+With this in mind, this thesis aims to automatically construct from unstructured tex-
+tual learning materials a concept map that encodes concept difficulty as node color and
+vi
+--- PAGE 8 ---
+connects concepts through coverage edges. To that end, we divide the problem into two
+subtasks: extracting concepts from unstructured text and constructing the concept map
+by estimating the difficulty of each extracted concept before inserting coverage edges
+among them. Specifically, we first develop an unsupervised method to extract concepts
+from unstructured textual learning materials and then compute a difficulty score for each
+of the identified concepts in the second subtask with a novel unsupervised method. We
+findthatourconceptextractionmethodismoreaccuratethanexistingstate-of-the-artmet-
+hods. To the best of our knowledge, we have proposed the first unsupervised method for
+finding the concept’s difficulty. Our experiments demonstrate the feasibility of our pro-
+posed difficulty prediction method.It also provides evidence for our core assumption that
+prerequisitesofagivenconcepttendtobeeasierthantheconceptitself,whichrendersour
+methodologyviable.Thesefindingsimplythatourproposedmethodologyyieldsconcept
+mapsforcoursesthathelpindividualsnavigateconceptsmoresuccessfullyinpractice.
+vii

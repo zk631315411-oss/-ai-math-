@@ -1,0 +1,352 @@
+
+--- PAGE 1 ---
+JournalofArtificialIntelligenceResearch55(2016)1059-1090 Submitted10/15;published04/16
+Learning Concept Graphs from Online Educational Data
+Hanxiao Liu hanxiaol@cs.cmu.edu
+Wanli Ma mawanli@cs.cmu.edu
+Yiming Yang yiming@cs.cmu.edu
+Jaime Carbonell jgc@cs.cmu.edu
+School of Computer Science
+Carnegie Mellon University
+5000 Forbes Avenue
+Pittsburgh, PA 15213 USA
+Abstract
+Thispaperaddressesanopenchallengeineducationaldatamining,i.e.,theproblemof
+automatically mapping online courses from different providers (universities, MOOCs, etc.)
+ontoauniversalspaceofconcepts,andpredictinglatentprerequisitedependencies(directed
+links)amongbothconceptsandcourses. Weproposeanovelapproachforinferencewithin
+andacrosscourse-levelandconcept-leveldirectedgraphs. Inthetrainingphase,oursystem
+projects partially observed course-level prerequisite links onto directed concept-level links;
+in the testing phase, the induced concept-level links are used to infer the unknown course-
+level prerequisite links. Whereas courses may be specific to one institution, concepts are
+sharedacrossdifferentproviders. Thebi-directionalmappingsenableoursystemtoperform
+interlingua-style transfer learning, e.g. treating the concept graph as the interlingua and
+transferring the prerequisite relations across universities via the interlingua. Experiments
+on our newly collected datasets of courses from MIT, Caltech, Princeton and CMU show
+promising results.
+1. Introduction
+The large and growing amounts of online education data present both open challenges and
+significant opportunities for machine learning research to enrich educational offerings. One
+of the most important challenges is to automatically detect the prerequisite dependencies
+among massive quantities of online courses, and to support decision making such as curric-
+ula planning for students, and to support course and curriculum design by teachers based
+on existing course offerings. One example is to find a coherent sequence of courses among
+MOOC offerings from different providers that respect implicit prerequisite relations. A
+more specific example would be a new student who just enters a university for a MS or
+PhD degree. She is interested in machine learning and data mining courses, but finds it
+difficult to choose among many courses which look similar or with ambiguous course titles
+to her, such as Machine Learning, Statistical Machine Learning, Applied Machine Learn-
+ing, Machine Learning with Large Datasets, Scalable Analytics, Advanced Data Analysis,
+Statistics: Data Mining, Intermediate Statistics, Statistical Computing, and so on. Com-
+pleting all the courses would imply taking forever to graduate, and possibly waste a big
+portion of her time due to the overlapping content. Alternately, if she wants to choose a
+small subset, which courses should she include? How should she order the included courses
+(cid:13)c2016AIAccessFoundation. Allrightsreserved.
+--- PAGE 2 ---
+Liu, Ma, Yang, & Carbonell
+Courses in University 1 Courses in University 2
+E&M Mechanics
+Calculus
+Differential Eq Matrix A Quantum Matrix A Topology
+Algorithms Java Prog
+Num Analysis Scalable Algs
+Universal Concepts (e.g. Wikipedia Topics)
+Figure 1: Theframeworkoftwo-leveldirectedgraphs: Thehigher-levelgraphshavecourses
+(nodes) with prerequisite relations (links). The lower-level graph consists of uni-
+versal concepts (nodes) and pairwise preference in learning or teaching concepts.
+The links between the two levels are system-assigned weights of concepts to each
+course.
+without sufficient understanding about the prerequisite dependencies? Often prerequisites
+are explicit within an academic department but implicit across departments. Moreover, if
+she already took several courses in machine learning or data mining through Coursera or in
+herundergraduateeducation, howmuchdothosecoursesoverlapwiththenewones? With-
+out an accurate representation of content overlap between courses and how the overlapped
+content reflects the prerequisite relations, it is difficult to help her find the most suitable
+courses in a correct order. Universities solve this problem in the old-fashioned way, via
+academic advisors, but it is not clear how to address this problem in the context of MOOCs
+or cross-university offerings where courses do not have unique IDs and are not described in
+a universally controlled or consistent vocabulary.
+Ideally, we would like to have a universal graph whose nodes are canonical and discrim-
+inant concepts (e.g. “convexity” or “eigenvalues”) being taught in a broad range of courses,
+and whose links indicate pairwise preferences in sequencing the teaching of these concepts.
+For example, to learn the concepts of PageRank and HITS, students should have already
+learned the concepts of eigenvectors, Markov matrices and irreducibility of matrices. This
+means directed links from eigenvectors, Markov matrices and irreducibility to PageRank
+and HITS in the concept graph. To generalize this further, if there are many directed links
+from the concepts in one course (say Matrix Algebra) to the concepts in another course (say
+Web Mining with Link Analysis as a sub-topic), we may infer a prerequisite relation be-
+tween the two courses. Clearly, having a directed graph with a broad coverage of universal
+1060
+--- PAGE 3 ---
+Learning Concept Graphs from Online Educational Data
+concepts is crucial for reasoning about course content overlap and prerequisite relation-
+ships, and hence important for educational decision making, such as curriculum planning
+by students and modularization in course syllabus design by instructors.
+How can we obtain such a knowledge-rich concept graph? Manual specification is obvi-
+ously not scalable when the number of concepts reaches tens of thousands or larger. Using
+machine learning to automatically induce such a graph based on massive online course ma-
+terials is an attractive alternative; however, no statistical learning techniques have been
+developed for this problem, to our knowledge. Addressing this open challenge with princi-
+pled algorithmic solutions is the novel contribution we aim to accomplish in this paper. We
+call our new method Concept Graph Learning (CGL). Specifically, we propose a multi-level
+inference framework as illustrated in Figure 1, which consists of two levels of graphs and
+cross-level links. Generally, a course would cover multiple concepts, and a concept may
+be covered by more than one course. Notice that the course-level graphs do not overlap
+because different universities do not have universal course IDs. However, the semantic con-
+ceptstaughtindifferentuniversitiesdooverlap, andwewanttolearnthemappingsbetween
+the non-universal courses and the universal concept space based on online course materials.
+In this paper we investigate the problem of concept graph learning (CGL) with our new
+collections of course syllabi (including course names, descriptions, listed lectures, prerequi-
+site relations, etc.) from Massachusetts Institute of Technology (MIT), California Institute
+of Technology (Caltech), Carnegie Mellon University (CMU) and Princeton. The syllabus
+data allow us to construct an initial course-level graph for each university, which may be
+further enriched by discovering latent prerequisite links. As for representing the universal
+concept space, we study four representation schemes (Section 2.1), including 1) using the
+English words in course descriptions, 2) using sparse coding of English words, 3) using
+distributed word embedding of English words, and 4) using a large subset of Wikipedia
+categories. For each of these representation schemes, we provide algorithmic solutions to
+establish a mapping from courses to concepts, and to learn the concept-level dependen-
+cies based on observed prerequisite relations at the course level. The second part, i.e., the
+explicit learning of the directed graph for universal concepts, is the most unique part of
+our proposed framework. Once the concept graph is learned, we can predict unobserved
+prerequisite relations among any courses, including those not in the training set and by dif-
+ferent universities. In other words, CGL enables an interlingua-style transfer learning as to
+train the models on the course materials of some universities and to predict the prerequisite
+relations for the courses in other universities. The universal transferability is particularly
+desirable in MOOC environments where courses are offered by different instructors in many
+universities. Aswementionedbefore, thecourse-levelsub-graphsofdifferentuniversitiesdo
+not overlap with each other, and the prerequisite links are only local within each sub-graph.
+Thus to enable cross-university transfer, it is crucial to project course-level prerequisite
+links in different universities onto the directed links among universal concepts.
+Thebi-directionalinferencebetweenthetwodirectedgraphsmakesourCGLframework
+fundamentally different from existing approaches in graph-based link detection (Kunegis &
+Lommatzsch, 2009; Liben-Nowell & Kleinberg, 2007; Lichtenwalter, Lussier, & Chawla,
+2010), matrix completion (Cand`es & Recht, 2009; Fazel, 2002; Johnson, 1990) and collabo-
+rative filtering (Su & Khoshgoftaar, 2009). That is, our approach requires explicit learning
+1061
+--- PAGE 4 ---
+Liu, Ma, Yang, & Carbonell
+of the concept-level directed graph and the optimal mapping between the two levels of links
+while other methods do not (see Section 7 for more discussion).
+Our main contributions in this paper1 can be summarized as:
+1. A novel framework for within- and cross-level inference of prerequisite relations at the
+course-level and the concept-level directed graphs;
+2. New algorithmic solutions for scalable concept graph learning under various (dense,
+sparse and transductive) settings;
+3. Newdatacollectionsfrommultipleuniversitieswithsyllabusdescriptions,prerequisite
+links and lecture materials;
+4. The first evaluation for prerequisite link prediction in within- and cross-university
+settings.
+The rest of the paper is organized as follows: Section 2 introduces the formal definitions
+of our framework and optimization objectives; Section 3 provides scalable algorithms for
+learning large concept graphs; Section 4 extends our new method to learn a sparse, parsi-
+monious concept graph for better interpretability; Section 5 explores how unlabeled course
+pairs can be leveraged to significantly improve the prediction performance of the learned
+concept graph; Section 6 describes the new datasets we collected for this study and future
+benchmark evaluations, and reports our empirical findings; Section 7 discusses related work
+and how concept graphs can be deployed to benefit future educational applications; and
+Section 8 summarizes the main findings in this study.
+2. Framework & Algorithms
+Let us formally define our methods with the following notation.
+• n is the number of courses in a training set;
+• p is the dimension of the universal concept space (Section 2.1);
+• X = [x ,x ,...,x ](cid:62) ∈ Rn×p is a collection of n courses, where x ∈ Rp is the bag-of-
+1 2 n i
+concepts representation of the i-th course;
+• Y ∈ {−1,+1}n×n is a collection of n2 binary indicators of the observed prerequisite
+relations between courses, i.e., y = 1 means that course j is a prerequisite of course
+ij
+i, and y = −1 otherwise.
+ij
+• A ∈ Rp×p istheadjacencymatrixoftheconceptgraph,whoseelementsaretheweights
+of directed links among concepts. That is, A is the matrix of model parameters we
+want to optimize given the training data in X and Y.
+1. Thisjournalpaperisasubstantiallyextendedversionofapreviouspaper(Yang,Liu,Carbonell,&Ma,
+2015).
+1062
+--- PAGE 5 ---
+Learning Concept Graphs from Online Educational Data
+2.1 Representation Schemes
+What is the best way to represent the contents of courses to learn the universal concept
+space? We explore different answers with four alternate choices as follows:
+1. Word-based Representation (Word): This method uses the vocabulary of course
+descriptions plus any listed keywords by the course providers (MIT, Caltech, CMU
+and Princeton) as the entire concept (feature) space. We applied standard procedures
+for text preprocessing, including stop-word removal, term-frequency (TF) based term
+weighting, and the removal of the rare words whose training-set frequency is one.
+We did not use TF-IDF weighting because the relative small number of “documents”
+(courses) in our datasets do not allow reliable estimates of the IDF part.
+2. Sparse Coding of Words (SCW):Thismethodprojectstheoriginaln-dimensional
+vector representations of words (the columns in the course-by-word matrix X) onto
+sparse vectors in a smaller k-dimensional space using Non-negative Matrix Factoriza-
+tion (Lee & Seung, 1999), where k is much smaller than n. One can view the lower
+dimensional components as the system-discovered latent concepts. Intrigued by the
+successful application of sparse coding in image processing (Hoyer, 2004), we explored
+its application to our graph-based inference problem. By applying an existing sparse
+codingalgorithm(Kim&Park,2008)toourtrainingsetsweobtainedak-dimensional
+vectorforeachword; bytakingtheaverageofwordvectorsineachcourseweobtained
+thebag-of-conceptsrepresentationofthecourse. Thisresultedinann-by-k matrixX,
+representing all the training-set courses in the k-dimensional space of latent concepts.
+We set k = 100 in our experiments based on cross validation.
+3. Distributed Word Embedding (DWE): This method also uses dimension-reduced
+vectors to represent words in the courses, similar to SCW. However, the lower dimen-
+sional vectors (continuous vector representations) for words are discovered by neural
+networks based on word usage w.r.t. contextual, syntactic and semantic information
+(Le & Mikolov, 2014). Intrigued by the popularity of DWE in recent research in
+Natural Language Processing and other domains (Collobert, Weston, Bottou, Karlen,
+Kavukcuoglu, & Kuksa, 2011; Chen, Perozzi, Al-Rfou, & Skiena, 2013), we explored
+its application to our graph-based inference problem. Specifically, we deploy English
+word embeddings trained on Wikipedia articles (Al-Rfou, Perozzi, & Skiena, 2013), a
+domain which is believed to be semantically close to that of academic courses. The
+vector representation for each course is obtained by aggregating the vector represen-
+tations of words it contains.
+4. Category-based Representation (Cat): This method used a large subset of
+Wikipedia categories as the concept space. We selected the subset via a pooling strat-
+egyasfollows: Weusedthewordsinourtraining-setcoursestoform3509queries(one
+query per course), and retrieved the top 100 documents per query based on cosine
+similarity. We then took the union of the Wikipedia category labels of these retrieved
+documents, and removed the categories which were retrieved by only three queries or
+less. This process resulted in a total of 10,051 categories in the concept space. The
+categorization of courses was based on an earlier highly scalable very-large category
+1063
+--- PAGE 6 ---
+Liu, Ma, Yang, & Carbonell
+space work (Gopal & Yang, 2013): the classifiers were trained on labeled Wikipedia
+articles and then applied to the word-based vector representation of each course for
+(weighted) category assignments.
+Each of the above representation schemes may have its own strengths and weaknesses.
+Word issimpleandnaturalbutrathernoisy,becausesemanticallyequivalentlexicalvariants
+are not unified into canonical concepts and there could be systematic vocabulary variation
+across universities. Also, this scheme will not work in cross-language settings, e.g., if course
+descriptionsareinEnglishandChinese. Cat wouldbelessnoisyandbetterincross-language
+settings, but the automated classification step will unavoidably introduce errors in category
+assignments. SCW (sparse coding of words) reduces the total number of model parameters
+via dimensionality reduction, which may lead to robust training (avoiding overfitting) and
+efficient computation, but at the risk of losing useful information in the projection from
+the original high-dimensional space to a lower dimensional space. DWE (distributed word
+embedding)deploysrecentadvancesindeeplearningofwordmeaningsincontext. However,
+reliable word embedding requires the availability of large volumes of training text (e.g.,
+Wikipedia articles); the potential mismatch between the training domain (for which large
+volumesofdatacanbeobtainedeasily)andthetestdomain(forwhichlargevolumesofdata
+are hard or costly to obtain) could be a serious issue. Yet another distinction among these
+representation schemes is that Word and Cat produce human-understandable concepts and
+links,whileSCW andDWE producelatentfactorswhicharehardertointerpretbyhumans,
+although methods such as L1 regularization help with interpretability (sec 6.5).
+By exploring all the four representation schemes in our unified framework for two-level
+graph based inference, and by examining their effectiveness in the task of link prediction
+of prerequisite relations among courses, we aim to obtain a deeper understanding of the
+strengths and weaknesses of those representational choices.
+2.2 The Optimization Methods
+We define the problem of concept graph learning as a key partof learning-to-predict prereq-
+uisite relations among courses, i.e., for the two-level statistical inference we introduced in
+Section 1 with Figure 1. Given a training set of courses with a bag-of-concepts representa-
+tionpercourseasarowinmatrixX,andalistofknownprerequisitelinkspercourseasarow
+in matrix Y, we optimize matrix A whose elements specify both the direction (sign) and the
+strength (magnitudes) of each link between concepts. We propose two new approaches to
+this problem: a classification approach and a learning-to-rank approach. Both approaches
+deploy the same extended versions of SVM algorithms with squared hinge loss, but the
+objective functions for optimization are different. We also propose a nearest-neighbor ap-
+proachforcomparison, whichpredictsthecourse-levellinks(prerequisites)withoutlearning
+the concept-level links.
+2.2.1 The Classification Approach (CGL.Class)
+In this method, we predict the score of the prerequisite link from course i to course j as:
+F = x(cid:62)Ax (1)
+ij i j
+1064
+--- PAGE 7 ---
+Learning Concept Graphs from Online Educational Data
+Figure 2: The weighted connections from course i to course j via matrix A which encodes
+the directed links between concepts
+The intuition behind this formula is shown in Figure 2. It can be easily verified that
+the quantity x(cid:62)Ax is the summation of the weights of all the paths from node i to node
+i j
+j in this graph, where each path is weighted using the product of the corresponding x ,
+ik
+A and x . In other words, we assume the prerequisite strength between two courses is
+kk(cid:48) jk(cid:48)
+a cumulative effect of the prerequisite strengths of all concept pairs.
+The criterion for optimizing matrix A given training data x for i = 1,2,...,n and true
+i
+labels y for all course pairs is defined as:
+ij
+(cid:88)(cid:104) (cid:16) (cid:17)(cid:105)2 λ
+min 1−y x(cid:62)Ax + (cid:107)A(cid:107)2 (2)
+A∈Rp×p ij i j + 2 F
+i,j
+where (1−v) = max(0,1−v) denotes the hinge function, and (cid:107)·(cid:107) denotes the matrix
++ F
+Frobenius norm. The 1st term in formula (2) is the empirical loss; the 2nd term is the reg-
+ularization term, controlling the model complexity based on the large margin principle. We
+choose to use the squared hinge loss (1−v)2 as the first term to gain first-order continuity
++
+of our objective function, enabling efficient computation using accelerated gradient descent
+(Nesterov, 1983, 1988) (Section 3). This efficiency improvement is crucial because we op-
+erate on pairs of courses, and thus have a much larger space than in normal classification
+(e.g. classifying individual courses).
+2.2.2 The Learning-to-Rank Approach (CGL.Rank)
+Inspired by the learning-to-rank literature (Joachims, Li, Liu, & Zhai, 2007), we explored
+going beyond the binary classifier in the previous approach to one that essentially learns to
+rank prerequisite preferences. Let Ω be the set of course pairs with the true labels y = 1
+i ij
+for different j’s, and Ω¯ the pairs of courses with the true labels y = −1 for different k’s,
+i ik
+we want our system to give all the pairs in Ω higher scores than that of any pair in Ω¯ . We
+i i
+call this the partial-order preference over links conditioned on course i.
+1065
+--- PAGE 8 ---
+Liu, Ma, Yang, & Carbonell
+Let T be the union of tuple sets {(i,j,k)|(i,j) ∈ Ω ,(i,k) ∈ Ω¯ } for all i in 1,2,...,n.
+i i
+We formulate our optimization problem as:
+(cid:88) (cid:104) (cid:16) (cid:17)(cid:105)2 λ
+min 1− x(cid:62)Ax −x(cid:62)Ax + (cid:107)A(cid:107)2 (3)
+A∈Rp×p i j i k + 2 F
+(i,j,k)∈T
+Or equivalently, the objective can be rewritten as:
+(cid:88)
+(cid:20)
+(cid:16) (cid:17) (cid:16) (cid:17)
+(cid:21)2
+λ
+min 1− XAX(cid:62) + XAX(cid:62) + (cid:107)A(cid:107)2 (4)
+A∈Rp×p
+(i,j,k)∈T
+ij ik
++
+2 F
+Solving this optimization problem requires us to extend standard packages of SVM algo-
+rithmsinordertoimprovecomputationalefficiencybecausethenumberofmodelparameters
+(p2) in our formulation is very large. For example, with the vocabulary size of 15,396 words
+in the MIT dataset, the number of model parameters in A is over 237 million. When p
+(the number of concepts) is much larger than n (the number of courses), one may consider
+solving this optimization problem in the dual space instead of the primal space. However,
+even in the dual space, the number of dual variables is still O(n3), corresponding to all the
+triplets in T, and the kernel matrix is in the order of O(n6). We are going to address these
+computational challenges in Section 3.
+2.2.3 The Nearest-Neighbor Approach (kNN)
+Different from the two approaches above where matrix A plays a central role, as a different
+baseline, we propose to predict the prerequisite relationship for any pair of courses based
+on matrix X and Y without A. Let (i(cid:48),j(cid:48)) be a new pair of courses in the test set, we score
+each course pair (i,j) in the training set with respect the new test pair as:
+(cid:10) (cid:11) (cid:10) (cid:11)
+x ,x × x ,x ∀i,j = 1,2,...,n (5)
+i(cid:48) i j(cid:48) j
+where(cid:104)·,·(cid:105)standsfortheinnerproductbetweentwovectors. Bytakingthetop-scoredpairs
+in the training set and by aggregating the corresponding y ’s, we perform the kNN-based
+ij
+prediction of yˆ for the new test pair. If we normalize the vectors, the dot-products in (5)
+i(cid:48)j(cid:48)
+become the cosine similarity. This approach requires nearest-neighbor search on-demand;
+when the number of course pairs in the test set is large, the online computation would be
+substantial. Via cross validation, we have found k = 1 (1NN) works best for this problem
+on the current datasets.
+2.2.4 The Support Vector Machine (SVM)
+As another baseline for comparision we also include an SVM with the following objective:
+(cid:88) (cid:104) (cid:105) λ
+min 1−y (x −x )(cid:62)w + (cid:107)w(cid:107)2 (6)
+w∈Rp ij i j + 2 2
+i,j
+Similar to the kNN approach above and unlike CGL, the SVM optimization in (6) does not
+involvelearningthematrixA(thedirectedgraphofuniversalconcepts). Thefeaturevector
+1066

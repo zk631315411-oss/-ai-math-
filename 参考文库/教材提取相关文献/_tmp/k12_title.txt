@@ -1,0 +1,26 @@
+Pages: 4
+An Automatic Knowledge Graph Construction System for
+K-12 Education
+PengheChen YuLu* VincentW.Zheng
+AdvancedInnovationCenter SchoolofEducational AdvancedDigitalSciences
+forFutureEducation Technology,Facultyof Center
+BeijingNormalUniversity Education Singapore
+chenpenghe@bnu.edu.cn BeijingNormalUniversity vincent.zheng@adsc.com.sg
+luyu@bnu.edu.cn
+*CorrespondingAuthor
+XiyangChen XiaoqingLi
+AdvancedInnovationCenter AdvancedInnovationCenter
+forFutureEducation forFutureEducation
+BeijingNormalUniversity BeijingNormalUniversity
+chenxiyang@bnu.edu.cn lixiaoqing8507@bnu.edu.cn
+ABSTRACT knowledge proficiency examination. Our Smart Learning
+Motivated by the pressing need of educational applica- Partner(SLP)issuchanewgenerationeducationplatform,
+tions with knowledge graph, we develop a system, called developedbyBeijingNormalUniversity,thatofficiallyserves
+K12EduKG,toautomaticallyconstructknowledgegraphsfor morethan15,000localprimaryandmiddleschoolstudents
+K-12 educational subjects. Leveraging on heterogeneous inBeijing. TobettersupportSLPservices,weproposethis
+domain-specific educational data, K12EduKG extracts edu- K12EduKGsystemwhichcanautomaticallybuildknowledge
+cationalconceptsandidentifiesimplicitrelationswithhigh graphs for different K-12 subjects by consisting of subject
+educationalsignificance. Morespecifically,itadoptsnamed conceptsasnodesandconceptrelationsasedges.
+entityrecognition(NER)techniquesoneducationaldatalike
+Comparedtogenericknowledgegraphs,educationalknowl-
+curriculu

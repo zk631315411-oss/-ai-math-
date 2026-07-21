@@ -1,0 +1,31 @@
+Pages: 8
+Computer Science and Application 计算机科学与应用, 2021, 11(11), 2591-2598
+Published Online November 2021 in Hans. http://www.hanspub.org/journal/csa
+https://doi.org/10.12677/csa.2021.1111262
+基于知识图谱的课程知识体系构建到学习者画
+像生成及应用技术研究
+邓莉琼1，任 媛1，王杰宇1，田辰晨2
+1空军通信士官学校，辽宁 大连
+2大连财经学院，辽宁 大连
+收稿日期：2021年10月1日；录用日期：2021年10月29日；发布日期：2021年11月5日
+摘 要
+信息化教学飞速发展，如何将人工智能技术应用于教育领域中，强化信息化教学手段是急需解决的问题。
+本文面向教育领域，首先提出了一种基于知识图谱的从课程知识体系建立、学习者画像生成到自适应学
+习推荐的完整技术框架，并以计算机网络等课程为例对知识图谱的构造技术进行了示例；其次，在自适
+应学习推荐中利用RippleNet算法实现了学习推荐，并通过实验验证了该算法具有较高的准确度；最后，
+总结归纳了教育知识图谱的主要应用方法，对教育知识图谱的构建及应用具有一定的指导意义。
+关键词
+知识图谱，教育，学习者画像，自适应学习
+From the Construction of Knowledge System
+to the Generation of Learner Portrait Based
+on Knowledge Graph and Research on Its
+Application Technology
+Liqiong Deng1, Yuan Ren1, Jieyu Wang1, Chenchen Tian2
+1Air Force Communication NCO Academy, Dalian Liaoning
+2Dalian Financial and Economic College, Dalian Liaoning
+Received: Oct. 1st, 2021; accepted: Oct. 29th, 2021; published: Nov. 5th, 2021
+Abstract
+With the rapid development of information teaching, how to apply artificial intelligence technolo-
+gy to the field of education and strengthen information teaching methods are urgent problems to
+文章引用: 邓莉琼, 任媛, 王杰宇, 田辰晨. 基于知识图谱的课程知识体系构建到学习者画像生成及应用技术研究[J].
+计算机科学与应用, 2021, 11(11): 2591-2598. DOI: 10.12677/csa.2021.1111262

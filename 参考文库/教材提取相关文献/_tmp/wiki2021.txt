@@ -1,0 +1,314 @@
+
+--- PAGE 1 ---
+Dang FR, Tang JT, Pang KY et al. Constructing an educational knowledge graph with concepts linked to Wikipedia.
+JOURNAL OF COMPUTER SCIENCE AND TECHNOLOGY 36(5): 1200–1211 Sept. 2021. DOI 10.1007/s11390-020-
+0328-2
+Constructing an Educational Knowledge Graph with
+Concepts Linked to Wikipedia
+Fu-Rong Dang1,+, Jin-Tao Tang1,+, Senior Member, CCF, Kun-Yuan Pang1
+Ting Wang1,∗, Senior Member, CCF, Sha-Sha Li1, and Xiao Li2
+1College of Computer Science and Technology, National University of Defense Technology, Hunan 410073, China
+2Information Center, National University of Defense Technology, Hunan 410073, China
+E-mail: 8mimixi8@163.com; {tangjintao, pangkunyuan, tingwang, shashali, xiaoli}@nudt.edu.cn
+Received January 11, 2020; accepted August 18, 2020.
+Abstract To use educational resources efficiently and dig out the nature of relations among MOOCs (massive open
+onlinecourses),aknowledgegraphwasbuiltforMOOCsonfourmajorplatforms: Coursera,EDX,XuetangX,andICourse.
+This paper demonstrates the whole process of educational knowledge graph construction for reference. And this knowledge
+graph, the largest knowledge graph of MOOC resources at present, stores and represents five classes, 11 kinds of relations
+and 52779 entities with their corresponding properties, amounting to more than 300000 triples. Notably, 24188 concepts
+are extracted from text attributes of MOOCs and linked them directly with corresponding Wikipedia entries or the closest
+entries calculated semantically, which provides the normalized representation of knowledge and a more precise description
+for MOOCs far more than enriching words with explanatory links. Besides, prerequisites discovered by direct extractions
+areviewedasanessentialsupplementtoaugmenttheconnectivityintheknowledgegraph. Thisknowledgegraphcouldbe
+considered as a collection of unified MOOC resources for learners and the abundant data for researchers on MOOC-related
+applications, such as prerequisites mining.
+Keywords conceptextraction,educationalresource,knowledgegraph,massiveopenonlinecourse(MOOC),prerequisite
+1 Introduction learners[1], because MOOCs which even have the same
+name may vary in languages, subjects, levels, teaching
+Recent years have witnessed the rapid develop- methods, and goals.
+○
+ment of MOOCs (massive open online courses) 1 , a Studies show that in the early stages of the MOOC
+totally new online educational model, which provides learningprocess, thedropoutratecanbeupto91%[2].
+high-qualityeducationalresourcesoftopuniversitiesto For people who fail to keep pace and have a tendency
+globallearnersinamoredistributedandmoreInternet- to drop out, the main reason is that the course content
+friendly format than the schooling. doesnotcomplywiththelearningneedsorthedifficulty
+MOOCs are characterized by openness and auton- of the course exceeds the learner’s ability[3]. In the
+omy,whichhasdistinguishingadvantagesintraditional past, prerequisites among courses were manually cre-
+educational tasks such as educational resources selec- ated by experts over the decades. While free accessible
+tion and learning path planning. Although it has seen MOOCs have increased steadily over the years, prereq-
+significantprogress,cross-platformonlineeducationre- uisiterelationsarerequiredforonlineeducationalappli-
+sourcesbringinformationoverloadandlearningtrekto cations to give effective guidance and cut the dropout
+RegularPaper
+RecommendedbyCCKS2019
+ThisworkwassupportedbytheNationalKeyResearchandDevelopmentProgramofChinaunderGrantNo.2018YFB1004502,
+andtheNationalNaturalScienceFoundationofChinaunderGrantNos.61532001,61702532and61303190.
++Contributedequallytothiswork
+∗CorrespondingAuthor
+○
+1 https://www.bestcolleges.com/research/#reports,Sept. 2021.
+©InstituteofComputingTechnology,ChineseAcademyofSciences2021
+--- PAGE 2 ---
+Fu-Rong Dang et al.: Educational Knowledge Graph Construction with Concepts Linked to Wikipedia 1201
+rate. It serves students of varying educational back- posed a system that could extract concepts from the
+grounds and is adaptable to any subjects. educationaldomainanddigouttheirrelationstobuild
+Knowledge graph describes the concepts, entities an educational knowledge graph[13].
+andtheirrelationsintheobjectiveworldinastructured In order to better understand the prerequisite rela-
+form, and expresses the mass knowledge of the Inter- tionship among MOOC resources, a considerable num-
+net into a form closer to the human cognitive way[4]. berofresearchersuseddifferentalgorithmstoinferpre-
+It has recently drawn increasing interest as an effective requisite dependencies of MOOCs. Alsaad et al.[14]
+approach to the generation of many intricate domains, proposed unsupervised methods to determine concept
+whichalsocanfacilitateonlineeducationalresourceor- co-occurrence in the lecture transcripts. Yang et al.
+ganizations across platforms much more than simple proposed the Concept-Graph-Learning (CGL) frame-
+information extraction techniques. work to learn the relationship between MOOCs by in-
+Ourresearchnotonlyfocusesontheconstructionof ferring concept prerequisite relations[15].
+the cross-platform knowledge graph about MOOC re- Itcanbeseenthatcoursedescriptionsoftenaretoo
+sourcesbutalsoproposesconceptextractionthatcould disparate structurally and semantically to compare for
+fuse the knowledge for better concept retrieving and online learners with limited knowledge. Existing re-
+improvelearners’experience. Tobespecific,extracting searches are concentrated on constructing knowledge
+conceptsfrommaterialsinMOOCswouldhelpstudents graphstoshowhowtoorganizeresourcesinanefficient
+bettergraspthemainpointsaswellassupportresearch way but not resource itself.
+towards deeper analyses such as automatic labeling[5]. We aim to offer users with an informative educa-
+The rest of this paper is organized as follows. Sec- tional knowledge graph with complete resource lists
+tion2describesrelatedstudiesofknowledgegraphcon- andprerequisitedependencies. Ourstudydistinguishes
+struction with a focus on the MOOC domain. Sec- in reorganizing educational resources and bringing im-
+tion 3 presents our certain method for the knowledge plicit knowledge out by extracting concepts to achieve
+graph construction, concept extraction, and prerequi- more satisfying MOOCs learning experience.
+site generation. Section 4 gives a detailed analysis for
+our knowledge graph and the comparison with a topic- 3 Construction of Knowledge Graph
+similar one. Section 5 concludes this paper and dis-
+cusses future work. Tobuildaknowledgegraph,thefirstthingistofig-
+ure out its architecture. There are two layers in the
+knowledge graph, the logical layer (always represented
+2 Related Work
+by the ontology) and the data layer (a large number
+Inrecentyears,knowledgegraphhasbecomeamain of instances)[16]. The logical layer scaffolds the know-
+formforsemanticrepresentationofnetworkedinforma- ledge graph which serves refined regulations or axioms
+tion to support intelligent systems. The research of to support the data layer in a normal way. In the data
+knowledge graph construction has extended from the layer, knowledge is organized as the triples (“entity-
+general-purpose open domain, such as DBpedia[6], to relation-entity” or “entity-property-value”) and consti-
+thedomain-specificknowledgegraph,suchasfinancial, tutes a large network.
+medical and educational[7–9]. In this paper, we use the top-down approach to
+In the field of education, knowledge graph has been construct the knowledge graph. Simply speaking, we
+extensively used for learning representation and effec- build the ontology first, and then link instances to cor-
+tive evaluation. For improving adaptive learning, [10] responding entities in the ontology[17]. The building
+proposesalearnerpreferencemodelbasedonSemantic process is generally divided into four modules: know-
+Webandmainlyconsidersthecognitionmethod, inter- ledge modeling, knowledge acquisition, knowledge fu-
+ests and learning ways; Chaplot et al. induced struc- sion, and knowledge storage[18].
+tures of multiple units in a course[11]; Sun et al. used Specifically, as shown in Fig.1, the first step of our
+theknowledgegraphtechnologytoexpressassociations approachisknowledgemodelingwhichbuildstheontol-
+among contents for visualization[12]. Chen et al. pro- ogy with Prot´eg´e ○ 2 . The second step is knowledge ac-
+○
+2 Prot´eg´e is an open-source tool that assists in the construction and modification of ontologies with an intuitive user interface.
+https://protege.stanford.edu/,June2020.
+○
+3 Neo4jwasselectedtostorethisknowledgegraphbecauseofhighreadandwriteperformance,user-friendlygraphquerylanguage
+--- PAGE 3 ---
+1202 J. Comput. Sci. & Technol., Sept. 2021, Vol.36, No.5
+Ontology
+Knowledge
+Knowledge Modeling
+Graph
+Knowledge
+Fusion
+Knowledge
+Instances Storage
+Knowledge Acquisition
+Fig.1. Constructionprocessoftheknowledgegraph.
+quisition which retrieves data from major MOOC plat- connect classes[19].
+forms. After data fusion, we accomplish the knowledge In our research, we define five interrelated classes
+○
+graph and store it into Neo4j graph database 3 . and their relations, including platforms, courses
+(MOOCs), universities, instructors and concepts.
+3.1 Knowledge Modeling
+Specifically, each platform cooperates with many uni-
+versitiestoprovidecourses,anduniversitiesemploylots
+Knowledge modeling is to establish a conceptual
+of instructors to teach various courses. Each course in-
+modelofknowledgegraphfororganizinganddescribing
+cludes lots of concepts to represent knowledge points.
+the associations among entities and their relations.
+Fig.2 shows a schematic of the ontology G we
+Here we construct an ontology for the knowledge l
+graphwhiletheontologyisthelogicallayerandthein- built. Classes N l are shown in circles with different
+stancesbelongtothedatalayer. AknowledgegraphG colors. Therefore, instances can be distinguished eas-
+iscomposedoftheontologyG l , thedatagraphG d and ily in color. Properties P l are the colored rectangles
+the corresponding relation R between them. It can be which have the same color as the corresponding class.
+represented as G = (G ,G ,R) and G = (N ,P ,E ). For example, “name”, “link”, and “language” are par-
+l d l l l l
+To be specific, N is the set of the class nodes, P rep- tial properties of courses. E is the black line between
+l l l
+resents properties and E is the set of relations that classes, such as universities “EMPLOY” instructors.
+l
+...
+Concept Name Link Language Platform
+INVOLVE PLAY_ON
+IS_PARTNER
+Course
+TEACH OFFER
+Instructor EMPLOY University
+Fig.2. Ontologyoftheknowledgegraph.
+Cypherandvisualizationofdata. https://neo4j.com/,June2020.
+--- PAGE 4 ---
+Fu-Rong Dang et al.: Educational Knowledge Graph Construction with Concepts Linked to Wikipedia 1203
+3.2 Knowledge Acquisition information from online websites could be viewed as
+a task of knowledge acquisition with semi-structured
+In this subsection, we describe the knowledge ac-
+data[20]. We compare the type of users, enrollment,
+quisition process which serves as a key part in our
+profit, reputation, the number of MOOCs, partners,
+framework. Due to the diversity and complexity of
+and the feedback of all platforms globally. As a result,
+real-world MOOCs, it is crucial to accurately and ef-
+ficientlyacquirethefactdatafromdifferentsourcesfor Coursera, EDX, XuetangX, and ICourse are selected
+building a knowledge graph. As we mainly deal with as the data source[21]. The former two are English-
+courseproperties,conceptsandprerequisiterelationsof basedMOOCplatformswheremostMOOCscomefrom
+MOOCs, we can categorize the knowledge acquisition American and British institutes. The latter two are
+process into three groups. Chinese-basedplatformsfocusingonMOOCsfromChi-
+nese institutes.
+3.2.1 Knowledge Acquisition from Web Information
+Fig.3showsanexampleofextractingacourseentity
+When students learn a MOOC, they can find the
+onEDXwhoseattributesandrelationswithinstructors
+course properties (e.g., title, abstract, and language)
+and the university are circled in red rectangles. We
+as well as relations with universities and instructors
+transform these web text into structured data to save
+directly from the web portal. Thus, in this category
+of knowledge acquisition, we aim at directly extract- them into the knowledge graph. Here we simulate the
+ing course information from MOOC platforms as well originalscreenshotandcirclepropertiesoutforahigher
+as their relations with other classes. Extracting course resolution of the figure.
+Name
+Introduction
+University
+Abstract
+Length
+Effort
+Goal Institution
+Subject
+Level
+Language
+Instructor
+Mode
+Price
+Fig.3. InformationextractionofanexampleMOOConEDX.
+--- PAGE 5 ---
+1204 J. Comput. Sci. & Technol., Sept. 2021, Vol.36, No.5
+3.2.2 Knowledge Acquisition from Concepts cessfully link them. In other cases, although we can-
+not find exact text counterpart of concept mentions in
+• Motivation to Extract Concepts. Compared with
+Wikipedia,itdoesnotmeantheseconceptmentionsare
+traditional higher educational courses that have lim-
+invalid. Thus, we need to find these probable relevant
+ited numbers of students, a MOOC may draw more
+concepts.
+than 100000 registrants with diverse backgrounds all
+To accurately evaluate the general meaning of con-
+over the world[22]. In most cases, key points presented
+ceptmentions,weuseawordembeddingbasedmethod
+in MOOCs are well grasped by certain students who
+which embeds basic units of words and constitute a
+may have the stronger understanding while they are
+higher hierarchy like the phrase and named entity[30],
+indigestible to other students[23]. Thus identifying key
+for the measurement between Wikipedia entries and
+knowledge points in MOOCs is very important.
+concept mentions. We give a brief description of this
+Usually, concepts or knowledge points hide in the
+algorithm (see Algorithm 1).
+text body of course information. It requires large
+HerearerelevantvariablesinAlgorithm1: acourse
+amountsofefforttoacquireandanalyzetheirrelevance
+corpus is composed of n MOOCs, denoted as M =
+as well as importance in a MOOC[24]. From a view of
+{m },i = 1,...,n, where m is a MOOC and an ob-
+i i
+text mining, concept extraction focuses on extracting
+ject to deal with. We assume that d is the directory
+i
+importantsemantickeyphraseofcoursecontent,which
+(containing titles of each chapter) of m . And several
+i
+is similar to keyword acquisition in the traditional text
+conceptmentionscouldbeextractedfromd . Thecon-
+i
+miningtask[25]. Toeasetheburdenofmanualkeyword
+ceptmentionsetisdenotedasC. ciseachmentionind
+i
+annotation, automatic keywords identification has re-
+and c∈C. Vector set V is trained with the Wikipedia
+t
+cently become a promising research direction, such as textbytheCBOWalgorithm[31]. Ourgoalistochoose
+concept map from textbooks[26], concepts extraction
+a proximate Wikipedia entry e for each concept men-
+fromvideotranscripts[27],searchingfornewconceptsin
+tion c. Concrete steps are shown in Algorithm 1.
+MOOCs[28], automated categorization and extraction
+We conduct a user study to rate Algorithm 1.
+of concepts from titles of scientific articles[29]. Most
+Based on the experiment, 90.7% of concept mentions
+of these researches are unsupervised with limited guid-
+exactly match the Wikipedia entries, which can be
+ance.
+linked straightforwardly. To calculate the accuracy of
+However,unsupervisedkeywordextractionmethods links between concept mentions and semantically simi-
+may not work well for MOOCs because of the lack of larWikipediaentries,werandomlysample100concept
+sufficient text labels. For example, in a MOOC named mentionsnotinWikipediaentries. TwoM.Sc. students
+“Data Mining Application”, keywords such as “SVM” andonePh.D.studentmajoringinsoftwareengineering
+may only occur once in a video. This can be very hard are invited to judge whether the links between concept
+for unsupervised methods. In this paper, we use exter- mentions and Wikipedia entries are proper. They are
+nal resources such as Wikipedia to enrich text repre- askedtolabel“proper”or“improper”andlinkslabeled
+sentationsothatcoreknowledgepointsinMOOCscan differently would be abandoned. After evaluation, we
+be accurately identified. find the accuracy of the algorithm for concept men-
+• How to Extract Concepts. Among the attributes tions which need to be calculated is 20%. The concept
+of MOOCs, the directory written by instructors could mentions not in Wikipedia entries account for 9.3%.
+give a comprehensive list of the domain. Besides, com- Eventually, the global accuracy rate of links between
+pared with MOOCs on Coursera and EDX, nearly all concept mentions and Wikipedia entries is 92.6%.
+MOOCs on ICourse and XuetangX are annotated with Fig.4 illustrates how Algorithm 1 works ○ 4 . The
+their own directories. Thus, we choose the latter ones words marked in red and blue from the directory of
+as data sources. “PrinciplesofManagement”inXuetangXbotharecon-
+In this paper, we extract concepts from directories cept mentions. Blue ones could be linked with certain
+of MOOCs and link them with Wikipedia. Generally, Wikipedia entries directly while red ones need to be
+we need to generate a group of concept mentions (i.e., calculated for the nearest Wikipedia entries. Eventu-
+candidateconcepts)first. Iftheseconceptmentionsare ally, each concept mention is transformed into the con-
+consistent with certain Wikipedia entries, we can suc- cept with word embeddings directly or after being cal-
+○
+4 WeconducttheconceptextractiononlyontheChinese-basedplatformsandMOOCs. Forillustrativepurposes,thedirectory
+andconceptsarewritteninEnglishandChineseinthefigure(Fig.4).
+--- PAGE 6 ---
+Fu-Rong Dang et al.: Educational Knowledge Graph Construction with Concepts Linked to Wikipedia 1205
+Algorithm 1. LinkConceptMentionsoftheMOOCwithCertainWikipediaEntries
+Input: adirectorydi,thevectortrainingsetVt,WikipediaentrysetE anditsvectorsetVe
+Output: WikipedialinkedentrieswithconceptmentionsetC
+1. Preprocessdi,includingsentencesegmentandstoppingwordremoving. ConceptmentionsetC isgeneratedandthe
+vector-basedrepresentationisVc.
+2. Setn=100,s=0.2,nisthenumberofneighborvectors,andsistheminimumneighboringdistance.
+3. forc∈C do
+if c∈E then
+chasatotallycorrespondinglinkedentryasitself.
+else
+1)Afterwordsegmentonc,wordsetP isgenerated. ThenremovesinglewordsandstoppingwordsinP.
+2)InitializetheneighborsetN =∅.
+3)forp∈P do
+a)forvt∈Vt do
+Calculatethecosinesimilarity
+sim(vp,vt)=cos(vp,vt)
+b)Rankvt indescendingorderofsim(vp,vt)andputtopnintoN,then
+N ={vt|sim(vp,vt)>s}and|N|=n
+4)K-meansalgorithmsplitsN into|P|groupsdenotedasN1,N2,...,N
+k
+. Choosethebiggestgroupandthefinal
+vector-basedpresentationofcistheaveragevectorofthegroup,then
+v=average(vt), wherevt∈Nmax.
+5)fore∈E do
+Calculatethecosinesimilarity
+sim(v)=cos(v,ve).
+6)Rankeindescendingorderofsim(v)andchoosethetop1asthelinkedWikipediaentryofc.
+... ...
+...
+Concept Mentions in the Directory Concepts and Their Vectors
+Fig.4. ExampleofconceptextractionandlinkswithWikipediaentries.
+culated. XuetangX) lost their meaningless directories. We ex-
+For 2197 and 1644 MOOCs separately on ICourse tract and link 24188 concept mentions from other di-
+and XuetangX, each directory is about hundreds of rectories with Wikipedia entries. For the knowledge
+words ordinarily. After phrasing and filtering, 616 graph,thereare24188instancesandmorethan200000
+MOOCs (48 MOOCs on ICourse and 568 MOOCs on relations between concepts and courses supplemented.

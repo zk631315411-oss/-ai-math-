@@ -1,0 +1,610 @@
+{
+  "2004_W3C_SWRL_Semantic_Web_Rule_Language.html": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2004_W3C_SWRL_Semantic_Web_Rule_Language.txt",
+    "hits": [
+      [
+        "conditional",
+        2
+      ],
+      [
+        "condition",
+        13
+      ],
+      [
+        "if",
+        149
+      ],
+      [
+        "then",
+        8
+      ],
+      [
+        "antecedent",
+        25
+      ],
+      [
+        "consequent",
+        29
+      ],
+      [
+        "rule",
+        369
+      ],
+      [
+        "relation",
+        13
+      ],
+      [
+        "n-ary",
+        1
+      ],
+      [
+        "SWRL",
+        399
+      ],
+      [
+        "body",
+        33
+      ],
+      [
+        "head",
+        35
+      ],
+      [
+        "event",
+        3
+      ],
+      [
+        "object",
+        55
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "conditional",
+        "snippet": "y the rule. rule ::= ' Implies( ' [ URIreference ] { annotation } antecedent consequent ' ) ' antecedent ::= ' Antecedent( ' { atom } ' ) ' consequent ::= ' Consequent( ' { atom } ' ) ' Informally, a rule may be read as meaning that if the antecedent holds (is \"true\"), then the consequent must also hold. An empty antecedent is treated as trivially holding (true), and an empty consequent is treated as trivially not holding (false). Rules with an empty antecedent can thus be used to provide unconditional facts; however such unconditional facts are better stated in OWL itself, i.e., without the use of the rule construct. Non-empty antecedents and consequents hold iff all of their constituent atoms hold, i.e., they are treated as conjunctions of their atoms. As mentioned above, rules with conjunctive consequents could easily transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomic consequent. atom ::= description ' ( ' i-object ' ) ' | dataRange ' ( ' d-object ' ) ' | individualvaluedPropertyID ' ( ' i-object i-object ' ) ' | datavaluedPropertyID ' ( ' i-object d-object ' ) ' | sameAs ' ( ' i-object i-object ' ) ' | differentFrom ' ( ' i-object i-object ' ) ' | builtIn ' ( ' builtinID { d-object } ' ) ' builtinID ::= URIreference Atoms"
+      },
+      {
+        "keyword": "condition",
+        "snippet": "with an OWL knowledge base. A high-level abstract syntax is provided that extends the OWL abstract syntax described in the OWL Semantics and Abstract Syntax document [ OWL S&AS ]. An extension of the OWL model-theoretic semantics is also given to provide a formal meaning for OWL ontologies including rules written in this abstract syntax. The proposed rules are of the form of an implication between an antecedent (body) and consequent (head). The intended meaning can be read as: whenever the conditions specified in the antecedent hold, then the conditions specified in the consequent must also hold. Both the antecedent (body) and consequent (head) consist of zero or more atoms. An empty antecedent is treated as trivially true (i.e. satisfied by every interpretation), so the consequent must also be satisfied by every interpretation; an empty consequent is treated as trivially false (i.e., not satisfied by any interpretation), so the antecedent must also not be satisfied by any interpretation. Multiple atoms are treated as a conjunction. Note that rules with conjunctive consequents could easily be transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomic consequent. Atoms in these rules can be of the form C(x), P(x,y), sameAs(x,y) or dif"
+      },
+      {
+        "keyword": "antecedent",
+        "snippet": "et of OWL axioms to include Horn-like rules. It thus enables Horn-like rules to be combined with an OWL knowledge base. A high-level abstract syntax is provided that extends the OWL abstract syntax described in the OWL Semantics and Abstract Syntax document [ OWL S&AS ]. An extension of the OWL model-theoretic semantics is also given to provide a formal meaning for OWL ontologies including rules written in this abstract syntax. The proposed rules are of the form of an implication between an antecedent (body) and consequent (head). The intended meaning can be read as: whenever the conditions specified in the antecedent hold, then the conditions specified in the consequent must also hold. Both the antecedent (body) and consequent (head) consist of zero or more atoms. An empty antecedent is treated as trivially true (i.e. satisfied by every interpretation), so the consequent must also be satisfied by every interpretation; an empty consequent is treated as trivially false (i.e., not satisfied by any interpretation), so the antecedent must also not be satisfied by any interpretation. Multiple atoms are treated as a conjunction. Note that rules with conjunctive consequents could easily be transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomi"
+      },
+      {
+        "keyword": "consequent",
+        "snippet": "clude Horn-like rules. It thus enables Horn-like rules to be combined with an OWL knowledge base. A high-level abstract syntax is provided that extends the OWL abstract syntax described in the OWL Semantics and Abstract Syntax document [ OWL S&AS ]. An extension of the OWL model-theoretic semantics is also given to provide a formal meaning for OWL ontologies including rules written in this abstract syntax. The proposed rules are of the form of an implication between an antecedent (body) and consequent (head). The intended meaning can be read as: whenever the conditions specified in the antecedent hold, then the conditions specified in the consequent must also hold. Both the antecedent (body) and consequent (head) consist of zero or more atoms. An empty antecedent is treated as trivially true (i.e. satisfied by every interpretation), so the consequent must also be satisfied by every interpretation; an empty consequent is treated as trivially false (i.e., not satisfied by any interpretation), so the antecedent must also not be satisfied by any interpretation. Multiple atoms are treated as a conjunction. Note that rules with conjunctive consequents could easily be transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomic consequent. Atom"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "SWRL: A Semantic Web Rule Language Combining OWL and RuleML SWRL: A Semantic Web Rule Language Combining OWL and RuleML W3C Member Submission 21 May 2004 This version: http://www.w3.org/submissions/2004/SUBM-SWRL-20040521/ Latest version: http://www.w3.org/submissions/SWRL/ Authors: Ian Horrocks , Network Inference Peter F. Patel-Schneider , Bell Labs Research, Lucent Technologies Harold Boley , National Research Council of Canada Said Tabet , Macgregor, Inc. Benjamin Grosof , Sloan School of Management, MIT Mike Dean , BBN Technologies Copyright © 2004 National Research Council of Canada, Network Inference, and Stanford University. All Rights Reserved. This document is available under the W3C Document License . See the W3C Intellectual Rights Notices and Disclaimers for additional"
+      },
+      {
+        "keyword": "body",
+        "snippet": "ioms to include Horn-like rules. It thus enables Horn-like rules to be combined with an OWL knowledge base. A high-level abstract syntax is provided that extends the OWL abstract syntax described in the OWL Semantics and Abstract Syntax document [ OWL S&AS ]. An extension of the OWL model-theoretic semantics is also given to provide a formal meaning for OWL ontologies including rules written in this abstract syntax. The proposed rules are of the form of an implication between an antecedent (body) and consequent (head). The intended meaning can be read as: whenever the conditions specified in the antecedent hold, then the conditions specified in the consequent must also hold. Both the antecedent (body) and consequent (head) consist of zero or more atoms. An empty antecedent is treated as trivially true (i.e. satisfied by every interpretation), so the consequent must also be satisfied by every interpretation; an empty consequent is treated as trivially false (i.e., not satisfied by any interpretation), so the antecedent must also not be satisfied by any interpretation. Multiple atoms are treated as a conjunction. Note that rules with conjunctive consequents could easily be transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomic cons"
+      },
+      {
+        "keyword": "head",
+        "snippet": "ike rules. It thus enables Horn-like rules to be combined with an OWL knowledge base. A high-level abstract syntax is provided that extends the OWL abstract syntax described in the OWL Semantics and Abstract Syntax document [ OWL S&AS ]. An extension of the OWL model-theoretic semantics is also given to provide a formal meaning for OWL ontologies including rules written in this abstract syntax. The proposed rules are of the form of an implication between an antecedent (body) and consequent (head). The intended meaning can be read as: whenever the conditions specified in the antecedent hold, then the conditions specified in the consequent must also hold. Both the antecedent (body) and consequent (head) consist of zero or more atoms. An empty antecedent is treated as trivially true (i.e. satisfied by every interpretation), so the consequent must also be satisfied by every interpretation; an empty consequent is treated as trivially false (i.e., not satisfied by any interpretation), so the antecedent must also not be satisfied by any interpretation. Multiple atoms are treated as a conjunction. Note that rules with conjunctive consequents could easily be transformed (via the Lloyd-Topor transformations [ Lloyd87 ]) into multiple rules each with an atomic consequent. Atoms in t"
+      },
+      {
+        "keyword": "n-ary",
+        "snippet": "itrary OWL classes (e.g., descriptions) can be used as predicates in rules; rules and ontology axioms can be freely mixed; the existing XSLT stylesheet ( owlxml2rdf.xsl ) can easily be extended to provide a mapping to RDF graphs that extends the OWL RDF/XML exchange syntax (see Section 6 ); interoperability between OWL and RuleML is simplified, existing RuleML tools can be adapted to SWRL, and an evolutionary extension path to additional rule expressive features cf. RuleML (e.g., n-ary, function-term, etc.) is prepared. An XML Schema for the SWRL XML Concrete Syntax is swrlx.xsd . swrlx.xsd currently references a local copy of the XML Schema for the OWL XML Presentation Syntax modified to allow external references to several of its elements and attributes and to define owlx:datarange , which appears to be a missing piece of the OWL XML Presentation Syntax. The SWRL XML Concrete Syntax uses the namespaces http://www.w3.org/2003/11/swrlx , http://www.w3.org/2003/11/ruleml , http://www.w3.org/2003/05/owl-xml (owlx), and http://www.w3.org/2001/XMLSchema (xsd). The Ontology root element of the OWL XML Presentation Syntax is extended to include \" imp \" (implication rule) and \" var \" (variable declaration) axioms as found under the rulebase root of RuleML."
+      }
+    ],
+    "chars": 67697
+  },
+  "2006_W3C_Defining_N_ary_Relations_on_the_Semantic_Web.html": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2006_W3C_Defining_N_ary_Relations_on_the_Semantic_Web.txt",
+    "hits": [
+      [
+        "if",
+        51
+      ],
+      [
+        "then",
+        2
+      ],
+      [
+        "rule",
+        1
+      ],
+      [
+        "decision",
+        2
+      ],
+      [
+        "relation",
+        142
+      ],
+      [
+        "n-ary",
+        34
+      ],
+      [
+        "constraint",
+        3
+      ],
+      [
+        "event",
+        1
+      ],
+      [
+        "activity",
+        1
+      ],
+      [
+        "object",
+        24
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "rule",
+        "snippet": "6 This version: http://www.w3.org/TR/2006/NOTE-swbp-n-aryRelations-20060412/ Latest version: http://www.w3.org/TR/swbp-n-aryRelations Previous version: http://www.w3.org/TR/2004/WD-swbp-n-aryRelations-20040721/ Editors: Natasha Noy , Stanford University Alan Rector , University of Manchester Contributors: Pat Hayes , IHMC Chris Welty , IBM Research Also see Acknowledgements . Copyright © 2006 W3C ® ( MIT , ERCIM , Keio ), All Rights Reserved. W3C liability , trademark and document use rules apply. Abstract In Semantic Web languages, such as RDF and OWL, a property is a binary relation: it is used to link two individuals or an individual and a value. However, in some cases, the natural and convenient way to represent certain concepts is to use relations to link an individual to more than just one individual or value. These relations are called n-ary relations . For example, we may want to represent properties of a relation, such as our certainty about it, severity or strength of a relation, relevance of a relation, and so on. Another example is representing relations among multiple individuals, such as a buyer, a seller, and an object that was bought when describing a purchase of a book. This document presents ontology patterns for representing n-ar"
+      },
+      {
+        "keyword": "decision",
+        "snippet": "two individuals? (\"n-ary relations\") Issue 3: If instances of properties can link only two individuals, how do we represent relations in which one of the participants is an ordered list of individuals rather than a single individual? The solutions to the first two problems are closely linked; the third problem is fundamentally different, although it can be adapted to meet issue one in special cases. Note that we don't use RDF reification in these patterns; the reasons for this decision are discussed in the final section . Data descriptions used in this document The data format used in this document is Turtle [ Turtle ], used to show each triple explicitly. Turtle allows URIs to be abbreviated with prefixes: @prefix dc: <http://purl.org/dc/elements/1.1/> . @prefix : <http://example.org/book/> . :book1 dc:title \"Defining N-ary Relations on the Semantic Web\" . Use case examples Several common use cases fall under the category of n-ary relations. Here are some examples: Christine has breast tumor with high probability . There is a binary relation between the person Christine and diagnosis Breast_Tumor_Christine and there is a qualitative probability value describing this relation ( high ). Steve has temperature, which is high, but falli"
+      },
+      {
+        "keyword": "n-ary",
+        "snippet": "Defining N-ary Relations on the Semantic Web Defining N-ary Relations on the Semantic Web W3C Working Group Note 12 April 2006 This version: http://www.w3.org/TR/2006/NOTE-swbp-n-aryRelations-20060412/ Latest version: http://www.w3.org/TR/swbp-n-aryRelations Previous version: http://www.w3.org/TR/2004/WD-swbp-n-aryRelations-20040721/ Editors: Natasha Noy , Stanford University Alan Rector , University of Manchester Contributors: Pat Hayes , IHMC Chris Welty , IBM Research Also see Acknowledgements . Copyright © 2006 W3C ® ( MIT , ERCIM , Keio ), All Rights Reserved. W3C liability , trademark and document use rules apply. Abstract In Semantic Web languages, such as RDF and OWL, a property is a binary relation: it is used to link two individuals or an individual and a value. How"
+      },
+      {
+        "keyword": "constraint",
+        "snippet": "lity . 4 The class definitions for the individuals in this pattern look as follows: The additional labels on the links indicate the OWL restrictions on the properties. We define both diagnosis_value and diagnosis_probability as functional properties, thus requiring that each instance of Diagnosis_Relation has exactly one value for Disease and one value for Probability . In RDFS, which does not have the OWL restrictions or functional properties, the links represent rdfs:range constraints on the properties. For example, the class Diagnosis_Relation is the range of the property has_diagnosis . Here is a definition of the class Diagnosis_Relation in OWL, assuming that both properties— diagnosis_value and diagnosis_probability —are defined as functional (we provide full code for the example in OWL and RDFS below): :Diagnosis_Relation a owl:Class ; rdfs:subClassOf [ a owl:Restriction ; owl:someValuesFrom :Disease ; owl:onProperty :diagnosis_value ] ; rdfs:subClassOf [ a owl:Restriction ; owl:allValuesFrom :Probability_values ; owl:onProperty :diagnosis_probability ] . In the definition of the Person class (of which the individual Christine is an instance), we specify a property has_diagnosis with the range restriction going to the Diagnosis_Rel"
+      }
+    ],
+    "chars": 31612
+  },
+  "2013_W3C_RIF_Overview.html": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2013_W3C_RIF_Overview.txt",
+    "hits": [
+      [
+        "condition",
+        1
+      ],
+      [
+        "if",
+        206
+      ],
+      [
+        "then",
+        2
+      ],
+      [
+        "rule",
+        49
+      ],
+      [
+        "RIF",
+        175
+      ],
+      [
+        "body",
+        1
+      ],
+      [
+        "event",
+        2
+      ],
+      [
+        "activity",
+        1
+      ],
+      [
+        "object",
+        1
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "condition",
+        "snippet": "two kinds of dialects: logic-based dialects and dialects for rules with actions . Generally, logic-based dialects include languages that employ some kind of logic, such as first-order logic (often restricted to Horn logic) or non-first-order logics underlying the various logic programming languages (e.g., logic programming under the well-founded or stable semantics). The rules-with-actions dialects include production rule systems, such as Jess , Drools and JRules , as well as reactive (or event-condition-action) rules, such as Reaction RuleML and XChange . Due to the limited resources of the RIF Working Group, it defined only two logic dialects, the Basic Logic Dialect (RIF-BLD) and a subset, the RIF Core Dialect , shared with RIF-PRD; the Production Rule Dialect (RIF-PRD) is the only rules-with-actions dialect defined by the group. Other dialects are expected to be defined by the various user communities. Present and future RIF dialects are expected to share datatypes, built-in functions, and built-in predicates as defined by RIF Datatypes and Built-Ins (RIF-DTB). In particular, the current dialects RIF-BLD, RIF-Core, and RIF-PRD all share the foundations of RIF-DTB 1.0. 3 RIF Framework for Logic Dialects The RIF Working Group spent almost four years on developing the above t"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "evious version: http://www.w3.org/TR/2012/NOTE-rif-overview-20121211/ Editors: Michael Kifer, State University of New York at Stony Brook Harold Boley, National Research Council Canada A color-coded version of this document showing changes made since the previous version is also available. This document is also available in these non-normative formats: PDF version . Copyright © 2013 W3C ® ( MIT , ERCIM , Keio , Beihang ), All Rights Reserved. W3C liability , trademark and document use rules apply. Abstract This document is an overview of the Rule Interchange Format (RIF). It provides a high-level explanation of RIF concepts and architecture as well as a general survey of RIF documents. Status of this Document May Be Superseded This section describes the status of this document at the time of its publication. Other documents may supersede this document. A list of current W3C publications and the latest revision of this technical report can be found in the W3C technical reports index at http://www.w3.org/TR/. Set of Documents This document is being published as one of a set of 13 documents: RIF Overview (Second Edition) (this document) RIF Use Cases and Requirements (Second Edition) RIF Core Dialect (Second Edition) RIF Ba"
+      },
+      {
+        "keyword": "body",
+        "snippet": "IF Basic Logic Dialect (Second Edition) RIF Production Rule Dialect (Second Edition) RIF Framework for Logic Dialects (Second Edition) RIF Datatypes and Built-Ins 1.0 (Second Edition) RIF RDF and OWL Compatibility (Second Edition) OWL 2 RL in RIF (Second Edition) RIF Combination with XML data (Second Edition) RIF In RDF (Second Edition) RIF Test Cases (Second Edition) RIF Primer (Second Edition) Document Unchanged There have been no changes to the body of this document since the previous version . For details on earlier changes, see the change log . Please Send Comments Please send any comments to public-rif-comments@w3.org ( public archive ). Although work on this document by the Rule Interchange Format (RIF) Working Group is complete, comments may be addressed in the errata or in future revisions. Open discussion among developers is welcome at public-rif-dev@w3.org ( public archive ). No Endorsement Publication as a Working Group Note does not imply endorsement by the W3C Membership. This is a draft document and may be updated, replaced or obsoleted by other documents at any time. It is inappropriate to cite this document as other than work in progress. Patents This document was produced by a group operating u"
+      }
+    ],
+    "chars": 19904
+  },
+  "2017_W3C_SHACL_Advanced_Features_Rules.html": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2017_W3C_SHACL_Advanced_Features_Rules.txt",
+    "hits": [
+      [
+        "condition",
+        17
+      ],
+      [
+        "if",
+        57
+      ],
+      [
+        "then",
+        18
+      ],
+      [
+        "rule",
+        163
+      ],
+      [
+        "RIF",
+        1
+      ],
+      [
+        "SHACL",
+        127
+      ],
+      [
+        "constraint",
+        30
+      ],
+      [
+        "object",
+        13
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "condition",
+        "snippet": "5. SHACL Functions 5.1 An Example SHACL Function 5.2 Function Parameters 5.3 sh:returnType 5.4 SPARQL-based Functions 6. Node Expressions 6.1 Focus Node Expressions 6.2 Constant Term Expressions 6.3 Filter Shape Expressions 6.4 Function Expressions 6.5 Path Expressions 6.6 Intersection Expressions 6.7 Union Expressions 7. Expression Constraints 8. SHACL Rules 8.1 Examples of SHACL Rules 8.2 General Syntax of SHACL Rules 8.2.1 sh:condition 8.2.2 sh:order 8.2.3 sh:deactivated 8.3 The sh:Rules Entailment Regime 8.4 General Execution Instructions for SHACL Rules 8.5 Triple Rules 8.6 SPARQL Rules A. Summary of Syntax Rules from this Document B. Security and Privacy Considerations C. Acknowledgements D. References D.1 Normative references D.2 Informative references Document Conventions Some examples in this document use Turtle [ turtle ]. The reader is expected to be familiar with SHACL [ shacl ] and SPARQL [ sparql11-query ]. Within this document, the following namespace prefix bindings are used: Prefix Namespace rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns# rdfs: http://www.w3.org/2000/01/rdf-schema# sh: http://www.w3.org/ns/shacl# xsd: http://www.w3.org/20"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "Features SHACL Advanced Features W3C Working Group Note 08 June 2017 This version: https://www.w3.org/TR/2017/NOTE-shacl-af-20170608/ Latest published version: https://www.w3.org/TR/shacl-af/ Latest editor's draft: https://w3c.github.io/data-shapes/shacl-af/ Editors: Holger Knublauch , TopQuadrant, Inc. Dean Allemang , Working Ontologist LLC. Simon Steyskal , WU Vienna/Siemens AG Copyright © 2017 W3C ® ( MIT , ERCIM , Keio , Beihang ). W3C liability , trademark and document use rules apply. Abstract This document describes advanced features of the Shapes Constraint Language (SHACL) [ shacl ] including features to define custom targets, annotation properties, user-defined functions, node expressions and rules. While many of these features rely on SPARQL, they also define extension points that can be used by other implementation languages. Status of This Document This section describes the status of this document at the time of its publication. Other documents may supersede this document. A list of current W3C publications and the latest revision of this technical report can be found in the W3C technical reports index at https://www.w3.org/TR/. Future revisions of this document may be produced by a SHACL W3C Community Group. This documen"
+      },
+      {
+        "keyword": "constraint",
+        "snippet": "ersion: https://www.w3.org/TR/2017/NOTE-shacl-af-20170608/ Latest published version: https://www.w3.org/TR/shacl-af/ Latest editor's draft: https://w3c.github.io/data-shapes/shacl-af/ Editors: Holger Knublauch , TopQuadrant, Inc. Dean Allemang , Working Ontologist LLC. Simon Steyskal , WU Vienna/Siemens AG Copyright © 2017 W3C ® ( MIT , ERCIM , Keio , Beihang ). W3C liability , trademark and document use rules apply. Abstract This document describes advanced features of the Shapes Constraint Language (SHACL) [ shacl ] including features to define custom targets, annotation properties, user-defined functions, node expressions and rules. While many of these features rely on SPARQL, they also define extension points that can be used by other implementation languages. Status of This Document This section describes the status of this document at the time of its publication. Other documents may supersede this document. A list of current W3C publications and the latest revision of this technical report can be found in the W3C technical reports index at https://www.w3.org/TR/. Future revisions of this document may be produced by a SHACL W3C Community Group. This document was published by the RDF Data Shapes Working Group as a First Public Working Group Note. Comme"
+      }
+    ],
+    "chars": 49531
+  },
+  "2021_Biomedical_Knowledge_Graphs_Construction_From_Conditional_Statements.pdf": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2021_Biomedical_Knowledge_Graphs_Construction_From_Conditional_Statements.txt",
+    "hits": [
+      [
+        "conditional",
+        10
+      ],
+      [
+        "condition",
+        161
+      ],
+      [
+        "if",
+        44
+      ],
+      [
+        "then",
+        10
+      ],
+      [
+        "rule",
+        3
+      ],
+      [
+        "relation",
+        68
+      ],
+      [
+        "head",
+        10
+      ],
+      [
+        "constraint",
+        1
+      ],
+      [
+        "event",
+        1
+      ],
+      [
+        "activity",
+        16
+      ],
+      [
+        "actor",
+        2
+      ],
+      [
+        "object",
+        37
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "conditional",
+        "snippet": "JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 1 Biomedical Knowledge Graphs Construction from Conditional Statements Tianwen Jiang, Qingkai Zeng, Tong Zhao, Bing Qin, Ting Liu, Nitesh V. Chawla, Meng Jiang Abstract—Conditions play an essential role in biomedical statements. However, existing biomedical knowledge graphs (BioKGs) only focus on factual knowledge, organized as a ﬂat relational network of biomedical concepts. These BioKGs ignore the conditions of the facts being valid, which loses essential contexts for knowledge exploration and inference. We consider both facts and their conditions in biomedical statements and proposed a three-layered information-lossless representation of BioKG. The ﬁrst layer has biomedical concept nodes, attribute nodes. The second layer represents both biomedical fact and condition tuples by nodes of the relation phrases, connecting to the subject and object"
+      },
+      {
+        "keyword": "condition",
+        "snippet": "JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 1 Biomedical Knowledge Graphs Construction from Conditional Statements Tianwen Jiang, Qingkai Zeng, Tong Zhao, Bing Qin, Ting Liu, Nitesh V. Chawla, Meng Jiang Abstract—Conditions play an essential role in biomedical statements. However, existing biomedical knowledge graphs (BioKGs) only focus on factual knowledge, organized as a ﬂat relational network of biomedical concepts. These BioKGs ignore the conditions of the facts being valid, which loses essential contexts for knowledge exploration and inference. We consider both facts and their conditions in biomedical statements and proposed a three-layered information-lossless representation of BioKG. The ﬁrst layer has biomedical concept nodes, attribute nodes. The second layer represents both biomedical fact and condition tuples by nodes of the relation phrases, connecting to the subject and objec"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "as conditions of the facts being observed and valid. Scientiﬁc Information Extraction. Information extraction in scientiﬁc literature, e.g., computer science, biology and chemistry, has been receiving much attention in recent years. ScienceIE in computer science focus on concept recogni- tion and factual relation extraction [28][29][18]. ScienceIE in biological literature aims at identifying the relationships between biological concepts (i.e., proteins, diseases, drugs and genes) [30][31][32]. Rule-based approaches were used in early studies [33][30]. Recently, a wide line of neural network models have been proposed and outperformed traditional methods [34][31][32][35]. Wang et al. [34] inves- tigated different kinds of word embeddings on different NLP tasks in the biological domain. Liu et al. [31] employed attention-based neural networks to extract chemical-protein relations. Xu et al. [32] used the BiLSTM model to recognize the drug interaction. In our work, we extract biological relational facts as well as their conditions. The condition tuples are essential to interpreting the factual claims. OpenIE Systems. OpenIE systems are proposed to extend information extraction to open domains without requiring any relation-speciﬁc schema in advance [19][11][36][37]. Fact tuple, i.e. (su"
+      },
+      {
+        "keyword": "head",
+        "snippet": "tech- niques. We evaluated state-of-the-art methods with our data set on upstream tasks such as Language Model (LM) [12], Part-of-Speech (POS) tagging [13], Concept detection, At- tribute discovery, and Phrase mining (CAP) [14], [15], [3], [16], and found that most of them are achieving very high accuracy (e.g., 0.96 for POS) requiring no more training on local corpus. Multi-input module harnesses these multiple NLP techniques to process the text for input sequences and feeds them into a multi-head encoder-decoder model with multi-input gates. Such multi-head encoder-decoder model and multi-input gates can utilize complementary signals from the input sequences for learning complex dependen- cies between the 21 sequence tags. Design 2: Multi-Output Module It has two layers: one is a relation name tagging layer that predicts the tags of relational phrases and determines the number of output JOURNAL OF LATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 3 Encoder DecoderLSTMd Feed ForwardFeed Forward SoftmaxSoftmax{𝒓𝟏𝒇,𝒓𝟐𝒇,…𝒓𝒏𝒇}Feed ForwardFeed Forward... Feed ForwardFeed Forward...SoftmaxSoftmax SoftmaxSoftmax Languagemodel(LM)Part-of-Speechtags(POS)Concept,Attribute,Phrase(CAP) 1. Multi-input: + + Conditional Statements extracellularacidicpH alkalinepHincreasesinJurkatTcells JJJJNN NNNNVB"
+      },
+      {
+        "keyword": "constraint",
+        "snippet": "ent t ∈ s, where N is the length of the sequence and yi t ∈ Y belongs to the tag schema. Here we provide a theorem (as well as an example) on the equivalence of the problem transformation. Theorem. Given an input token sequence w, extracting a tuple t = ( {c1 : a1},p, {c3 : a3}) is equivalent to tagging the tokens properly as an output sequence yt, when (a) the tokens of each unit in t can be located in x as a consecutive sequence and (b) the tuple’s units does not share any token. Proof: Given constraint (a), each unit in t, u ∈ {c1,a 1,p,c 3,a 3} can be denoted as x[ju :ku], where 1 ≤ ju ≤ku ≤N ifu is not “null”. When (b) is true, we have {ju1,j u1 + 1, · · ·,k u1 } ∩ {ju2,j u2 + 1, · · ·,k u2 } = ∅, ∀u1,u 2 ∈ {c1,a 1,p,c 3,a 3} ∧u1 ̸=u2. (3) The strategy to generate an output tag sequence that corresponds to the tuple (if the tuple is a fact tuple) is as follows: • yjc1 t = “B-f1c”, yja1 t = “B-f1a”, yjp t = “B-f2p”, yjc3 t = “B- f3c”,yja3 t = “B-f3a”; • yi t = “I-f1c” (i ∈ [jc1 + 1,k c1]),yi t = “I-f1a” (i ∈ [ja1 + 1,k a1]),yi t = “I-f2p” (i ∈ [jp + 1,k p]),yi t = “I-f3c” (i ∈ [jc3 + 1,k c3]),yi t = “I-f3a” (i ∈ [ja3 + 1,k a3]); and all other tags will be “O”; the strategy for a condition tuple is the same except the tag difference (e.g., “B-f1c” → “B-c1c”). An example can be found in"
+      }
+    ],
+    "chars": 76226
+  },
+  "2024_Generative_Models_for_Automatic_Medical_Decision_Rule_Extraction_from_Text.pdf": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2024_Generative_Models_for_Automatic_Medical_Decision_Rule_Extraction_from_Text.txt",
+    "hits": [
+      [
+        "conditional",
+        1
+      ],
+      [
+        "condition",
+        10
+      ],
+      [
+        "if",
+        81
+      ],
+      [
+        "then",
+        14
+      ],
+      [
+        "rule",
+        18
+      ],
+      [
+        "conclusion",
+        2
+      ],
+      [
+        "decision",
+        77
+      ],
+      [
+        "triplet",
+        1
+      ],
+      [
+        "relation",
+        120
+      ],
+      [
+        "RIF",
+        4
+      ],
+      [
+        "head",
+        10
+      ],
+      [
+        "event",
+        9
+      ],
+      [
+        "actor",
+        6
+      ],
+      [
+        "object",
+        6
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "conditional",
+        "snippet": "mats (Xu et al., 2023). 4.3 Medical Decision Tree Extraction Existing medical decision tree extraction methods (Wu, 2022; Jiang et al., 2022) rely on discrimi- native models. Wu (2022) proposes to combine a BERT-style language model (Cui et al., 2021) with a Biaffine model (Dozat and Manning, 2016) to extract the relation triples, classify the logical connection among triples, and compose the tree. SOTA method, PromptRE (Jiang et al., 2022), for- mulates medical tree extraction as a multi-round conditional relation extraction task, where each par- ent node is a condition for extracting relation triples of its left/right child from text. Concurrent with our work, Text2MDT (Zhu et al., 2024) comes up with an expanded version of the Text2DT dataset (unavailable yet) and reports some new results. 5 Conclusion In this study, we present several generative mod- els to extract medical decision trees, which are valuable for CDSS but costly to acquire manually. The proposed models inherit two mainstream text generation paradigms, i.e. sequence-to-sequence generation and autoregressive generation, which bring advantage in modeling both source text and the intrinsic logical connection among tree compo- nents. Experiments show that our method wins the SOTA discriminative method by a large margin, es- 70"
+      },
+      {
+        "keyword": "condition",
+        "snippet": "21S051047@stu.hit.edu.cn tangbuzhou@gmail.com Abstract Medical decision rules play a key role in many clinical decision support systems (CDSS). However, these rules are conventionally con- structed by medical experts, which is expensive and hard to scale up. In this study, we explore the automatic extraction of medical decision rules from text, leading to a solution to con- struct large-scale medical decision rules. We adopt a formulation of medical decision rules as binary trees consisting of condition/decision nodes. Such trees are referred to as medical de- cision trees and we introduce several generative models to extract them from text. The proposed models inherit the merit of two categories of successful natural language generation frame- works, i.e., sequence-to-sequence generation and autoregressive generation. To unleash the potential of pretrained language models, we design three styles of linearization (natural lan- guage, augmented natural language and JSON code), acting as the target sequence for our models. Our final system achieves 67% tree accuracy on a comprehensive Chinese bench- mark, outperforming state-of-the-art baseline by 12%. The result demonstrates the effective- ness of generative models on explicitly model- ing structural decision-making roadmaps, and shows gr"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 7034–7048 November 12-16, 2024 ©2024 Association for Computational Linguistics Generative Models for Automatic Medical Decision Rule Extraction from Text Yuxin He1,3 and Buzhou Tang *1,2 and Xiaoling Wang 4 1Department of Computer Science, Harbin Institute of Technology (Shenzhen) 2Peng Cheng Laboratory 3The Hong University of Science and Technology (Guangzhou) 4East China Normal University 21S051047@stu.hit.edu.cn tangbuzhou@gmail.com Abstract Medical decision rules play a key role in many clinical decision support systems (CDSS). However, these rules are conventionally con- structed by medical experts, which is expensive and hard to scale up. In this study, we explore the automatic extraction of medical decision rules from text, leading to a solution to con- struct large-scale medical decision rules. We adopt a formulation of medical decision rules as binary trees consisting of condition/decision nodes. Such trees ar"
+      },
+      {
+        "keyword": "decision",
+        "snippet": "Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 7034–7048 November 12-16, 2024 ©2024 Association for Computational Linguistics Generative Models for Automatic Medical Decision Rule Extraction from Text Yuxin He1,3 and Buzhou Tang *1,2 and Xiaoling Wang 4 1Department of Computer Science, Harbin Institute of Technology (Shenzhen) 2Peng Cheng Laboratory 3The Hong University of Science and Technology (Guangzhou) 4East China Normal University 21S051047@stu.hit.edu.cn tangbuzhou@gmail.com Abstract Medical decision rules play a key role in many clinical decision support systems (CDSS). However, these rules are conventionally con- structed by medical experts, which is expensive and hard to scale up. In this study, we explore the automatic extraction of medical decision rules from text, leading to a solution to con- struct large-scale medical decision rules. We adopt a formulation of medical decision rules as binary trees consisting of condition/decision nodes. Such tre"
+      },
+      {
+        "keyword": "triplet",
+        "snippet": "t models and Its Influence The performance gains after ensemble vary with different paradigms of models, as observed in Ta- ble 1. We suspect this is due to the difference in the “diversity\" of trees generated by different models. To verify that, we measures the similarity between medical decision trees using edit distance. The edit distance for medical decision trees is the minimum number of tree edit operations (i.e., inserting or deleting a node, changing a node role, inserting or deleting a triplet and modifying a logical operator) required to transform one tree into another. For a group of trees, the average edit distance between each pair of trees is denoted as the “diversity\". Fig- ure 7 shows the diversity of trees generated by various models. It is observed that the diversity of trees by sequence-to-sequence models is much stronger than that of autoregressive models, and that the diversity is the strongest when integrating 7047 Figure 6: Comparison of different generative models on extracting trees of different depths. Results here are recorded for 5-model ensembles and it is inapplicable to include error bars. Trees of depth=5 only exist in the training data but not the evaluation data, so there is not result for depth=5. Figure 7: Diversity of trees generated by different mod"
+      },
+      {
+        "keyword": "head",
+        "snippet": "ingHx acts as key and value, relation query vectors ˜Hr corresponding to all extracted relation triples act as query; 3) Harmonized relation context (HRC), the fusion of RQC and RTC through gating mechanism. To inject the relational context into the model, we concatenate text encoding Hx with the rela- tional context in the sequence dimension and to- gether they serve as the decoding context for the pretrained language decoder: hd t−1 = Decoder(ˆy<t|[Hx;C]) (1) C∈{RQC, RTC, HRC} (2) P (ˆyt) = LMHead(hd t−1)∈R|V| (3) ˆyt = DecodeSearch(P (ˆyt), ˆy<t, ˆR) (4) where ‘;’ means concatenation,ˆy<t is the generated tokens by time stept, hd t−1 is the undated hidden state of current time step, LMHead is a classifier that first convert current hidden state into vector of size|V|that apply SoftMax to obtain predicted probability distributionP (ˆyt) over the vocabulary, DecodeSearch is the decode search strategy (we use constrained search in this paper, see Section 2.2.3). ˆyt is the token generated for current time step and will be concatenated withˆy<t to restart the process, until the terminal token</s> is generated. 2.2.3 Constrained Decoding In order to utilize apriori decision tree linearization grammar (as shown in Algorithm 1) to constrain the candidate space of generated target sequenc"
+      }
+    ],
+    "chars": 52410
+  },
+  "2024_Human_Evaluation_of_Procedural_KG_Extraction_from_Text_with_LLMs.pdf": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2024_Human_Evaluation_of_Procedural_KG_Extraction_from_Text_with_LLMs.txt",
+    "hits": [
+      [
+        "if",
+        96
+      ],
+      [
+        "then",
+        9
+      ],
+      [
+        "conclusion",
+        2
+      ],
+      [
+        "criterion",
+        1
+      ],
+      [
+        "decision",
+        1
+      ],
+      [
+        "relation",
+        13
+      ],
+      [
+        "RIF",
+        2
+      ],
+      [
+        "head",
+        1
+      ],
+      [
+        "constraint",
+        1
+      ],
+      [
+        "event",
+        2
+      ],
+      [
+        "activity",
+        3
+      ],
+      [
+        "actor",
+        3
+      ],
+      [
+        "object",
+        13
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "decision",
+        "snippet": "okkoris, M.D.: Defending humankind: Anthro- pocentric bias in the appreciation of ai art. Computers in Human Behavior143, 107707 (2023) 33. Nabizadeh, N., Kolossa, D., Heckmann, M.: Myfixit: an annotated dataset, anno- tation tool, and baseline methods for information extraction from repair manuals. In: Proceedings of LREC 2020. pp. 2120–2128. European Language Resources As- sociation (2020) 34. Neudert, L.M., Knuutila, A., Howard, P.N.: Global attitudes towards ai, machine learning & automated decision making. Oxford Commission on AI and Good Gov- ernance (2020) 35. Ni, J., Shi, M., Stammbach, D., Sachan, M., Ash, E., Leippold, M.: Afacta: Assist- ing the annotation of factual claim detection with reliable llm annotators. arXiv preprint arXiv:2402.11073 (2024) 36. Palan, S., Schitter, C.: Prolific.ac — a subject pool for online experiments. Journal of Behavioral and Experimental Finance17, 22–27 (2018) 18 Valentina Anita Carriero et al. 37. Pan,J.Z.,Razniewski,S.,Kalo,J.C.,Singhania,S.,Chen,J.,Dietze,S.,Jabeen,H., Omeliyanenko,J.,Zhang,W.,Lissandrini,M.,Biswas,R.,deMelo,G.,Bonifati,A., Vakaj,E.,Dragoni,M.,Graux,D.:LargeLanguageModelsandKnowledgeGraphs: Opportunities and Challenges. DROPS-IDN/v2/document/10.4230/TGDK.1.1.2 (2023). https://doi.org/10.4230/TGDK.1.1.2 38. Pan, S., Luo, L.,"
+      },
+      {
+        "keyword": "head",
+        "snippet": "s a reference dataset Wiki- How, one of the largest online databases of PK, which includes how-to articles on multiple domains. We reuse the JSON dataset built by [52], crawled from the WikiHow website5, and focus on atomic procedures, that do not include methods/parts as sub-procedures. Out of each selected procedure, we build an unformatted text (also partially removing punctuation), by concatenating (i) procedure title, representing the overall goal, (ii) general procedure description, (iii) headline of each step, (iv) description of each step. Thus, we also include in the text irrelevant sentences, which are supposed to be discarded during the extraction phase. In total, we used four procedures randomly selected from Wik- iHow, one as working example for our prompt engineering phase, and three for our method replication and human assessment. Such procedures are diverse with respect to both complexity and topic:how to clean a computer monitor(working example), how to fix a rubbing door, how to make honey glazed parsnips, andhow to plant a bare root tree. 4 Preliminary Study In a preliminary formative study, we wanted to kick-start the LLM-powered pro- cedure extraction from text, by identifying the best performing prompt chain- ing [46] to execute the task. We evaluated both the p"
+      },
+      {
+        "keyword": "constraint",
+        "snippet": "ontology.However, relevant triples were missing: many inverse relations included in the ontology were never used, and the procedure was linked only to the first step. Moreover, additional and very specific instructions would have been needed in the prompt for defining all prefixes and how to design local names, to prevent ambiguous individuals. Instead, by showing an example on how to map the textual list of steps and annotations to Turtle, we avoid possible errors in complying with ontological constraints, with a greater guarantee of the final KG to be complete. Moreover, this method may be particularly useful when we work with multiple, and possibly large, ontologies, that would exceed the context window of the LLM. Results. For our experiments, we use the GPT 4o model, and rely on the LangChain framework6. We also tested with GPT 3.5 Turbo model, however, we obtained worse results than GPT 4o, with respect to bothP1 and P2. Specif- ically, GPT 3.5 Turbo tended to collapse some objects and equipment items instead of keeping them separate as in the example (e.g.bucket filled with water in place ofbucket and water), and it did not always comply with the provided template, as opposed to GPT 4o. The results of both prompts are available on GitHub. All produced KGs are valid RDF in Turtle syn"
+      }
+    ],
+    "chars": 51677
+  },
+  "2026_Ontology_based_KG_for_Industrial_Standards_with_Hierarchical_and_Conditional_Structuring.pdf": {
+    "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\条件判断相关文献\\extracted_text\\2026_Ontology_based_KG_for_Industrial_Standards_with_Hierarchical_and_Conditional_Structuring.txt",
+    "hits": [
+      [
+        "conditional",
+        51
+      ],
+      [
+        "condition",
+        132
+      ],
+      [
+        "if",
+        106
+      ],
+      [
+        "then",
+        12
+      ],
+      [
+        "rule",
+        79
+      ],
+      [
+        "conclusion",
+        1
+      ],
+      [
+        "decision",
+        3
+      ],
+      [
+        "triplet",
+        92
+      ],
+      [
+        "relation",
+        71
+      ],
+      [
+        "RIF",
+        1
+      ],
+      [
+        "body",
+        1
+      ],
+      [
+        "head",
+        2
+      ],
+      [
+        "constraint",
+        14
+      ],
+      [
+        "event",
+        1
+      ],
+      [
+        "actor",
+        2
+      ],
+      [
+        "object",
+        14
+      ]
+    ],
+    "contexts": [
+      {
+        "keyword": "conditional",
+        "snippet": "Ontology-based Knowledge Graph for Industrial Standards with Hierarchical and Conditional Structuring Anonymous ACL submission Abstract001 Industrial standards documents contain com-002 plex conditional statements and table-based003 rules, making them challenging to interpret004 using conventional text-based approaches. Al-005 though large language model–based document006 understanding methods have been actively stud-007 ied, they often fail to capture hierarchical008 and conditional document structures, limit-009 ing their ability to model complex conditions010 and table-driven rules. To address this chal-011 lenge, we propose an Ontology-based knowl-012 edge graph (KG) construction method that in-013 tegrates ontologies with conditional-structure-014 based triplet extraction, and evaluate its ef-015 fectiveness using question answering datasets016 constructed from multiple i"
+      },
+      {
+        "keyword": "condition",
+        "snippet": "Ontology-based Knowledge Graph for Industrial Standards with Hierarchical and Conditional Structuring Anonymous ACL submission Abstract001 Industrial standards documents contain com-002 plex conditional statements and table-based003 rules, making them challenging to interpret004 using conventional text-based approaches. Al-005 though large language model–based document006 understanding methods have been actively stud-007 ied, they often fail to capture hierarchical008 and conditional document structures, limit-009 ing their ability to model complex conditions010 and table-driven rules. To address this chal-011 lenge, we propose an Ontology-based knowl-012 edge graph (KG) construction method that in-013 tegrates ontologies with conditional-structure-014 based triplet extraction, and evaluate its ef-015 fectiveness using question answering datasets016 constructed from multiple"
+      },
+      {
+        "keyword": "rule",
+        "snippet": "Ontology-based Knowledge Graph for Industrial Standards with Hierarchical and Conditional Structuring Anonymous ACL submission Abstract001 Industrial standards documents contain com-002 plex conditional statements and table-based003 rules, making them challenging to interpret004 using conventional text-based approaches. Al-005 though large language model–based document006 understanding methods have been actively stud-007 ied, they often fail to capture hierarchical008 and conditional document structures, limit-009 ing their ability to model complex conditions010 and table-driven rules. To address this chal-011 lenge, we propose an Ontology-based knowl-012 edge graph (KG) construction method that in-013 tegrates ontologies with conditional-structure-014 based triplet extraction, and evaluate its ef-015 fectiveness using question answering datasets016 constructed from multiple industrial standards017 documents. Experimental results show statis-018 tically significant performance improvements019 over baseline models, with pa"
+      },
+      {
+        "keyword": "decision",
+        "snippet": "els, with particularly notable020 gains on reasoning tasks involving table-based021 rules and multi-condition reasoning, demon-022 strating that the proposed Ontology-based KG023 effectively captures document structure for re-024 liable question answering. Code is available025 at: https://anonymous.4open.science/r/026 ontology_based_kg_paper-F5CE027 1 Introduction028 Industrial standards documents are used as author-029 itative references to ensure the quality of mate-030 rials and processes in decision-making processes031 such as design reviews, technical comparisons, and032 contract drafting across various industries, includ-033 ing shipbuilding, construction, and energy. These034 documents typically follow a hierarchical structure035 in the form of SECTION –S UBSECTION –CLAUSE ,036 and they incorporate diverse forms of expression037 such as tables, multiple conditions, unit constraints,038 and footnotes. As a result, the meaning of rules is039 determined within the global hierarchical context040 of the document rather than in isolation. Due to041 this structural complexity, the interpretation of in-042 Industrial Standard Document CE maxThicknessGrade0.39≤ 40mmGrade 500.4140-90 mm0.42≤ 40mmGrade 60 5. Chemical Requirements6. Mechanical RequirementsGrade 60Grade 50Property414-621345–51"
+      },
+      {
+        "keyword": "triplet",
+        "snippet": "terpret004 using conventional text-based approaches. Al-005 though large language model–based document006 understanding methods have been actively stud-007 ied, they often fail to capture hierarchical008 and conditional document structures, limit-009 ing their ability to model complex conditions010 and table-driven rules. To address this chal-011 lenge, we propose an Ontology-based knowl-012 edge graph (KG) construction method that in-013 tegrates ontologies with conditional-structure-014 based triplet extraction, and evaluate its ef-015 fectiveness using question answering datasets016 constructed from multiple industrial standards017 documents. Experimental results show statis-018 tically significant performance improvements019 over baseline models, with particularly notable020 gains on reasoning tasks involving table-based021 rules and multi-condition reasoning, demon-022 strating that the proposed Ontology-based KG023 effectively captures document structure for re-024 liable question answering. Code is available025 at: https://anonymous.4open.science/r/026 ontology_based_kg_paper-F5CE027 1 Introduction028 Industrial standards documents are used as author-029 itative references to ensure the quality of mate-030 rials and processes in decision-making processes031 such as design reviews"
+      },
+      {
+        "keyword": "body",
+        "snippet": "ed methodology consists of a two-stage 861 evidence extraction process at the Ontology KG- 862 Level and the Global KG-Level, followed by a 863 final stage that integrates the extracted evidence 864 and injects it into the LLM prompt. 865 At the Ontology KG-Level, each section title of 866 a document is defined as a semantic unit, and each 867 section is represented as a pair (t(i) title, t(i) text), where 868 t(i) title denotes the title of the i-th section and t(i) text 869 denotes the set of body sentences associated with 870 the corresponding title. First, the sentences in t(i) text 871 are encoded using a sentence embedding function, 872 Sentence-BERT (all-MiniLM-L6-v2), and aver- 873 aged via mean pooling to generate a section embed- 874 ding di. The query q is likewise transformed into a 875 11 Table 5: A578/A578M Performance Comparison across different question types. Performance comparison of various QA models on table-, rule-, and multi-hop–based questions. Type Method table rule multi-hop F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge LLM-only GPT-4o-mini 0.000 0.773 0.000 0.000 0.013 0.806 0.004 0.021 0.017 0.806 0.006 0.016 gemini-2.0-flash 0.000 0.773 0.000 0.000 0.000 0.802 0.000 0.005 0.000 0.806 0.000 0.000 DeepSeek-v3.1 0.000 0.773 0.000 0.0"
+      },
+      {
+        "keyword": "head",
+        "snippet": "tational Linguistics, pages 1476–1488, 750 Online. Association for Computational Linguistics. 751 Yilin Wen, Zifeng Wang, and Jimeng Sun. 2024. 752 MindMap: Knowledge graph prompting sparks graph 753 of thoughts in large language models. In Proceedings 754 of the 62nd Annual Meeting of the Association for 755 Computational Linguistics (Volume 1: Long Papers), 756 pages 10370–10388, Bangkok, Thailand. Association 757 for Computational Linguistics. 758 Alexander Yates, Michele Banko, Matthew Broadhead, 759 Michael Cafarella, Oren Etzioni, and Stephen Soder- 760 land. 2007. TextRunner: Open information extrac- 761 tion on the web. In Proceedings of Human Lan- 762 guage Technologies: The Annual Conference of the 763 North American Chapter of the Association for Com- 764 putational Linguistics (NAACL-HLT), pages 25–26, 765 Rochester, New York, USA. Association for Compu- 766 tational Linguistics. 767 Bowen Zhang and Harold Soh. 2024a. Extract, define, 768 canonicalize: An LLM-based framework for knowl- 769 edge graph construction. In Proceedings of the 2024 770 Conference on Empirical Methods in Natural Lan- 771 guage Processing, pages 9820–9836, Miami, Florida, 772 USA. Association for Computational Linguistics. 773 Bowen Zhang and Harold Soh. 2024b. Extract, 774 define, canonicalize: An"
+      },
+      {
+        "keyword": "constraint",
+        "snippet": "documents are used as author-029 itative references to ensure the quality of mate-030 rials and processes in decision-making processes031 such as design reviews, technical comparisons, and032 contract drafting across various industries, includ-033 ing shipbuilding, construction, and energy. These034 documents typically follow a hierarchical structure035 in the form of SECTION –S UBSECTION –CLAUSE ,036 and they incorporate diverse forms of expression037 such as tables, multiple conditions, unit constraints,038 and footnotes. As a result, the meaning of rules is039 determined within the global hierarchical context040 of the document rather than in isolation. Due to041 this structural complexity, the interpretation of in-042 Industrial Standard Document CE maxThicknessGrade0.39≤ 40mmGrade 500.4140-90 mm0.42≤ 40mmGrade 60 5. Chemical Requirements6. Mechanical RequirementsGrade 60Grade 50Property414-621345–517Yield Strength 517448Tensile Strength 2223Elongation Table 2 —Carbon Equivalent MaximumsTable 3 —Tensile Requirements What is the maximum carbon equivalentfor Grade 50 steel when the plate thicknessis 30mm? Existing MethodsOntology-based KG (ours) According to Table 2(Section 5), for Grade 50steel with thickness ≤ 40mm, the maximum carbon equivalent is 0.39The maximum CE for Grade 50 is 3"
+      }
+    ],
+    "chars": 96084
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "version": "v4.3",
+  "source": {
+    "format": "structured_markdown",
+    "input_path": "D:\\ai-math\\教材提取模块\\中间产物\\高等代数上册_clean.md",
+    "textbook_id": "gaodai_shang",
+    "textbook_name": "高等代数上册",
+    "course_name": "高等代数"
+  },
+  "output": {
+    "intermediate_dir": "D:\\ai-math\\教材提取模块\\正式脚本\\v4.3\\中间产物",
+    "config_path": "D:\\ai-math\\教材提取模块\\正式脚本\\v4.3\\v4_3_config.json"
+  },
+  "tree": {
+    "heading_levels": {
+      "chapter": 1,
+      "section": 2,
+      "subsection": 3,
+      "anchor": 5
+    },
+    "summary_source_scopes": [
+      "core_content"
+    ],
+    "skip_source_scopes": [
+      "exercise",
+      "example"
+    ]
+  },
+  "schema": {
+    "node_types": [
+      "Concept",
+      "Method",
+      "Formula",
+      "Theorem",
+      "ProblemClass"
+    ],
+    "application_node_types": [
+      "Method",
+      "ProblemClass"
+    ],
+    "rule_layer_node_types": [
+      "RuleCase",
+      "ConditionExpression",
+      "Outcome",
+      "LogicGroup"
+    ],
+    "edge_types": [
+      "HAS_SUBSECTION",
+      "INTRODUCES",
+      "HAS_EXAMPLE",
+      "SUPERIOR",
+      "EQUATIVE",
+      "PART_OF",
+      "HAS_PROPERTY",
+      "USES",
+      "GETS",
+      "DERIVES",
+      "HAS_RULE_CASE",
+      "APPLIES_TO",
+      "HAS_CONDITION",
+      "HAS_CONDITION_AND",
+      "HAS_CONDITION_OR",
+      "HAS_OUTCOME",
+      "HAS_OUTCOME_AND",
+      "HAS_OUTCOME_OR",
+      "PREREQUISITE_OF",
+      "HAS_POSSIBLE_STATE"
+    ],
+    "weak_or_recommendation_edges": [
+      "EQUATIVE"
+    ],
+    "derived_edges": [
+      "PREREQUISITE_OF",
+      "HAS_POSSIBLE_STATE"
+    ],
+    "forbidden_node_types": [
+      "Definition",
+      "AttributeValue"
+    ]
+  },
+  "llm": {
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com/v1",
+    "default_model": "deepseek-chat",
+    "high_risk_model": "deepseek-chat",
+    "allow_pro": false,
+    "temperature": 0.0,
+    "timeout_seconds": 120
+  },
+  "treekg_api": {
+    "enabled": false,
+    "submit_url": "https://pacman.cs.tsinghua.edu.cn/api/treekg/submit_task",
+    "status_url_template": "https://pacman.cs.tsinghua.edu.cn/api/treekg/task_status/{task_id}",
+    "result_url_template": "https://pacman.cs.tsinghua.edu.cn/api/treekg/task_result/{task_id}",
+    "note": "Public API returned nginx 403 in local probe; keep as optional adapter."
+  }
+}

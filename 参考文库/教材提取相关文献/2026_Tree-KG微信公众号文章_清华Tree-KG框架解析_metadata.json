@@ -1,0 +1,40 @@
+{
+  "source_url": "https://mp.weixin.qq.com/s/TnaYmO5i7kMK6O3bs1KjLw?scene=1&click_id=774939261",
+  "fetched_at": "2026-06-22T11:16:36",
+  "html_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析.html",
+  "markdown_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析.md",
+  "text_path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析.txt",
+  "image_dir": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析_images",
+  "image_count_found": 4,
+  "image_count_downloaded": 4,
+  "images": [
+    {
+      "index": 1,
+      "url": "https://mmbiz.qpic.cn/mmbiz_png/QmaZGtn6627ecRLzt5iavMU5oBKFa4wdicib1dicf7VQNzhgfjIQDOBLAliaRictmIyNicSo49EDsbMvgpvXic1p2aMGHQ/640?wx_fmt=png&from=appmsg",
+      "path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析_images\\image_001.png",
+      "status": "ok",
+      "content_type": "image/png"
+    },
+    {
+      "index": 2,
+      "url": "https://mmbiz.qpic.cn/mmbiz_png/QmaZGtn6627ecRLzt5iavMU5oBKFa4wdic2NF5Y7Grdhb1dDJEgcNicMs3Bm1VBqIqDiagjHiaaESqSJVvzeosaoDYQ/640?wx_fmt=png&from=appmsg",
+      "path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析_images\\image_002.png",
+      "status": "ok",
+      "content_type": "image/png"
+    },
+    {
+      "index": 3,
+      "url": "https://mmbiz.qpic.cn/mmbiz_png/QmaZGtn6627ecRLzt5iavMU5oBKFa4wdicuRvibtUwvzZH9aNMrKZVeN7bHyLBQNoWia4o9MKp9VvnEibRaibLI9Ih1Q/640?wx_fmt=png&from=appmsg",
+      "path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析_images\\image_003.png",
+      "status": "ok",
+      "content_type": "image/png"
+    },
+    {
+      "index": 4,
+      "url": "https://mmbiz.qpic.cn/mmbiz_png/QmaZGtn6627ecRLzt5iavMU5oBKFa4wdicfFKiaFKd0PI4LMWiaz1tJoYdNSJfBT5Y6aGM2MtPzxSqwiaoAksXkt3ug/640?wx_fmt=png&from=appmsg",
+      "path": "D:\\ai-math\\参考文库\\教材提取相关文献\\2026_Tree-KG微信公众号文章_清华Tree-KG框架解析_images\\image_004.png",
+      "status": "ok",
+      "content_type": "image/png"
+    }
+  ]
+}

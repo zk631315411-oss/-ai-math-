@@ -1,0 +1,125 @@
+{
+  "version": "v4.3",
+  "source": {
+    "format": "structured_markdown",
+    "input_path": "D:\\ai-math\\比赛相关文件与文件夹\\揭榜挂帅\\教材库\\高等数学\\下册\\高等数学下册_clean.md",
+    "textbook_id": "gaoshu_xia",
+    "textbook_name": "高等数学下册",
+    "course_name": "高等数学"
+  },
+  "output": {
+    "intermediate_dir": "D:\\ai-math\\教材提取模块\\高数提取\\v4.4_xia\\中间产物",
+    "config_path": "D:\\ai-math\\教材提取模块\\高数提取\\v4.4_xia\\v4_4_gaoshu_config.json"
+  },
+  "tree": {
+    "heading_levels": {
+      "chapter": 1,
+      "section": 2,
+      "subsection": 3,
+      "anchor": 5
+    },
+    "summary_source_scopes": [
+      "core_content"
+    ],
+    "skip_source_scopes": [
+      "exercise",
+      "example"
+    ]
+  },
+  "schema": {
+    "node_types": [
+      "Concept",
+      "Method",
+      "Formula",
+      "Theorem",
+      "ProblemClass"
+    ],
+    "application_node_types": [
+      "Method",
+      "ProblemClass"
+    ],
+    "rule_layer_node_types": [
+      "RuleCase",
+      "ConditionExpression",
+      "Outcome",
+      "LogicGroup"
+    ],
+    "edge_types": [
+      "HAS_SUBSECTION",
+      "INTRODUCES",
+      "HAS_EXAMPLE",
+      "SUPERIOR",
+      "EQUATIVE",
+      "PART_OF",
+      "HAS_PROPERTY",
+      "USES",
+      "GETS",
+      "DERIVES",
+      "HAS_RULE_CASE",
+      "APPLIES_TO",
+      "HAS_CONDITION",
+      "HAS_CONDITION_AND",
+      "HAS_CONDITION_OR",
+      "HAS_OUTCOME",
+      "HAS_OUTCOME_AND",
+      "HAS_OUTCOME_OR",
+      "PREREQUISITE_OF",
+      "HAS_POSSIBLE_STATE"
+    ],
+    "weak_or_recommendation_edges": [
+      "EQUATIVE"
+    ],
+    "derived_edges": [
+      "PREREQUISITE_OF",
+      "HAS_POSSIBLE_STATE"
+    ],
+    "forbidden_node_types": [
+      "Definition",
+      "AttributeValue"
+    ]
+  },
+  "llm": {
+    "provider": "openai_compatible",
+    "base_url": "http://localhost:8000/v1",
+    "api_key_env": "OPENAI_API_KEY",
+    "fallback_env_api_keys": [
+      "LLM_API_KEY",
+      "DEEPSEEK_API_KEY"
+    ],
+    "base_url_env": "OPENAI_BASE_URL",
+    "fallback_env_base_urls": [
+      "LLM_BASE_URL",
+      "DEEPSEEK_API_BASE"
+    ],
+    "default_model": "deepseek-expert",
+    "summary_model": "deepseek-expert",
+    "node_model": "deepseek-expert",
+    "edge_model": "deepseek-expert-reasoner",
+    "rule_case_model": "deepseek-expert-reasoner",
+    "node_audit_model": "deepseek-expert-reasoner",
+    "relation_audit_model": "deepseek-expert-reasoner",
+    "review_model": "deepseek-expert-reasoner",
+    "conflict_review_model": "deepseek-expert-reasoner",
+    "high_risk_model": "deepseek-expert-reasoner",
+    "reasoning_effort": {
+      "summary": "medium",
+      "node": "medium",
+      "edge": "high",
+      "rule_case": "high",
+      "node_audit": "high",
+      "relation_audit": "high",
+      "review": "high",
+      "conflict_review": "xhigh"
+    },
+    "allow_pro": true,
+    "temperature": 0.0,
+    "timeout_seconds": 180
+  },
+  "treekg_api": {
+    "enabled": false,
+    "submit_url": "https://pacman.cs.tsinghua.edu.cn/api/treekg/submit_task",
+    "status_url_template": "https://pacman.cs.tsinghua.edu.cn/api/treekg/task_status/{task_id}",
+    "result_url_template": "https://pacman.cs.tsinghua.edu.cn/api/treekg/task_result/{task_id}",
+    "note": "Public API returned nginx 403 in local probe; keep as optional adapter."
+  }
+}

@@ -1,0 +1,45 @@
+@import url('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  @apply bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300;
+}
+
+/* Markdown content */
+.markdown-body {
+  font-size: 15px;
+  line-height: 1.8;
+}
+.markdown-body h1 { font-size: 1.75rem; font-weight: 600; margin: 1.5rem 0 1rem; @apply text-slate-800 dark:text-slate-100; }
+.markdown-body h2 { font-size: 1.4rem; font-weight: 600; margin: 1.25rem 0 0.75rem; @apply text-slate-700 dark:text-slate-200; }
+.markdown-body h3 { font-size: 1.15rem; font-weight: 600; margin: 1rem 0 0.5rem; @apply text-slate-600 dark:text-slate-300; }
+.markdown-body p { margin: 0.75rem 0; }
+.markdown-body code { background: #f1f5f9; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.9em; }
+.markdown-body pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+.markdown-body pre code { background: transparent; padding: 0; }
+
+.dark .markdown-body { color: #cbd5e1; }
+.dark .markdown-body code { background: #334155; color: #e2e8f0; }
+.dark .markdown-body pre { background: #0f172a; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-600 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-slate-500; }
+
+/* Selection */
+.selected-text { background-color: #dbeafe; border-radius: 2px; }
+.selection-popover { position: absolute; z-index: 50; }
+
+/* Toast 滑入动画 */
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in { animation: slide-in 0.3s ease-out; }

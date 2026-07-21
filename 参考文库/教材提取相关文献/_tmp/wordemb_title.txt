@@ -1,0 +1,25 @@
+Pages: 18
+informatio n
+Article
+Automatic Construction of Educational Knowledge Graphs:
+A Word Embedding-Based Approach
+QuratUlAin* ,MohamedAmineChatti* ,KomlanGluckCharlesBakar,ShoebJoarderandRawaaAlatrash
+SocialComputingGroup,FacultyofEngineering,UniversityofDuisburg-Essen,47057Duisburg,Germany;
+komlan.bakar@stud.uni-due.de(K.G.C.B.);shoeb.joarder@uni-due.de(S.J.);
+rawaa.alatrash@stud.uni-due.de(R.A.)
+* Correspondence:qurat.ain@stud.uni-due.de(Q.U.A.);mohamed.chatti@uni-due.de(M.A.C.)
+Abstract: Knowledgegraphs(KGs)arewidelyusedintheeducationdomaintoofferlearnersa
+semanticrepresentationofdomainconceptsfromeducationalcontentandtheirrelations,termedas
+educationalknowledgegraphs(EduKGs).PreviousstudiesonEduKGshaveincorporatedconcept
+extractionandweightingmodules. However,thesestudiesfacelimitationsintermsofaccuracy
+andperformance. Toaddressthesechallenges,thisworkaimstoimprovetheconceptextraction
+andweightingmechanismsbyleveragingstate-of-the-artwordandsentenceembeddingtechniques.
+Concretely, we enhance the SIFRank keyphrase extraction method by using SqueezeBERT and
+we propose a concept-weighting strategy based on SBERT. Furthermore, we conduct extensive
+experimentsondifferentdatasets,demonstratingsignificantimprovementsoverseveralstate-of-the-
+artkeyphraseextractionandconcept-weightingtechniques.
+Keywords: technology-enhancedlearning;massiveopenonlinecourses;educationalknowledge
+graphs;courseknowledgegraphs;naturallanguageprocessing
+1. Introduction
+Citation:Ain,Q.U.;Chatti,M.A.;
+Inrecen

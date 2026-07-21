@@ -1,0 +1,679 @@
+arXiv:1005.5232v2  [cs.OH]  31 May 2010
+Towards MKM in the Large: Modular Representation
+and Scalable Software Architecture ⋆
+Michael Kohlhase, Florian Rabe, Vyacheslav Zholudev
+Computer Science, Jacobs University Bremen
+{m.kohlhase,f.rabe,v.zholudev}@jacobs-university.de
+Abstract. MKM has been deﬁned as the quest for technologies to manage math-
+ematical knowledge. MKM “in the small” is well-studied, so t he real problem
+is to scale up to large, highly interconnected corpora: “MKM in the large”. We
+contend that advances in two areas are needed to reach this go al. We need rep-
+resentation languages that support incremental processing of all primitive MKM
+operations, and we need software architectures and impleme ntations that imple-
+ment these operations scalably on large knowledge bases.
+We present instances of both in this paper: the M MT framework for modular
+theory-graphs that integrates meta-logical foundations, which forms the base of
+the next OMD OC version; and TNTBase, a versioned storage system for XML-
+based document formats. TNTBase becomes an M MT database by instantiating
+it with special MKM operations for MMT.
+1 Introduction
+[
+12] deﬁnes the objective of MKM to be to develop new and better ways of managing
+mathematical knowledge using sophisticated software tools and later states the “Grand
+Challenge of MKM” as a universal digital mathematics library (UDML) , which is in-
+deed a grand challenge, as it envisions that the UDML would continuously grow and
+in time would contain essentially all mathematical knowled ge, which is estimated to
+be well in excess of 107 published pages. 1 All current efforts towards comprehensive
+machine-organizable libraries of mathematics are at least three orders of magnitude
+smaller than the UDML envisioned by Farmer in 2004: Formal li braries like those of
+Mizar ([33], Isabelle ([26]) or PVS ([25]) have ca.104.x statements (deﬁnitions and the-
+orems). Even the semi-formal, commercial Wolfram MathWorld which hails itself the
+world’s most extensive mathematics resourceonly has 104.1 entries. There is anecdotal
+evidence that already at this size, management procedures are struggling.
+To meet the MKM Grand Challenge will have to develop fundamentally more scal-
+able ways of dealing with mathematical knowledge, especial ly since [ 12] goes on to
+postulate that the UDML would also be continuously reorganized and consolidated as
+new connections and discoveries were made . Clearly this can only be achieved algo-
+rithmically; experience with the libraries cited above alr eady show that manual MKM
+⋆ The ﬁnal publication of this paper is available at www.springerlink.com.
+1 For instance, Zentralblatt Math contains 2.4 million abstr acts of articles form mathematical
+journals in the last 100 years.
+does not scale sufﬁciently. Most of the work in the MKM community has concentrated
+on what we could call “MKM in the small”, i.e. dealing with asp ects of MKM that do
+not explicitly address issues of very large knowledge collections; these we call “MKM
+in the large”.
+In this paper we contribute to the MKM Grand Challenge of doin g formal “MKM
+in the large” by analyzing scalability challenges inherent in MKM and propose steps
+towards solutions based on our M MT format, which is the basis for the next version of
+OMD OC. We justify our conclusions and recommendations for scalab ility techniques
+with concrete case studies we have undertaken in the last years. Section 2 tackles scal-
+ability issues pertaining to the representation languages used in the formalization of
+mathematical knowledge. Section 3 discusses how the modularity features of MMT can
+be realized scalably by realizing basic MKM functionality l ike validation, querying,
+and presentation incrementally and carefully evaluating the on-the-ﬂy computation (and
+caching) of induced representations. These considerations, which are mainly concerned
+with efﬁcient computation “in memory” are complemented wit h a discussion of mass
+storage, caching, and indexing in Section 4, which addresses scalability issues in large
+collections of mathematical knowledge. Section 5 concludes the paper and addresses
+avenues of further research.
+2 A Scalable Representation Language
+Our representation language M MT was introduced in [
+29]. It arises from three cen-
+tral design goals. Firstly, it should provide an expressive but simple module system as
+modularity is a necessary requirement for scalability. As u sual in language design, the
+goals of simplicity and expressivity form a difﬁcult trade- off that must be solved by
+identifying the right primitive module constructs. Secondly, scalability across semantic
+domains requires foundation-independence in the sense that M MT does not commit
+to any particular foundation (such as Zermelo-Fraenkel set theory or Church’s higher-
+order logic). Providing a good trade-off between this level of generality and the ability
+to give a rigorous semantics is a unique feature of M MT. Finally, scalability across
+implementation domains requires standards-compliance, and while using XML and
+OPEN MATH is essentially orthogonal to the language design, the use of URIs as iden-
+tiﬁers is not as it imposes subtle constraints that can be very hard to meet a posteriori.
+MMT represents logical knowledge on three levels: On the module level, M MT
+builds on modular algebraic speciﬁcation languages for logical knowledge such as OBJ
+[14], ASL [32], development graphs [1], and CASL [7]. In particular, MMT uses theo-
+ries and theory morphism as the primitive modular concepts. Contrary to them, M MT
+only imposes very lightweight assumptions on the underlying language. This leads to a
+very simple generic module system that subsumes almost all a spects of the syntax and
+semantics of speciﬁc module systems such as PVS [25], Isabelle [26], or Coq [3].
+On the symbol level, MMT is a simple declarative language that uses named sym-
+bol declarations where symbols may or may not have a type or a d eﬁniens. By experi-
+mental evidence, this subsumes virtually all declarative l anguages. In particular, M MT
+uses the Curry-Howard correspondence [8,17] to represent axioms and theorem as con-
+stants, and proofs as terms. Sets of symbol declarations yie ld theories and correspond
+to OPEN MATH content dictionaries.
+On the object level, M MT uses the formal grammar of O PEN MATH [6] to rep-
+resent mathematical objects without committing to a speciﬁ c formal foundation. The
+semantics of objects is given proof theoretically using judgments for typing and equal-
+ity between objects. M MT is parametric in these judgments, and the precise choice is
+relegated to a foundation.
+2.1 Module System
+Sophisticated mathematical reasoning usually involves several related but different math-
+ematical contexts, and it is desirable to exploit these relationships by moving theorems
+between contexts. It is well-known that modular design can r educe space to an extent
+that is exponential in the depth of the reuse relation betwee n the modules, and this ap-
+plies in particular to the large theory hierarchies employed in mathematics and computer
+science.
+The ﬁrst applications of this technique in mathematics are f ound in the works by
+Bourbaki ([
+4,5]), which tried to prove every theorem in the context with the smallest
+possible set of axioms. MMT follows the “little theories approach” proposed in [11], in
+which separate contexts are represented by separate theories, and structural relation-
+ships between contexts are represented as theory morphisms, which serve as conduits
+for passing information (e.g., deﬁnitions and theorems) be tween theories (see [ 10]).
+This yields theory graphs where the nodes are theories and the paths are theory mor-
+phisms.
+Example 1 (Algebra). For example, consider the theory graph in Fig.
+1 for a portion
+of algebra, which was formalized in M MT in [9]. It deﬁnes the theory of magmas (A
+magma has a binary operation without axioms.) and extends itsuccessively to monoids,
+groups, and commutative groups. Then the theory of rings is formed by importing from
+both CGroup (for the additive operation) and Monoid (for the multiplicative operation).
+A crucial property here is that the imports are named, e.g., Monoid imports from
+Magma via an import named mag. While redundant in some cases, it is essential in Ring
+where we have to distinguish two theory morphisms from Monoid to Ring: The com-
+position add/grp/mon for the additive monoid andmult for the multiplicative monoid.
+The import names are used to form qualiﬁed names for the impor ted symbols. For
+example, if ∗ is the name of the binary operation in Magma, then add/grp/mon/mag/∗
+denotes addition and mult/mag/∗ multiplication in Ring. Of course, M MT supports
+the use of abbreviations instead of qualiﬁed names, but it is a crucial prerequisite for
+scalability to make qualiﬁed names the default: Without named imports, every time we
+add a new name in Magma (e.g, for an abbreviation or a theorem), we would have to add
+corresponding renamings in Ring to avoid name clashes.
+Another reason to use named imports is that we can use them to instantiate imports
+with theory morphisms. In our example, distributivity is st ated separately as a theory
+that imports two magmas. Let us assume, the left distributivity axiom is stated as
+∀x, y, z.x mag1/∗ (y mag2/∗ z) = ( x mag1/∗ y) mag2/∗ (x mag1/∗ z)
+Then the import dist from Distrib to Ring will carry the instantiations mag1 ↦→
+mult/mag and mag2 ↦→ add/grp/mon/mag.
+In other module systems such as SML, such instantiations are called (asymmetric)
+sharing declarations. In terms of theory morphism, their se mantics is a commutative
+diagram, i.e., an equality between two morphisms such as dist/mag1 = mult/mag :
+Magma → Ring. This provides M MT users and systems with a module level invariant
+for the efﬁcient structuring of large theory graphs.
+Besides imports, which induce theory morphisms into the con taining theory, there
+is a second kind of edge in the theory graph: Views are explici t theory morphisms that
+represent translations between two theories. For example, the node on the right side of
+the graph represents a theory for the integers, say declaring the constants 0, +, − , 1, and
+·. The fact that the integers are a commutative group is repres ented by the view v1: If
+we assume that Monoid declares a constant e for the unit element and Group a constant
+inv for the inverse element, then v1 carries the instantiations grp/mon/mag/∗ ↦→ +,
+grp/mon/e ↦→ 1, and grp/inv ↦→ − . Furthermore, every axiom declared or imported
+in CGroup is mapped to a proof of the corresponding property of the integers.
+The view v2 extends v1 with corresponding instantiations for multiplication. MMT
+permits modular views as well: When deﬁning v2, we can import all instantiations of
+v1 using add ↦→ v1. As above, the semantics of such an instantiation is a commutative
+diagram, namely v2 ◦ add = v1 as intended.
+Magma Monoid Group CGroup
+RingDistrib Integers
+mag mon grp
+addmultmag1 mag2
+dist
+v1
+v2
+Fig. 1. Algebraic Hierarchy
+The major advantage of modu-
+lar design is that every declaration
+— abbreviations, theorems, nota-
+tions etc. — effects induced dec-
+larations in the importing theo-
+ries. A disadvantage is that decla-
+rations may not always be located
+easily, e.g., the addition in a ring is
+declared in a theory that is four imports away. MMT ﬁnds a compromise here: Through
+qualiﬁed names, all induced declarations are addressable a nd locatable. The process
+of removing the modularity by adding all these induced decla rations to all theories is
+called ﬂattening.
+Case Study 1: The formalization in [
+9] uses the Twelf module system ([31]), which
+is a special case of MMT. Twelf automatically computes the ﬂattened theory graph. The
+modular theory graph including all axioms and proofs can be w ritten in 180 lines of
+Twelf code. The ﬂattened graph is computed in less than half a second and requires
+more than 1800 lines.
+The same case study deﬁnes two theories for lattices, one bas ed on orderings and
+one based on algebra, and gives mutually inverse views to prove the equivalence of the
+two theories. Both deﬁnitions are modular: Algebraic latti ces arise by importing twice
+from the theory of semi-lattices; order-based lattices ari se by importing the inﬁmum
+operation twice, once for the ordering and once for its dual. Consequently, the views
+can be given modularly as well, which is particularly import ant because views must
+map axioms to expensive-to-ﬁnd proofs. These additional declarations take 310 lines of
+Twelf in modular and 3500 lines in ﬂattened form.
+These numbers already show the value of modularity in repres entation already in
+very small formalizations. If this is lacking, later steps will face severe scalability prob-
+lems from blow-up in representation. Here, the named imports of MMT were the crucial
+innovation to strengthen modularity.
+2.2 Foundation-Independence
+Mathematical knowledge is described using very different f oundations, and the most
+common foundations can be grouped into set theory and type theory. Within each group
+there are numerous variants, e.g., Zermelo-Fraenkel or G¨ o del-Bernays set theory, or
+set theories with or without the axiom of choice. Therefore, a single representation
+language can only be adequate if it is foundation-independent.
+OPEN MATH and OMD OC achieve this by concentrating on structural issues and
+leaving lexical ones to an external deﬁnition mechanism lik e content dictionaries or
+theories. In particular, this allows us to operate without c hoosing a particular founda-
+tional logical system, as we can just supply content diction aries for the symbols in the
+particular logic. Thus, logics and in the same way foundations become theories, and we
+speak of the logics-as-theories approach.
+But conceptually, it is helpful to distinguish levels here. To state a property in the
+theory CGroup like commutativity of the operation ◦ := grp/mon/mag/∗ as ∀a, b.a ◦
+b = b ◦ a, we use symbols ∀ and = from ﬁrst-order logic together with ◦ from CGroup.
+Even though it is structurally possible to build algebraic t heories by simply importing
+ﬁrst-order logic, this would fail to describe the meta-relationship between the theories.
+But this relation is crucial, e.g., when interpreting CGroup in the integers, the symbols
+of the meta-language are not interpreted because a ﬁxed inte rpretation is given in the
+context.
+To understand this example better, we use the M/T notation for meta-languages.
+M/T refers to working in the object language T , which is deﬁned within the meta-
+language M. For example, most of mathematics is carried out in F OL/ZF , i.e., ﬁrst-
+order logic is the meta-language, in which set theory is deﬁn ed. F OL itself might be
+deﬁned in a logical framework such asLF , and within ZF , we can deﬁne the language
+of natural numbers, which yields LF/F OL/ZF/N at. For algebra, we obtain, e.g.,
+F OL/Magma. M MT makes this meta-relation explicit: Every theory T may point to
+another theory M as its meta-theory. We can write this as M M T /(M/T ).
+LF Isabelle
+FOL HOL
+Monoid Ring
+meta meta
+meta meta
+m
+m′
+mult
+Fig. 2. Meta-Theories
+In Fig. 2, the algebra example is ex-
+tended by adding meta-theories. The the-
+ory FOL for ﬁrst-order logic is the meta-
+theory for all algebraic theories, and the
+theory LF for the logical framework LF is
+the meta-theory of FOL and of the theory
+HOL for higher-order logic.
+Now the crucial advantage of the
+logics-as-theories approach is that on all
+three levels the same module system can
+be used: For example, the viewsm and m′
+indicate possible translations on the levels
+of logical frameworks and logics, respectively. Similarly, logics and foundations can be
+built modularly. Thus, we can use imports to represent inheritance at the level of logical
+foundations and views to represent formal translations bet ween them. Just like in the
+little theories approach, we can prove meta-logical result s in the simplest foundation
+that is expressive enough and then use views to move results between foundations.
+Example 2 (Little Logics and Little Foundations). In [ 15], we formalize the syntax,
+proof theory, and model theory and prove the soundness of ﬁrs t-order logic in M MT.
+Using the module system, we can treat all connectives and quantiﬁers separately. Thus,
+we can reuse these fragments to deﬁne other logics, and in [ 18] we do that, e.g., for
+sorted ﬁrst-order logic and modal logic.
+For the deﬁnition of the model theory, we need to formalize se t theory in M MT,
+which is a signiﬁcant investment, and even then doing proofsin set theory — as needed
+for the soundness proof — is tedious. Therefore, in [16], we develop the set theoretical
+foundation itself modularly. We deﬁne a typed higher-order logic HOL ﬁrst, which is
+expressive enough for many applications such as the above so undness proof. Then a
+view from HOL to ZF proves that ZF is a reﬁnement of HOL and completes the proof of
+the soundness of FOL relative to models deﬁned in ZF.
+Case Study 2: Ex. 2 already showed that it is feasible to represent foundations
+and relations between foundations in M MT. Being able to this is a qualitative aspect
+of cross-domain scalability. In another case study, we repr esented LF/Isabelle and
+LF/Isabelle/HOL ([26,23]) as well as a translation from them into LF/F OL/ZF C
+(see [18]).
+To our knowledge, M MT is the only declarative formalism in which comparable
+foundation or logic translations have been conducted. In He ts ([21]) a number of logic
+translations are implemented in Haskell. Twelf and Delphin provide logic and func-
+tional programming languages, respectively, on top of LF ([ 27,28]), which have been
+used to formalize the HOL-Nuprl translation ([22]).
+2.3 Symbol Identiﬁers “in the Large”
+In mathematical languages, we need to be able to refer to (i.e., identify) content objects
+in order to state the semantic relations. It was a somewhat su rprising realization in the
+design of M MT that to understand the symbol identiﬁers is almost as difﬁcu lt as to
+understand the whole module system. Theories are containers for symbol declarations,
+and relations between theories deﬁne the available symbols in any given theory. Since
+every available symbol should have a canonical identiﬁer, t he syntax of identiﬁers is
+inherently connected to the possible relations between theories.
+In principle, there are two ways to identify content object: by location (relative to
+a particular document or ﬁle) and by context (relative to a mathematical theory). The
+ﬁrst one essentially makes use of the organizational struct ure of ﬁles and ﬁle systems,
+and the second makes use of mathematical structuring principles supplied by the repre-
+sentation format.
+As a general rule, it is preferable to use identiﬁcation by co ntext as the distribution
+of knowledge over ﬁle systems is usually a secondary consideration. Then the mapping
+between theory identiﬁers and physical theory locations can be deferred to an extralin-
+guistic catalog. Resource identiﬁcation by context should still be compatible with the
+URI-based approach that mediates most resource transport o ver the internet. This is
+common practice in scalable programming languages such as Java where package iden-
+tiﬁers are URIs and classes are located using the classpath.
+For logical and mathematical knowledge, the O PEN MATH 2 standard ([6]) and the
+current OMD OC version 1.2 deﬁne URIs for symbols. A symbol is identiﬁed by t he
+symbol name and content dictionary, which in turn is identiﬁ ed by the CD name and
+the CD base, i.e., the URI where the CD is located. From these c onstituents, symbol
+URIs are formed using URI fragments (the part after the # delimiter). However, OPEN -
+MATH imposes a one-CD-one-ﬁle restriction, which is too restrictive in general. While
+OMD OC1.2 permits multiple theories per ﬁle, it requires ﬁle-uniq ue identiﬁers for all
+symbols. In both cases, the use of URI fragments, which are resolved only on the client,
+forces clients to retrieve the complete ﬁle even if only a single symbol is needed.
+Furthermore, many module systems have features that impedeor complicate the for-
+mation of canonical symbol URIs. Such features include unna med imports, unnamed
+axioms, overloading, opening of modules, or shadowing of sy mbol names. Typically,
+this leads to a non-trivial correspondence between user-visible and application-internal
+identiﬁers. But this impedes or complicates cross-applica tion scalability where all ap-
+plications (ranging from, e.g., a Javascript GUI to a database backend) must understand
+the same identiﬁers.
+MMT avoids the above pitfalls and introduces a simple yet expressive web-scalable
+syntax for symbol identiﬁers. An MMT-URI is of the form doc?mod?sym where
+– doc is a URI without query or fragment, e.g.,http://cds.omdoc.org/math/algebra/algegra1.omdoc
+which identiﬁes (but not necessarily locates) an MMT document,
+– mod is a /-separated sequence of local names that gives the path to a nested theory
+in the above document, e.g., Ring,
+– sym is a /-separated sequence imp1/ . . . /impn/con of local names such that
+impi is an import and con a symbol name, e.g., mult/mon/∗,
+– a local name is of the form pchar+ where pchar is deﬁned as in RFC 3986 [ 2],
+which — possibly via %-encoding — permits almost all Unicode characters.
+In our running example, the canonical URI of multiplicationin a ring ishttp://cds.omdoc.org/math/algebra/algegra1.omdoc?Ring?mult/mon/*.
+Note that the use of two ? characters in a URI is unusual outside of M MT, but le-
+gal w.r.t. RFC 3986. Of course, M MT also deﬁnes relative URIs that are resolved
+against the URI of the containing declaration. The most impo rtant case is when doc
+is empty. Then the resolution proceeds as in RFC 3986, e.g., ?mod′?sym′ resolves to
+doc?mod′?sym′ relative to doc?mod?sym (Note that this differs from RFC 2396.).
+MMT deﬁnes some additional cases that are needed in mathematica l practice and go
+beyond the expressivity of relative URIs: Relative to doc?mod?sym, the resolution of
+??sym′ and ?/mod′?sym′ yields doc?mod?sym′ and doc?mod/mod′?sym′, respec-
+tively.
+Case Study 3: URIs are the main data structure needed for cross-applicati on scala-
+bility, and our experience shows that they must be implemented by almost every periph-
+eral system, even those that do not implement MMT itself. Already at this point, we had
+to implement them in SML ([31]), Javascript ([13]), XQuery ([35]), Haskell (for Hets,
+[21]), and Bean Shell (for a jEdit plugin) — in addition to the Sca la-based reference
+API (Sect. 3).
+This was only possible because M MT-URIs constitute a well-balanced trade-off
+between mathematical rigor, feasibility, and URI-compatibility: In particular, due to the
+use of the two separators / and ? (rather than only one), they can be parsed locally, i.e.,
+without access to or understanding of the surrounding M MT document. And they can
+be dereferenced using standard URI libraries and URI-URL tr anslations. At the same
+time, they provide canonical names for all symbols that are i n scope, including those
+that are only available through imports.
+3 A Scalable Implementation
+As the implementation language for the MMT reference API, we pick Scala, a program-
+ming language designed to be scalable ([
+24]). Being functional, Scala permits elegant
+code, and based on and fully compatible with Java, it offers cross-application and web-
+level scalability.
+The M MT API implements the syntax and semantics of M MT. It compiles to a
+1 MB Java archive ﬁle that can be readily integrated into appl ications. Library and
+documentation can be obtained from [30]. Two technical aspects are especially notable
+from the point of view of scalability. Firstly, all M MT functionality is exposed to non-
+Java applications via a scriptable shell and via an HTTP serv let. Secondly, the API
+maintains an abstraction layer that separates the backends that physically store M MT
+documents (URLs) from the document identiﬁers (URIs). Thus, it is conﬁgurable which
+MMT documents are located, e.g., in a remote database or on the lo cal ﬁle system. In
+the following section we describe some of the advanced features.
+3.1 Validation
+Validation describes the process of checking M MT theory graphs against the M MT
+grammar and type system. MMT validation is done in three increasingly strict stages.
+The ﬁrst stage is XML validation against a context-free RelaxNG grammar. As this
+only catches errors in the surface syntax, M MT documents are validated structurally
+in a second stage. Structural validity guarantees that all declarations have unique URIs
+and that all references to symbols, theories, etc. can be res olved. This is still too lax
+for mathematics as it lacks type-checking. But it is exactly the right middle ground
+between the weak validation against a context-free grammar and the expensive and
+complex validation against a speciﬁc type system: On the one hand, it is efﬁcient and
+foundation-independent, and on the other hand, it providesan invariant that is sufﬁcient
+for many MKM services such as storage, navigation, or search.
+Type-checking is foundation-speciﬁc, therefore each foun dation must provide an
+MMT plugin that implements the typing and equality judgments. M ore precisely, the
+plugin must provide function that (semi-)decide for two giv en terms A and B over a
+theory T , the judgments ⊢ T A = B and ⊢ T A : B. Given such a plugin, a third valida-
+tion stage can reﬁne structural validity by additionally va lidating well-typedness of all
+declarations. For scalability, it is important that (i) these plugins are stateless as the the-
+ory graph is maintained by MMT, and that the (ii) modular structure is transparent to the
+plugin. Thus plugin developers only need to provide the corealgorithms for the speciﬁc
+type system, and all MKM issues can be relegated to dedicated implementations.
+Context-free validation is well-understood. Moreover, M MT is designed such that
+foundation-speciﬁc validation is obtained from structura l validation by using the same
+inference system with some typing and equality constraintsadded. This leaves structural
+validation as the central issue for scalability.
+Case Study 4: We have implemented structural validation by decomposing an MMT
+theory graph into a list of atomic declarations. For example , the declaration T = {s1 :
+τ1, s 2 : τ2} of a theory T with two typed symbols yields the atomic declarations
+T = {}, T ?s1 : τ, and T ?s2 : τ2. This “unnesting” of declarations is a special property
+of the MMT type system that is not usually found in other systems. It is possible because
+every declaration has a canonical URI and can therefore be taken out of its context.
+This is important for scalability as it permits incremental processing. In particu-
+lar, large MMT documents can be processed as streams of atomic declarations. Further-
+more, the semantics of MMT guarantees that the processing order of these streams never
+matters if the (easily-inferrable) dependencies between declarations are respected. This
+would even permit parallel processing, another prerequisite for scalability.
+3.2 Querying
+Once a theory graph has been read, M MT provides two ways how to access it: M MT-
+URI dereferencing and querying with respect to a simple ontology.
+Firstly, a theory graph always has two forms: the modular form where all nodes are
+partial theories whose declarations are computed using imports, and the ﬂattened form
+where all imports are replaced with translated copies of theimported declarations. Many
+implementations of module systems, e.g., Isabelle’s locales, automatically compute the
+ﬂat form and do not maintain the modular form. This can be a thr eat to scalability as it
+can induce combinatorial explosion.
+MMT maintains only the modular form. However, as every declarat ion present in
+the ﬂat form has a canonical URI, the access to the ﬂat form is p ossible via M MT-URI
+dereferencing: Dereferencing computes (and caches) the in duced declarations present
+in the ﬂat form. Thus, applications can ignore the modular structure and interact with a
+modular theory graph as if it were ﬂattened, but the exponent ially expensive ﬂattening
+is performed transparently and incrementally.
+Secondly, the API computes the ABox of a theory graph with res pect to the M MT
+ontology. It has M MT-URIs as individuals and 10 types like theory or symbol as
+unary predicates. 11 binary predicates represent relation s between individuals such as
+HasDomain relating an import to a theory or HasOccurrenceOfInType relating
+two symbols. These relations are structurally complete: The structure of a theory graph
+can be recovered from the ABox. The computation time is negligible as it is a byproduct
+of validation anyway.
+The API includes a simple query language for this ontology. I t can compute all
+individuals in the theory graph that are in a certain relatio n to a given individual. The
+possible queries include composition, union, transitive closure, and inverse of relations.
+The ABox can also be regarded as the result of compiling an M MT theory graph.
+Many operations on theory graphs only require the ABox: for e xample the computa-
+tion of the forward or backward dependency cone of a declaration which are needed to
+generate self-contained documents and in change management, respectively. This is im-
+portant for cross-application scalability because applic ations can parse the ABox very
+easily. Moreover, we obtain a notion of separate compilation: ABox-generation only
+requires structural validity, and the latter can be implemented if only the ABoxes of the
+referenced ﬁles are known.
+Case Study 5: Since all M MT knowledge items have a globally unique M MT-URI,
+being able to dereference them is sufﬁcient to obtain comple te information about a
+theory graph. We have implemented a web servlet for M MT that can act as a local
+proxy for MMT-URIs and as a URI catalog that maps MMT-URIs into (local or remote)
+URLs. The former means that all MMT-URIs are resolved locally if possible. The latter
+means that the M MT-URI of a module can be independent from its physical locatio n.
+The same servlet can be run remotely, e.g., on the same machin e as a mathematical
+database and conﬁgured to retrieve ﬁles directly from there or from other servers.
+Thus systems can access all their input documents by URI via alocal service, which
+makes all storage issues transparent. (Using presentation , see below, these can even
+be presented in the system’s native syntax.) This solves a ce ntral problem in current
+implementations of formal systems: the restriction to in-m emory knowledge. Besides
+the advantages of distributed storage and caching, a simple example application is that
+imported theories are automatically included when remote d ocuments are retrieved in
+order to avoid successive lookups.
+3.3 Presentation
+MMT comes with a declarative language for notations similar to [
+19] that can be used
+to transform M MT theory graphs into arbitrary output formats. Notations are declared
+by giving parameters such as ﬁxity and input/output precede nce, and snippets for sep-
+arators and brackets. Notations are not only used for mathem atical objects but also for
+all MMT expressions, e.g. theory declarations and theory graphs.
+Two aspects are particularly important for scalability. Firstly, sets of notations (called
+styles) behave like theories, which are sets of symbols. In particular, styles and notations
+have MMT-URIs (and are part of the MMT ontology), and the MMT module system can
+be used for inheritance between styles.
+Secondly, every M MT expression has a URI E, for declarations this is trivial, for
+most mathematical objects it is the URI of the head symbol. Co rrespondingly, every
+notation must give an M MT-URI N, and the notation is applicable to an expression if
+N is a preﬁx of E. More speciﬁc notations can inherit from more general ones,e.g., the
+brackets and separators are usually given only once in the mo st general notation. This
+simpliﬁes the authoring and maintenance of styles for large theory graphs signiﬁcantly.
+Case Study 6: In order to present M MT content as, e.g., HTML with embedded
+presentation M ATHML, we need a style with only the 20 generic notations given in
+http://alpha.tntbase.mathweb.org/repos/cds/omdoc/mathml.omdoc.
+<notation for="http://cds.omdoc.org/"
+role="constant">
+<element name="mo">
+<attribute name="xref">
+<text value="#"/><id/>
+</attribute>
+<hole><component index="2"/></hole>
+</element>
+</notation>
+For example, the notation declara-
+tion on the right applies to all con-
+stants whose cdbase starts with
+http://cds.omdoc.org/
+and renders OMS elements as mo elements.
+The latter has an xref attribute that links
+to the parallel markup (which is included by
+notations at higher levels). The content of the
+mo elements is a “hole” that is by default ﬁlled with the second c omponent, for con-
+stants that is the name (0 and 1 are cdbase and cd.).
+This scales well because we can give notations for speciﬁc theories, e.g., by saying
+that ?M agma?∗ is associative inﬁx and optionally giving a different opera tor symbol
+than ∗. We can also add other output formats easily: Our implementa tion (see [
+18])
+extends the above notation with ajobad:href attribute containing the MMT-URI —
+this URI is picked up by our JOBAD Javascript ([13]) for hyperlinking.
+4 A Scalable Database
+The TNTBase system [
+34] is a versioned XML-database with a client-server architec -
+ture. It integrates Berkeley DB XML into a Subversion server. DB XML stores HEAD
+revisions of XML ﬁles; non-XML content like PDF, images or LATEX source ﬁles, dif-
+ferences between revisions, directory entry lists and othe r repository information are
+retained in a usual SVN back-end storage (Berkeley DB in our c ase). Keeping XML
+documents in DB XML allows accessing ﬁles not only via any SVN client but also
+through the DB XML API that supports efﬁcient querying of XMLcontent via XQuery
+and (versioned) modiﬁcation of that content via XQuery Update.
+In addition, TNTBase provides a plugin architecture for doc ument format-speciﬁc
+customizations [35]. Using OMD OC as concrete syntax for MMT and the MMT API as
+a TNTBase plugin, we have made TNTBase M MT-aware so that data-intensive M MT
+algorithms can be executed within the database.
+The TNTBase system and its documentation are available athttp://tntbase.org.
+Below we describe some of the features particularly relevant for scalability.
+4.1 Generating Content
+Large scale collaborative authoring of mathematical docum ents requires distributed
+and versioned storage. On the language end, M MT supports this by making all iden-
+tiﬁers URIs so that M MT documents can be distributed among authors and networks
+and reference each other. On the database end, TNTBase suppo rts this by acting as a
+versioned MMT database.
+In principle, versioning and distribution could also be rea lized with a plain SVN
+server. But for mathematics, it is important that the storag e backend is aware of at
+least some aspects of the mathematical semantics. In large s cale authoring processes,
+an important requirement is to guarantee consistency, i.e., it should be possible to reject
+commits of invalid documents. Therefore, TNTBase supportsdocument format-speciﬁc
+validation.
+For scalability, it is crucial that validation of interlinked collections of M MT docu-
+ments is incremental, i.e., only those documents added or changed during a commitare
+validated. This is a signiﬁcant effect because the committe d documents almost always
+import modules from other documents that are already in the database, and these should
+not be revalidated — especially not if they contain unnecessary modules that introduce
+further dependencies.
+Therefore, we integrate M MT separate compilation into TNTBase. During a com-
+mit TNTBase validates all committed ﬁles structurally by ca lling the M MT API. After
+successful validation, the ABox is generated and immediately stored in TNTBase. Ref-
+erences to previously committed ﬁles are not resolved; instead their generated ABox is
+used for validation. Thus, validation is limited to the committed documents.
+Case Study 7: In the L ATIN project [ 18], we create an atlas of logics and logic
+translations formalized in M MT. At the current early stage of the project 5 people are
+actively editing so far about 100 ﬁles. These contain about 2 00 theories and 50 views,
+which form a single highly inter-linked M MT theory graph. We use TNTBase as the
+validity-guaranteeing backend storage.
+The L ATIN theory graph is highly modular. For example, the document gi ving the
+set-theoretical model theory of ﬁrst-order logic from [ 16] depends on about 100 other
+theories. (We counted them conveniently using an XQuery, see below.) Standalone vali-
+dation of this document takes about 15 seconds if needed ﬁlesare retrieved from a local
+ﬁle system. Using separate compilation in TNTBase, it is almost instantaneous.
+In fact, we can conﬁgure TNTBase so that structural validati on is preceded by Re-
+laxNG validation. This permits the MMT application to drop inefﬁcient checks for syn-
+tax errors. Similarly, structural validation could be preceded by foundation-speciﬁc val-
+idation, but often we do not have a well-understood notion of separate compilation for
+speciﬁc foundations. But even in that case, we can do better t han naive revalidation.
+MMT is designed so that it is foundation-independent which modules a given document
+depends on. Thus, we can collect these modules in one documen t using an efﬁcient
+XQuery (see below) and then revalidate only this document. M oreover, we can use
+the presentation algorithm from Sect. 3.3 to transform the generated document into the
+input syntax of a dedicated implementation.
+4.2 Retrieving Content
+While the previous section already showed some of the streng th of an M MT-aware
+TNTBase, its true strength lies in retrieving content. As ev ery XML-native database,
+TNTBase supports XQuery but extends the DB XML syntax by a notion of ﬁle system
+path to address path-based collections of documents. Furth ermore, it supports index-
+ing to improve performance of queries and the querying of pre vious revisions. Finally,
+custom XQuery modules can be integrated into TNTBase.
+MMT-aware retrieval is achieved through two measures. Firstly , ABox caching
+means that for every committed ﬁle, the M MT ABox is generated and stored in TNT-
+Base. The ABox contains only two kinds of declarations — inst ances of unary and
+binary predicates — and is stored as a simple XML document. Th e element types in
+these documents are indexed, which yields efﬁcient global queries.
+Example 3. An M MT document for the algebra example from Sect. 2.1 is served at
+http://alpha.tntbase.mathweb.org/repos/cds/math/algebra/algebra1.omdoc. Its ABox is cached
+at http://alpha.tntbase.mathweb.org:8080/tntbase/cds/restful/integration/validation/mmt/content/
+math/algebra/algebra1.omdoc.
+Secondly, custom XQuery functions utilize the cached and indexed ABoxes to
+provide efﬁcient access to frequently needed aggregated do cuments. These include in
+particular the forward and backward dependency cones of a mo dule. The backward
+dependency cone of a module M is the minimal set of modules needed to make M
+well-formed. Dually, the forward cone contains all modules that need M. If it were not
+for the indexed ABoxes, the latter would be highly expensive to compute: linear in the
+size of the database.
+Case Study 8: The M MT presentation algorithm described in Sect. 3.3 takes a set
+of notations as input. However, additional notations may begiven in imported theories,
+typically format-independent notations such as the one making ?Magma?∗ inﬁx. There-
+fore, when an M MT expression is rendered, all imported theories must be traversed for
+the sole reason of obtaining all notations.
+Without MMT awareness in TNTBase, this would require multiple successive queries
+which is particularly harmful when presentation is executed locally while the imported
+theories are stored remotely. But even when all theories are available on a local disk,
+these successive calls already take 1.5 seconds for the abov e algebra document. (Once
+the notations are retrieved, the presentation itself is instantaneous.)
+In MMT-aware TNTBase, we can retrieve all notations in the backward dependency
+closure of the presented expression with a single XQuery. AB ox-indexing made this
+instantaneous up to network lag.
+TNTBase does not only permit the efﬁcient retrieval of such generated documents,
+but it also permits to commit edited versions of them. We callthese virtual documents
+in [35]. These are essentially “XML database views” analogous to v iews in relational
+databases. They are editable, and TNTBase transparently pa tches the differences into
+the original ﬁles in the underlying versioning system.
+Case Study 9: While manual refactoring of large theory graphs is as difﬁcu lt as
+refactoring large software, there is virtually no tool support for it. For MMT, we obtain
+a simple renaming tool using a virtual document for the one-s tep (i.e., non-transitive)
+forward dependency cone of a theory T (see [35] for an example). That contains all
+references to T so that T can be renamed and all references modiﬁed in one go.
+5 Conclusion and Future Work
+This paper aims to pave the way for MKM “in the large” by proposing a theoretical and
+technological basis for a “Universal Digital Mathematics Library” (UDML) which has
+been touted as the grand challenge for MKM. In a nutshell, we conclude that the prob-
+lem of scalability has be to addressed on all levels: we need modularity and accessibility
+of induced declarations in the representation format, incr ementality and memoization
+in the implementation of the fundamental algorithms, and a m ass storage solution that
+supports fragment access and indexing. We have developed pr ototypical implementa-
+tions and tested them on a variety of case studies.
+The next step will be to integrate the parts and assemble a UDM L installation with
+these. We plan to use the next generation of the OMD OC format, which will integrate
+the MMT infrastructure described in this paper as an interoperability layer; see [20] for
+a discussion of the issues involved. In the last years, we have developed OMDOC trans-
+lation facilities for various fully formal theorem proving systems and their libraries.
+In the LATIN project [ 18], we are already developing a graph of concrete “logics-as-
+theories” to make the underlying logics interoperable.
+References
+1. S. Autexier, D. Hutter, H. Mantel, and A. Schairer. Toward s an Evolutionary Formal
+Software-Development Using CASL. In D. Bert, C. Choppy, and P. Mosses, editors,WADT,
+volume 1827 of Lecture Notes in Computer Science, pages 73–88. Springer, 1999.
+2. T. Berners-Lee, R. Fielding, and L. Masinter. Uniform Res ource Identiﬁer (URI): Generic
+Syntax. RFC 3986, Internet Engineering Task Force, 2005.
+3. Y . Bertot and P. Cast´ eran.Coq’Art: The Calculus of Inductive Constructions. Springer, 2004.
+4. N. Bourbaki. Theory of Sets. Elements of Mathematics. Springer, 1968.
+5. N. Bourbaki. Algebra I. Elements of Mathematics. Springer, 1974.
+6. S. Buswell, O. Caprotti, D. Carlisle, M. Dewar, M. Gaetano , and M. Kohlhase. The
+Open Math Standard, Version 2.0. Technical report, The Open Math Society, 2004. See
+http://www.openmath.org/standard/om20.
+7. CoFI (The Common Framework Initiative). CASL Reference Manual, volume 2960 ofLNCS.
+Springer, 2004.
+8. H. Curry and R. Feys. Combinatory Logic. North-Holland, Amsterdam, 1958.
+9. S. Dumbrava, F. Horozal, and K. Sojakova. A Case Study on Fo rmalizing Algebra in a
+Module System. In F. Rabe and C. Sch¨ urmann, editors,Workshop on Modules and Libraries
+for Proof Assistants, volume 429 ofACM International Conference Proceeding Series, pages
+11–18, 2009.
+10. W. Farmer. An Infrastructure for Intertheory Reasoning. In D. McAllester, editor,Conference
+on Automated Deduction, pages 115–131. Springer, 2000.
+11. W. Farmer, J. Guttman, and F. Thayer. Little Theories. In D. Kapur, editor, Conference on
+Automated Deduction, pages 467–581, 1992.
+12. William M. Farmer. Mathematical Knowledge Management. In David G. Schwartz, editor,
+Encyclopedia of Knowledge Management, pages 599–604. Idea Group Reference, 2005.
+13. J. Giceva, C. Lange, and F. Rabe. Integrating Web Service s into Active Mathematical Doc-
+uments. In J. Carette and L. Dixon and C. Sacerdoti Coen and S. Watt, editor, Intelligent
+Computer Mathematics, volume 5625 of Lecture Notes in Computer Science , pages 279–
+293. Springer, 2009.
+14. J. Goguen, Timothy Winkler, J. Meseguer, K. Futatsugi, and J. Jouannaud. Introducing OBJ.
+In J. Goguen, D. Coleman, and R. Gallimore, editors,Applications of Algebraic Speciﬁcation
+using OBJ. Cambridge, 1993.
+15. F. Horozal and F. Rabe. Representing Model Theory in a Typ e-Theoretical Logical Frame-
+work. In Fourth Workshop on Logical and Semantic Frameworks, with Applications, volume
+256 of Electronic Notes in Theoretical Computer Science, pages 49–65, 2009.
+16. F. Horozal and F. Rabe. Representing Model Theory in
+a Type-Theoretical Logical Framework. Under review, see
+http://kwarc.info/frabe/Research/EArabe_folsound_10.pdf, 2010.
+17. W. Howard. The formulas-as-types notion of construction. In To H.B. Curry: Essays on Com-
+binatory Logic, Lambda-Calculus and Formalism, pages 479–490. Academic Press, 1980.
+18. M. Kohlhase, T. Mossakowski, and F. Rabe. The LATIN Proje ct, 2009. See
+https://trac.omdoc.org/LATIN/.
+19. M. Kohlhase, C. M¨ uller, and F. Rabe. Notations for Living Mathematical Documents. In S.
+Autexier and J. Campbell and J. Rubio and V . Sorge and M. Suzuki and F. Wiedijk, editor,
+Mathematical Knowledge Management, volume 5144 ofLecture Notes in Computer Science,
+pages 504–519, 2008.
+20. M. Kohlhase, F. Rabe, and C. Sacerdoti Coen. A Foundational View on Integration Problems.
+Submitted to CALCULEMUS, 2010.
+21. T. Mossakowski, C. Maeder, and K. L¨ uttich. The Heterogeneous Tool Set. In O. Grumberg
+and M. Huth, editor,TACAS 2007, volume 4424 ofLecture Notes in Computer Science, pages
+519–522, 2007.
+22. P. Naumov, M. Stehr, and J. Meseguer. The HOL/NuPRL proof translator - a practical ap-
+proach to formal interoperability. In 14th International Conference on Theorem Proving in
+Higher Order Logics. Springer, 2001.
+23. T. Nipkow, L. Paulson, and M. Wenzel. Isabelle/HOL — A Proof Assistant for Higher-Order
+Logic. Springer, 2002.
+24. M. Odersky, L. Spoon, and B. Venners. Programming in Scala. artima, 2007.
+25. S. Owre, J. Rushby, and N. Shankar. PVS: A Prototype Veriﬁ cation System. In D. Kapur,
+editor, 11th International Conference on Automated Deduction (CAD E), pages 748–752.
+Springer, 1992.
+26. L. Paulson. Isabelle: A Generic Theorem Prover, volume 828 of Lecture Notes in Computer
+Science. Springer, 1994.
+27. F. Pfenning and C. Sch¨ urmann. System description: Twel f - a meta-logical framework for
+deductive systems. Lecture Notes in Computer Science, 1632:202–206, 1999.
+28. A. Poswolsky and C. Sch¨ urmann. System Description: Delphin A Functional Programming
+Language for Deductive Systems. In A. Abel and C. Urban, editors, International Workshop
+on Logical Frameworks and Metalanguages: Theory and Practice, pages 135–141. ENTCS,
+2008.
+29. F. Rabe. Representing Logics and Logic Translations. PhD thesis, Jacobs University Bremen,
+2008. Available at http://kwarc.info/frabe/Research/phdthesis.pdf.
+30. F. Rabe. The MMT System, 2008. See https://trac.kwarc.info/MMT/.
+31. F. Rabe and C. Sch¨ urmann. A Practical Module System for LF. In J. Cheney and A. Felty,
+editors, Proceedings of the Workshop on Logical Frameworks: Meta-Th eory and Practice
+(LFMTP), pages 40–48. ACM Press, 2009.
+32. D. Sannella and M. Wirsing. A Kernel Language for Algebra ic Speciﬁcation and Imple-
+mentation. In M. Karpinski, editor, Fundamentals of Computation Theory, pages 413–427.
+Springer, 1983.
+33. A. Trybulec and H. Blair. Computer Assisted Reasoning wi th MIZAR. In A. Joshi, editor,
+Proceedings of the 9th International Joint Conference on Artiﬁcial Intelligence, pages 26–28,
+1985.
+34. V . Zholudev and M. Kohlhase. TNTBase: a Versioned Storage for XML. In Proceedings of
+Balisage: The Markup Conference 2009, volume 3. Mulberry Technologies, Inc., 2009.
+35. V . Zholudev, M. Kohlhase, and F. Rabe. A [insert XML Forma t] Database for [insert cool
+application]. In Proceedings of XMLPrague. XMPPrague.cz, 2010.

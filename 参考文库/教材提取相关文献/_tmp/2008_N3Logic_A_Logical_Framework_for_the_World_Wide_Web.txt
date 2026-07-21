@@ -1,0 +1,830 @@
+arXiv:0711.1533v1  [cs.NI]  9 Nov 2007
+Under consideration for publication in Theory and Practice of Logic Programming 1
+N3Logic: A Logical Framework For the World
+Wide Web
+Tim Berners-Lee, Dan Connolly, Lalana Kagal, Yosi Scharf
+Computer Science and Artiﬁcial Intelligence lab
+Massachusetts Institute of Technology
+{timbl, connolly, lkagal, syosi }@csail.mit.edu
+Jim Hendler
+Rensselaer Polytechnic Institute
+hendler@cs.rpi.edu
+submitted 13 May 2006; revised 11 Sep 2007; accepted 18 Octob er 2007
+Abstract
+The Semantic Web drives towards the use of the Web for interac ting with logically in-
+terconnected data. Through knowledge models such as Resour ce Description Framework
+(RDF), the Semantic Web provides a unifying representation of richly structured data.
+Adding logic to the Web implies the use of rules to make infere nces, choose courses of
+action, and answer questions. This logic must be powerful en ough to describe complex
+properties of objects but not so powerful that agents can be t ricked by being asked to
+consider a paradox. The Web has several characteristics tha t can lead to problems when
+existing logics are used, in particular, the inconsistenci es that inevitably arise due to the
+openness of the Web, where anyone can assert anything. N3Log ic is a logic that allows
+rules to be expressed in a Web environment. It extends RDF wit h syntax for nested graphs
+and quantiﬁed variables and with predicates for implicatio n and accessing resources on the
+Web, and functions including cryptographic, string, math. The main goal of N3Logic is to
+be a minimal extension to the RDF data model such that the same language can be used
+for logic and data. In this paper, we describe N3Logic and ill ustrate through examples
+why it is an appropriate logic for the Web.
+KEYWORDS: logic, Web, Semantic Web, scoped negation, quoting, RDF, N 3
+1 Introduction
+The Semantic Web is an enhancement of the World Wide Web to broaden its shar-
+ing capacity to application data sharing as well as human-focused da ta sharing.
+Through RDF the Semantic Web provides a unifying representation o f richly struc-
+tured data. And through the Web, application developers can shar e these data
+representations so that their applications can make “decisions” on the basis of
+combining the many diﬀerent kinds of data published on the Web.
+RDF builds on the fundamental pointer mechanism of the Web; the Un iform
+Resource Identiﬁer (URI). In the initial incarnation of the Web, UR Is were generally
+thought to refer to documents and parts of documents via hyper text anchors. The
+2 T. Berners-Lee
+Semantic Web makes it explicit that URIs can be used to name anything – from
+abstract concepts (“color”) to physical objects (“the building in which MIT’s CSAIL
+personnel work”) to electronic objects (“the machine code that implements the
+Linux operating system”). RDF uses URIs to give names to relations hips between
+objects as well as to the objects themselves.
+The abstract representation of RDF (Carroll and Klyne 2004) is a d irected labeled
+graph – i.e. nodes and arcs. A subset of the nodes are URIs; these are “named”
+nodes. Other nodes may not be identifying URIs but the graph can s till describe
+properties of such nodes including relationships with other named an d un-named
+nodes. The properties and relationships are the edges in the graph . Every edge type
+has its own label and these same edge type labels themselves can be u sed to name
+other nodes in the graph that represent the edge type. This perm its properties of
+edge types themselves to be represented in an RDF graph.
+N3 is a compact and readable alternative to RDF’s XML syntax (Berne rs-Lee
+1998). N3 allows RDF to be expressed but emphasizes readability and symmetry.
+It also allows quoting or statements to be made about statements. This quoting
+feature allows users to distinguish between what they believe to be t rue and what
+someone else including a website states or believes.
+N3Logic uses N3 syntax and extends RDF with a vocabulary of predic ates. N3
+aims to do for logical information what RDF does for data: to provide a common
+data model and a common syntax, so that extensions of the langua ge are made
+simply by deﬁning new terms in an ontology. Declarative programming la nguages
+such as Scheme (Steele and Sussman ) already do this. However, th ey diﬀer in their
+choice of pairs rather than the RDF binary relational model for dat a, and lack
+the use of universal identiﬁers as symbols. N3Logic allows rules to be integrated
+smoothly with RDF and provides certain essential built-in functions t hat allow
+information from the Web to be accessed and reasoned over. The m ain goal of
+N3Logic is to make a minimal extension to the RDF data model so the sa me
+language could be used for logic and data, and to do so in a way that is c ompatible
+with the architectural principles of the Web
+In this paper, we discuss the features of N3Logic with the help of ex amples and
+describe its informal semantics.
+2 N3Logic Overview
+One of the main motivations of N3Logic is to be useful as a tool in the o pen
+Web environment. The Web contains many sources of information, w ith diﬀerent
+characteristics and relationships to any given reader. Whereas a c losed system may
+be built based on a single knowledge base of believed facts, an open We b-based
+system exists in an unbounded sea of interconnected information r esources. This
+requires that an entity be aware of the provenance of information and responsible
+for its disposition. A language for use in this environment typically req uires the
+ability to express which document or message asserts what. We fou nd that quoting
+provides a pragmatic solution to this. However, quotation and refe rence, with its
+inevitable possibility of direct or indirect self-reference, if added dir ectly to ﬁrst
+N3Logic: A Logical Framework For the World Wide Web 3
+order logic presents problems such as paradox traps. To avoid this , N3Logic has
+deliberately been kept to limited expressive power: it currently cont ains no general
+ﬁrst order negation.
+Another goal of N3Logic is that information, such as but not limited t o rules,
+which requires greater expressive power than the RDF graph, sho uld be sharable
+in the same way as RDF can be shared. This means that one person sh ould be able
+to express knowledge in N3Logic for a certain purpose, and later ind ependently
+someone else can reuse that knowledge for a diﬀerent unforeseen purpose. As the
+context of the latter use is unknown, this prevents us from making implicit closed
+assumptions about the total set of knowledge in the system as a wh ole.
+Further, users of the Web have the ability to express new knowledg e without
+aﬀecting systems that are already built. We’ve chosen to adopt a mo notonicity
+requirement for N3Logic because we ﬁnd it scales well. This implies that the ad-
+dition of new information from elsewhere cannot silently change the m eaning of
+the original knowledge, though it might cause an inconsistency by co ntradicting
+the old information. The non-monotonicity of many existing systems follows from
+a form of negation as failure (NAF) in which a sentence is deemed false if it not
+held within (or, derivable from) the current knowledge base. It is th is concept of
+current knowledge base, which is a variable quantity, and the ability t o indirectly
+make reference to it which causes the non-monotonicity. In N3Log ic, while a cur-
+rent knowledge base is a ﬁne concept, there is no ability to make refe rences to it
+implicitly in the negative. The negation provided is called Scoped Negatio n As Fail-
+ure (SNAF) and is the ability for a speciﬁc given document (or, essen tially, some
+abstract formula) to objectively determine whether or not it holds , or allows one to
+derive, a given fact. However, negated forms of many of the built- in functions are
+available. (Please refer to Sections 4.3 and 5.5 for more information a bout scoped
+negation and built-in functions)
+3 Motivating Example
+We describe a Web-based scenario that will be used to illustrate the d iﬀerent fea-
+tures of N3 logic. Consider a conference management system that handles diﬀerent
+aspects of registration for conferences. It allows people to regis ter by specifying
+their names, addresses, aﬃliations, and their Friend-of-a-Friend (foaf) page. A foaf
+page includes information such as the organization the registrant w orks for, her/his
+current and past projects, and her/his interests (Brickley and M iller 1999; Dumbill
+2002). Using this information, the conference management syste m goes out onto
+the Web and retrieves relevant information. By reasoning over this information it
+is able to make inferences about the registrant such as whether th e registrant is a
+vegetarian or not, which workshops she/he would be most interest ed in, whether
+she/he is a member of a certain professional organization, and whe ther the reg-
+istrant is a student. This allows the conference management syste m to provide
+greater support in the registration process by ﬁguring out what r egistration fees
+are applicable, whether to order vegetarian meals, and by suggest ing appropriate
+4 T. Berners-Lee
+workshops. In the following sections, we deﬁne N3Logic in detail, usin g the example
+of this conference system to illustrate key features.
+4 Notions and T erminology
+N3 is based on the abstract syntax of RDF. The concrete syntax o f N3 includes a
+number of other abbreviations. Please refer to the Appendix 11 or to the N3 Primer
+(Berners-Lee 2005) for a tutorial introduction.
+4.1 Basic Concepts from RDF
+• The atomic formulas in the RDF abstract syntax are called “triples”; they
+are analogous to one 3-place holds(s, p, o) predicate. For example:
+<http://dig.csail.mit.edu/2006/Papers/TPLP/example/exconf#ExConf>
+<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <h ttp://example.org/conf#Conference>
+• RDF also has conjunctions of formulas. URI terms can be abbreviat ed using
+namespaces, and the keyword ’a’ is short for <http://www.w3.org/1999/
+02/22-rdf-syntax-ns#type >.
+@prefix conf: <http://example.org/conf#> .
+@prefix : <http://dig.csail.mit.edu/2006/Papers/TPLP/ example/exconf#> .
+ExConf a conf:Conference .
+ExConf conf:homepage <http://www.l3s.de/~olmedilla/ev ents/MTW06_Workshop.html>.
+ExConf conf:registrant Judy.
+Judy a foaf:Person.
+<http://dig.csail.mit.edu/2005/09/rein/examples/judy-foaf.rdf> foaf:maker Judy.
+• RDF also has literal terms; for example:
+ExConf conf:eventName "WWW2006 Workshop on Models of Trust for the Web".
+ExConf conf:numOfRegistrants 65.
+• Finally, RDF abstract syntax allows existential quantiﬁcation. Cert ain syn-
+taxes (e.g. “[“...”]”) allow an existential variable to be introduced witho ut
+having to name it: this is known as a blank node. The following are equiva -
+lent:
+@forSome X. j:Joe foaf:knows X. X foaf:name "Fred" .
+j:Joe foaf:knows [ foaf:name "Fred" ] .
+4.2 N3 Extension to RDF
+N3 extends the abstract syntax of RDF in two ways:
+• It has all of the terms of RDF plus quoted formulas. For example:
+N3Logic: A Logical Framework For the World Wide Web 5
+b:mary says { j:Joe foaf:schoolHomepage <http://example. edu> } .
+• It has all of the formulas of RDF plus universally quantiﬁed formulas. In
+simple cases, the @forAll quantiﬁer can be left implicit. The following ar e
+equivalent:
+@forAll X. { X a Man } log:implies { X a Mortal }.
+{ ?X a Man } log:implies { ?X a Mortal }.
+The N3 example below declares namespace preﬁxes and deﬁnes ExConf an in-
+stance of the Conference class as deﬁned in conf namespace.
+@keywords a.
+@prefix conf: <http://example.org/conf#> .
+@prefix : <http://dig.csail.mit.edu/2006/Papers/TPLP/ example/exconf#> .
+ExConf a conf:Conference;
+conf:eventName "WWW2006 Workshop on Models of Trust for the Web";
+conf:acronym "MTW06";
+conf:address "mtw@www.org";
+conf:homepage <http://www.l3s.de/~olmedilla/events/M TW06_Workshop.html> .
+4.3 N3Logic Vocabulary
+N3Logic uses the N3 syntax and also includes a set of predicates. It s vocabulary is
+union of the N3 syntax and the set of URI references deﬁned in the log: ( http://
+www.w3.org/2000/10/swap/log#), crypto: ( http://www.w3.org/2000/10/swap/
+crypto#), list: ( http://www.w3.org/2000/10/swap/list#), math: ( http://www.
+w3.org/2000/10/swap/math#), os: (http://www.w3.org/2000/10/swap/os#), string:
+(http://www.w3.org/2000/10/swap/string#), and time: ( http://www.w3.org/
+2000/10/swap/time#) namespaces as shown in Table 4.3.
+log:conclusion, log:content, log:includes, log:semanti cs, log:notIncludes, log:supports
+... crypto:md5, crypto:sign, crypto:verify ... list:in, l ist:last ... math:lessThan,
+math:greaterThan ... os:argv, os:environ ... string:cont ains, string:endsWith,
+string:scrape ... time:day, time:hour, time:minute ...
+Table 1. Some N3Logic predicates
+While N3Logic properties can be used simply as ground facts in a datab ase, is
+very useful to take advantage of the fact that in fact they can b e calculated. N3Logic
+includes axiom schemas for each of these terms; reasoners can us e these axioms to
+evaluate formulas and bind variables. These are called built-in functions and they
+can be used to provide a variety of functionality, for example the cr ypto:sha1 built-
+in allows the object to be computed as the SHA-1 hash of the subjec t.
+6 T. Berners-Lee
+5 Informal Semantics of N3Logic
+Various vocabularies, notably RDFS and OWL, have deﬁned RDF pred icates with
+logical semantics, such as rdfs:range, and owl:sameAs, etc. Of the se, N3 logic uses
+rdf:type and owl:sameAs, and deﬁnes further predicates to allow ru les, web access
+and built-in calculated functions. N3Logic extends RDF in two ways (i) a syntax
+namely N3, and (2) a vocabulary of new predicates, which can be use d to talk about
+the provenance of information, contents of documents on the We b, and provide
+a variety of useful functionality such as string, cryptographic, a nd mathematic
+functions.
+N3Logic allows statements to be made about, and to query, other s tatements such
+as the content of data in information resources on the Web. Formu lae provide the
+ability to represent such sets of statements. To allow statements about them, some
+of the relationships deﬁned are given URIs so that these statemen ts and queries
+can be written in N3.
+The fact that the rule language and the data language are the same gives a
+certain simplicity (there is only one syntax) and completeness (rules can operate
+on themselves, anything written in N3 can be queried in N3). This would be broken
+if a special syntax were added for built-in functions and operators . Instead, these
+are simply represented as RDF properties. Rules may have full N3, e ven with nested
+graphs, on both sides of the implication. This gives a form of complete ness as rules
+can generate rules.
+5.1 Relationship with RDF, RDFS, and OWL
+N3 syntax allows RDF to be expressed, however, it does not make us e of the full
+RDF vocabulary.
+• In N3 the keyword “a” is a shorthand for rdf:type and can be replac ed with
+a direct use of the full URI symbol for rdf:type.
+• The shorthand notation of “=” refers to owl:sameAs. It is used to state that
+the subject and object are equal.
+• N3 uses rdf:List, rdf:ﬁrst, rdf:rest, and rdf:nil for describing lists. Implemen-
+tations may treat list as a data type rather than just a ladder of rd f:ﬁrst and
+rdf:rest properties. The use of rdf:ﬁrst and rdf:rest can be seen as a reiﬁcation
+of the list datatype. This use of lists requires more axioms than are a ctually
+deﬁned in the RDF speciﬁcation. These axioms, described in N3, are g iven
+below
+— Existence of lists
+(?X).
+{ ?L rdf:rest [ ] } => { [ ] rdf:first ?X; rdf:rest ?L }.
+— Uniqueness of lists
+{ ?L1 rdf:first ?X; rdf:rest ?R.
+?L1 rdf:first ?X; rdf:rest ?R. } => { ?L1 = ?L2 }.
+N3Logic: A Logical Framework For the World Wide Web 7
+— Uniqueness of the rdf:ﬁrst and rdf:rest of a list
+{ ?S rdf:first ?O1, ?O2 } => { ?O1 = ?O2 }.
+{ ?S rdf:rest ?O1, ?O2 } => { ?O1 = ?O2 }.
+• The semantics of RDFS can be easily expressed in N3Logic. A set of N3 Logic
+rules for deﬁning rdf:domain and rdf:range are as follows
+{ ?S [ s:domain ?C ] ?O } => { ?S a ?C } .
+{ ?S [ s:range ?C ] ?O } => { ?O a ?C } .
+{ ?S a [ s:subClassOf ?C ] } => { ?S a ?C } .
+5.2 Quoted N3 Formulae
+Quoting is an important feature provided by N3. Various forms of lite ral value
+are allowed in RDF graphs, however the RDF standard does not itself provide
+for another RDF graph to be a data value. Remedying this allows one t o express
+relationships between graphs, for example that a given graph is the RDF content of
+a particular document. Every RDF graph is a subclass of N3 formula. A quoted N3
+formula is an N3 formula enclosed in braces “ {“ “}”. Some examples of N3 formulae
+and quoted N3 formulae are shown in Table 2.
+Note that, however, substitution of equal (owl:sameAs) terms oc curring in a
+formula does not take place within nested quoted formulae: formula e are not refer-
+entially transparent.
+In our conference management example, we assume that there ar e several admin-
+istrators. Each administrator speciﬁes a list of people who may not r egister due to
+some reason. The example below states that Joe says that Peter is not permitted
+to register. Even though Peter is equal to John, it does not imply th at Joe says
+that John is not permitted to register. This is an example of a quoted N3 formula.
+j:Joe says { mit:Peter policy:notpermitted conf:Register }.
+mit:Peter = cmu:John.
+5.3 Dereferencing URIs
+The Web is exposed as a mapping between URIs and the information re turned when
+such a URI is dereferenced, using appropriate protocols. In N3Lo gic, the information
+resource is identiﬁed by a symbol, which is in fact is its URI. The informa tion is
+represented in formulae, the information retrieved is also represe nted as a formula.
+Not all information on the Web is, of course in N3. If we assume that N 3 is the
+interlingua, then from the point of view of this system, the semantic s of a document
+is exactly what can be expressed in N3.
+log:semantics is a logical property that represents the relation between a docu-
+ment and the logical expression which represents its meaning expre ssed as N3. The
+log:semantics of an N3 document is the formula achieved by parsing the represen-
+tation of the document.
+8 T. Berners-Lee
+N3 formula : c1 is a Car as deﬁned in the “ex” namespace and its c olor is green.
+@keywords a.
+@prefix ex: <http://example.org/car.n3#> .
+c1 a ex:Car;
+ex:color "green".
+N3 formula : The semantics of <http://www.example.org/myfoaf.rdf> as expressed
+in N3 is stored into a variable, F.
+@forAll F.
+<http://www.example.org/myfoaf.rdf> log:semantics F .
+Quoted N3 formula : Joe believes that Peter is a graduate stud ent.
+j:Joe believes { mit:Peter a school:GraduateStudent } .
+Quoted N3 Formula : Mary believes that Joe believes that Pete r is a graduate student.
+Mary believes { j:Joe believes { mit:Peter a school:Graduat eStudent } } .
+Table 2. N3 Formula Examples
+In order to access a foaf ﬁle and store its N3 representation to a v ariable,
+log:semantics is used in the following manner
+<http://www.example.org/myfoaf.rdf> log:semantics ?F.
+The Architecture of the World Wide Web deﬁnes algorithms by which a m achine
+can determine representations of document given its symbol - URI . For a represen-
+tation in N3, this is the formula which corresponds to the document p roduction
+of the grammar. For a representation in RDF/XML, it is the formula w hich is the
+entire graph parsed. For any other languages, it may be calculated as long as a
+speciﬁcation exists that deﬁnes the equivalent N3 semantics for ﬁle s in that lan-
+guage. The N3 semantics of other languages for Web documents su ch as GRDDL
+(Haza¨ el-Massieux and Connolly 2005) and RDF/A (Adida and Birbeck 2006) may
+be deﬁned so that they are also calculable.
+The N3 formula of a document is not the semantics of the document in any
+absolute sense. It is the semantics expressed in N3. In turn, the f ull semantics of an
+N3 formula are grounded in the deﬁnitions of the properties and clas ses used by the
+formula. In the HTTP space, in which URIs are minted by an authority , deﬁnitive
+information about those deﬁnitions may be found by dereferencing the URIs. This
+information may be in natural language, in some machine-processab le logic, or a
+mixture.
+N3Logic: A Logical Framework For the World Wide Web 9
+URI
+"http://www.example.org/foaf.rdf"
+Resource
+FOAF File
+String
+"@keywords a.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+me  a foaf:Person;
+       foaf:family_name "Kagal";
+       foaf:givenname "Lalana";
+       foaf:workplaceHomepage <http://
+www.csail.mit.edu/index.php> . "
+log:content
+log:uri
+log:
+parsedAsN3
+N3
+log:semantics
+me
+rdf:type
+foaf:
+Person
+foaf:
+famiy_name
+"Kagal"foaf:
+givenname
+"Lalana"
+foaf:
+givenname
+<http://www.csail.mit.edu/index.php>
+Fig. 1. Relationship between resource, URI, string, N3 repr esentation, and logic
+properties.
+Other logical properties related to dereferencing include log:content, log:parsedAsN3,
+log:N3String, and log:uri.
+• log:content of a document, is the string which was returned as the document
+contents when the URI of the resource was looked up.
+• log:parsedAsN3 is the logical property that returns the formula got by parsing
+the string as a Notation3 document.
+• log:N3String returns the string which expresses a certain formula in N3.
+• log:uri is the URI of a resource. Normal logic processing should not look at
+URIs but in some cases one needs to. Though a URI itself has semant ics and
+can be used to obtain additional information, log:uri must be used ca refully
+because it is a level-breaker: it lets an N3 system look at its infrastru cture. It
+is a function which one can evaluate either way: resource to URI or U RI to
+resource.
+<http://example.org/> log:uri "http://example.org/"
+Figure 1 illustrates the relationship between URI, resource, string , N3 represen-
+tation, and the diﬀerent logical properties.
+5.4 Rules
+N3 extends RDF with variables and nested graphs to enable the desc riptions of
+rules. In its blank nodes (items in the graph not directly identiﬁed by a URI)
+10 T. Berners-Lee
+an RDF graph has a form of existential variable. Extending the langu age to allow
+variables existentially or universally quantiﬁed over a graph allows N3 t o be used for
+a form of logic. The drive for this initially was so that, given variables, a rule is just
+a relation between two graphs. Variables are deﬁned such that whe n substitution
+occurs in a graph, it also occurs in any nested graph.
+The log:implies property expresses a rule, its subject being the antecedent gra ph,
+and the object being the consequent graph. It relates two formu lae, expressing
+implication. A statement using log:implies cannot be calculated. It is not a built-in
+function, but a predicate which allows the expression of a rule. N3 allo ws blank
+nodes in the conclusion of a rule, hence allowing the creation of new ob jects.
+Continuing with our earlier example, though anyone can specify a list o f people
+who cannot register, the conference management system only tr usts administrators
+of the system with this information.
+@forAll A, X.
+{ A a conf:Administrator.
+A conf:says { X policy:notpermitted conf:Register }.
+} => { X policy:notpermitted conf:Register }.
+To do some inference within another set of rules, a useful relations hip is log:conclusion.
+It is a property between a formula, and the result of running any ru les in the for-
+mula on all the data recursively - the deductive closure. To make up t he initial
+formula, log:conjunction can be used to merge a list of formulae.
+For example, if the statements made by administrators is in ﬁle <statements.n3>,
+the list of administrators in ﬁle <admin.rdf>, and the rule described about in
+<rule.n3>, then we can use log:conjunction and log:conclusion to decide whether
+or not someone should be permitted to register. log:supports is a relationship that
+combines log:conclusion and log:includes to check whether the conclusion of the for-
+mula includes a certain subgraph. (Please refer to section 5.5 for mo re information
+about log:includes).
+@forAll S, A, R, C, X.
+{ <statements.n3> log:semantics S.
+<admin.rdf> log:semantics A.
+<rule.n3> log:semantics R.
+(S A R) log:conjunction C.
+C log:supports { X policy:notpermitted conf:Register }.
+} => { X policy:notpermitted conf:Register }.
+As it is possible to have blank nodes in the conclusion of a rule, log:conclusion and
+log:supports are undecidable and may run forever. However, it is possible to rest rict
+N3Logic to a decidable subset language in which blank nodes are not allo wed in
+the conclusion.
+5.5 Graph Functions
+The logic function, log:includes, checks whether one formula can be N3-derived
+from another formula. (Please refer to Section 5.7 for more inform ation about N3-
+N3Logic: A Logical Framework For the World Wide Web 11
+N3
+@prefix conf:  <http://example.org/conf#> .
+@prefix policy:  <http://example.org/policy#> .
+Joe  conf:said
+   {  mit:Peter policy:notpermitted conf:Register }.
+log:includes
+N3
+{ Joe conf:said { mit:Peter policy:notpermitted 
+conf:Register } }
+N3
+{ mit:Peter policy:notpermitted conf:Register } 
+log:notIncludes
+Fig. 2. Quoting and its relation to log:includes and log:not Includes
+derivation) Together, log:semantics and log:includes allow rules to access the Web,
+and to objectively check the contents of documents, without hav ing to load them
+and believe everything they say.
+The following rule states that if the home page of a registrant says t hat she is a
+vegetarian, then she/he is a vegetarian. We ﬁnd the URI of her hom epage on her
+foaf page.
+@forAll X, FOAF, F, H, HS.
+{ ExConf conf:registrant X.
+FOAF foaf:maker X.
+FOAF log:semantics F.
+F log:includes { X foaf:homepage H }.
+H log:semantics HS.
+HS log:includes { X a ex:Vegetarian }
+} => { X a ex:Vegetarian}.
+Whereas some datasets (such as a list of members of a club) are deﬁ nitively
+complete, others (such as a set of temperature measurements) are not. This aspect
+of the Semantic Web makes negation as failure meaningless unless it is a ssociated
+to a speciﬁc dataset. As a formula is of ﬁnite size, it can be tested fo r what it does
+not say. As a form of negation, log:notIncludes is completely monotonic. It can be
+evaluated by a mathematical calculation on the value of the two term s: no other
+knowledge gained can inﬂuence the result. This is the scoped negation as failure
+mentioned in the introduction. This is not a non-monotonic negation a s failure.
+Figure 2 shows how log:includes and log:notIncludes relate to quoting.
+We continue with our example. We assume that every school website has a prop-
+erty linking to its directory. The directory provides information abo ut people in-
+12 T. Berners-Lee
+cluding their foaf pages, their designation (such as student, facu lty, associate), and
+their email address. Below we have a rule that states if the director y of the school
+does not specify that the person under consideration is a student , the system gives
+the person the academic rate but not the student rate.
+@forAll X, FOAF, F, H, HS, D, DS.
+{ ExConf conf:registrant X.
+FOAF foaf:maker X.
+FOAF log:semantics F.
+F log:includes { X foaf:schoolHomepage H }.
+H log:semantics HS.
+HS log:includes { H school:directory D }.
+D log:semantics DS.
+DS log:notIncludes { X a school:Student }
+} => { X conf:registrationRate conf:AcademicRate }.
+The eﬀect of a default with an explicit domain is achieved with log:notIncludes.
+Defaults can be handled by ﬁrst running rules to work out everythin g that is speci-
+ﬁed, and then doing a log:notIncludes on the result as shown in the example above.
+5.6 Built-ins
+N3Logic also provides other built-ins for additional functionality. So me examples
+include
+• crypto functions - md5, sign, and verify
+• xmath functions - cos, greaterThan, notGreaterThan, and diﬀerence
+• os functions for retrieving environment information - argv, baseAbs olute, and
+baseRelative
+• string functions - concatenation, matches, and startsWith
+• time functions - dayOfWeek, gmTime, and localTime
+The following example describes a rule that states that papers subm itted to the
+conference that are not more than 6 pages are valid if authorized b y a program
+chair of the conference.
+@prefix math: <http://www.w3.org/2000/10/swap/math#> .
+@forAll PAPER, LEN, CHAIR.
+{ ExConf conf:submittedPaper PAPER.
+PAPER conf:pageLength LEN.
+LEN math:notGreaterThan 6.
+PAPER conf:authorized CHAIR.
+CHAIR conf:chair ExConf.
+} => { PAPER a conf:ValidPaper }.
+N3Logic: A Logical Framework For the World Wide Web 13
+5.7 N3 Derivation
+N3-derivation is not aimed at moving all the way to the powerful inference capa-
+bilities of an expressive logic, but rather extends textual inclusion t o include some
+simple inferences that are standard in most logics. These include:
+• Conjunction Elimination (CE): For any formulae A and B, given conjun ction
+A and B, then A follows, and B follows.
+• Conjunction Introduction (CI): For any formulae A and B, given A, and
+given B, then the conjunction A and B follows.
+• Universal Elimination (UE): Given any formula A, a universal variable x that
+is used in A, and a ground term t, A t/x follows. i.e. @forAll x, A and ground
+term t, then A t/x follows.
+• Existential Introduction (EI): Given any formula A containing a gro und term
+t, and an existential variable v that does not occur in A, then A x/t follows.
+• Variable Renaming (VR): For any formula A, and variables x and x’, A =
+A’ where A’ is a formula derived by Subst(x/x’, A).
+N3 derivation is any ﬁnite number of applications of of CE, CI, UE, EI o r VR.
+An N3 derivation operator T is deﬁned as any operator which is the successive
+application of any sequence (possibly empty) of such operators. A formula F n3-
+derives a formula T F, which implies that by a combination of CE, EI, UE and VR,
+T F logically follows from F.
+As RDF Graph is a subclass of N3 formula, if F and G are RDF graphs, on ly CE
+and EI apply and n3-derivation reduces to simple entailment from RDF Semantics.
+The implementation of built-in functions is not in general required for any im-
+plementation of N3Logic, as they can always soundly be treated as g round facts.
+However, their usefulness is derived from their implementation. For example, { 1
+math:negation -1 } is derived by calculation. Like other RDF properties, the set
+is designed to be extensible, enabling others to use URIs for new fun ctions. When
+a triple can be evaluated, or a variable bound because its predicate is a built-in
+function, then the derivation of the statement is said to be by calculated derivation.
+N3Logic-derivation is N3-derivation with modus ponens and calculated derivation.
+5.8 Symmetry of Triples
+When designing an ontology in RDF the direction chosen for a given pro perty is
+arbitrary - one can either deﬁne “parent” or “child”, “employee” o r “employer”.
+Our philosophy (from the Enquire design of 1980 (Berners-Lee 198 0)) is that one
+should not favor one way over another. On the other hand, one sh ould not encourage
+people to declare both a property and its inverse. Therefore, a de sign choice in N3
+is to allow forward and backward links to be expressed with equal ease . It does this
+by providing keywords “is” and “of” that allow one to reverse the dir ection of the
+description of a triple. This also enables the serialization of any acyclic graphs with
+blank nodes without requiring them to have generated node identiﬁe rs.
+14 T. Berners-Lee
+5.9 Extensibility
+The extensibility of RDF is deliberate so that a document may draw on p redicates
+from many sources. The statement {s p o } expresses that the relationship denoted
+by p holds between the things denoted by s and o. The meaning of the statement
+{s p o } in general is deﬁned by any speciﬁcation for p. The Architecture of the
+Web speciﬁes informally how information about the relation can be disc overed (Ja-
+cobs and Walsh 2004). In a similar fashion, N3Logic allows external pr edicates -
+predicates not deﬁned within N3Logic - to be used. The deﬁnitions of these exter-
+nal predicates can be discovered by looking up their URI on the Web a nd used as
+long as their semantics are deﬁned in N3Logic. Clearly a system which in cludes fur-
+ther logical predicates, beyond those deﬁned in N3Logic, whose me aning introduces
+greater logical expressiveness would change the properties of th e logic.
+By having rules and data in the same languages, N3Logic provides simp licity in
+syntax and completeness as rules can operate on themselves and a nything written
+in N3 can be queried in N3. A rule engine, when analyzing a rule prior to ru nning
+it, can treat specially those properties it knows as calculable functio ns which occur
+in the antecedent. This allows N3 to be used to develop speciﬁc langua ges such
+as query languages. For example, we can create a language for exp ressing graph
+diﬀerences and updates by simply deﬁning two new properties, diﬀ:insertion and
+diﬀ:deletion (Berners-Lee and Connolly 2004). These properties provide a way to
+uniquely identify what is changing and a way to distinguish between the pieces
+added and those subtracted.
+In the following example, everyone who is paying a student rate, will a lso be
+given accommodation in the dormitory but will not be given a ticket to a ttend the
+social event of the conference.
+@forAll X.
+{ X conf:registrationRate conf:StudentRate }
+diff:insertion { X conf:accommodation conf:Dormitory };
+diff:deletion { X conf:ticket conf:SocialEvent } .
+In many languages similar to N3, there is a risk of ambiguity as to wheth er a
+naked alphanumeric string is a keyword or an identiﬁer. Serious vers ion management
+problems occur when new keywords are added to a language, chang ing things which
+were identiﬁers into keywords. N3 is designed to be extended in the f uture. For this
+reason, an N3 document can declare which keywords it uses without the “@” sign.
+This allows N3 to be extended without the danger that existing docum ents be
+incorrectly interpreted by future systems, or future document s by existing systems.
+6 N3Logic Example: Access control policy
+We extend our conference management system example with a policy for controlling
+access to pictures that were taken during the conference. This p olicy states that only
+people who registered for the conference can view pictures t aken at the conference .
+During the registration process, the system records registrant ’s foaf pages. In order
+N3Logic: A Logical Framework For the World Wide Web 15
+to prove that they have registered for the conference, users m ust be able to prove
+ownership of a registered foaf page. This can be done either using a decentralized
+authentication mechanism such as Open ID (Foundation ) or using a m echanism
+by which users must present a secret key whose hash is on their foa f page. In this
+policy, we use the latter. A user request consists of her secret ke y and the URI of the
+picture being requested. If the picture is one of the pictures take n at the conference
+and the secret key is the digest of the session:hexdigest value on a registered foaf
+page, then the request is considered valid and the picture is return ed to the user.
+For the entire working example, please refer to http://dig.csail.mit.edu/2006/
+Papers/TPLP/example/.
+@forAll REQ, PHOTO, WHO, FOAF, X, TXT, CONF, C.
+{ REQ a rein:Request.
+REQ rein:resource PHOTO.
+<http://dig.csail.mit.edu/2006/Papers/TPLP/example/exconf.n3> log:semantics C.
+C log:includes
+{ CONF a conf:Conference. PHOTO a conf:GroupPicture; conf: taken CONF }.
+REQ rein:requester WHO.
+WHO session:secret ?S.
+?S crypto:md5 TXT.
+C log:includes
+{ CONF conf:registrant X. FOAF foaf:maker X }.
+FOAF log:semantics [ log:includes
+{ FOAF foaf:maker [ session:hexdigest TXT ] }
+].
+} => { REQ rein:requester [ policy:permitted-to-view PHOTO ]. REQ a ValidRequest }.
+7 Implementations
+We have developed cwm (Berners-Lee 2000) a forward-chained re asoner in python
+(pyt ) for N3 and N3Logic. It is a general-purpose reasoner for th e Semantic Web
+that can be used for querying, checking, transforming and ﬁlterin g information.
+Currently, cwm parses RDF/XML, and N3 and its subsets. A number of tools,
+for example SWOOP (Kalyanpur et al. 2005), support Turtle (Becke tt 2006), a
+fragment of N3 that is equivalent to RDF/XML.
+Being based on a more expressive logic language adds a host of featu res to cwm
+not available to other RDF processing tools: accessing Web resourc es, and ﬁltering
+RDF graphs after merging them, for example. Since N3Logic is expre ssive enough
+so that positive datalog-like rules can be expressed in it, cwm is able to reason
+using a ﬁrst order logic but without classical negation. Combining this reasoning
+functionality with its ability to retrieve documents form the Web as ne eded, the
+16 T. Berners-Lee
+system can be considered a reasoner for the Web. It has grown fr om a proof of
+concept application to a popular rule engine, used in major research projects such
+as Policy Aware Web (Kolovski et al. 2005; Kagal et al. 2006), and th e Technical
+Report Automation project at W3C ( http://www.w3.org/TR/).
+Euler is an inference engine supporting logic based proofs. Unlike cwm , it is a
+backward-chaining reasoner enhanced with Euler path detection ( Roo 2005).
+Pychinko is a Python implementation of the classic Rete pattern matc hing algo-
+rithm (Parsia et al. 2005). Rete has shown to be, in many cases, the most eﬃcient
+way to apply rules to a set of facts–the basic functionality of an exp ert system.
+Pychinko employs an optimized implementation of the algorithm to hand le facts,
+expressed as triples, and process them using a set of N3 rules. Pyc hinko tries to
+closely mimic the features available in Cwm, as it is one of the most widely u sed
+rule engines in the RDF community. Pychinko has proven to be faster than Cwm,
+however it’s limitation lies in its expressivity: Pychinko cannot handle mo st of the
+cwm built-ins. It is worth mentioning here that the RETE engine used in Pychinko
+has been ported to Cwm - thus Cwm can now boast the same perform ance im-
+provements.
+8 Related Work
+Several logics related to N3Logic exist including OWL, Simple Common Lo gic
+(SCL) (Altheim et al. 2005), and Knowledge Interface Format (KIF ) (Genesereth
+1998). OWL is built on top of RDFS and provides a vocabulary for desc ribing the
+characteristics of properties and classes, the relationships betw een classes, and re-
+lationships between properties. OWL is based on Description Logic (B aader et al.
+2003), which is a subset of First Order Logic (FOL) (Shapiro 2005). OWL provides
+limited expressivity for a Web-like environment as it does not support quantiﬁed
+variables, rules, or a mechanism to distinguish which document or per son asserts
+what. KIF is a framework for exchanging of declarative knowledge a mong hetero-
+geneous computer systems. It is a version of ﬁrst order predicat e calculus with
+extensions to support non-monotonic reasoning and quoting. The key diﬀerences
+between KIF and N3Logic are that KIF does not include operators f or Web access
+and it supports non-monotonic reasoning. SCL is aimed at providing a standard log-
+ical interchange language based on XML. It has a higher-order syn tax that provides
+integration between diﬀerent representation languages but SCL g ives this syntax
+a completely ﬁrst-order semantics. This syntax can be used to pro vide quoting
+functionality. Proof Carrying Authorization (PCA) proposes that the underlying
+framework of a distributed authorization system be a higher-orde r logic and that
+diﬀerent domains in this system use diﬀerent application-speciﬁc logic s that are
+subsets of the higher-order logic (Appel and Felten 1999). They a lso propose that
+clients develop proofs of access using these application speciﬁc logic s and send them
+to servers to validate. N3Logic draws inspiration from PCA but modiﬁ es it to lever-
+age the distributed nature and linkability of the Web.
+A formal categorization of N3Logic is complicated as it diﬀers from mo st tra-
+ditional logics in expressivity. It is clearly more expressive than Data log (Gallaire
+N3Logic: A Logical Framework For the World Wide Web 17
+and Minker 1978) but less expressive than traditional FOL. Much Se mantic Web
+work uses DL expressivity, and like DL, N3Logic is a subset of FOL, alt hough the
+quoting mechanisms provide higher order features (which we believe are actually
+limited to FOL in the same manner as SCL). However, unlike DL, N3Logic is not
+decidable, limiting expressivity in other ways motivated by the Web con siderations
+discuss in this paper. As such, developing a formal model theory fo r N3Logic is
+quite challenging, and is the focus of current work.
+9 Conclusion
+The main goal of N3Logic is to extend the RDF data model, so that the same lan-
+guage can be used for logic and data. N3Logic uses the N3 syntax, w hich provides
+quoting, variables, and the implication operator. N3Logic also include s built-in func-
+tions that allow rules to access Web resources, deﬁne which inferen ce can be drawn
+from speciﬁc Web documents, and other useful functionality such as mathematic,
+cryptographic, and string. In this paper, we described the N3 syn tax and give the
+informal semantics of N3Logic.
+The use of log:notIncludes to allow default reasoning without non-monotonic
+behavior achieves a design goal for distributed rule systems. The N 3Logic language
+has been found to have some useful practical properties. The se paration between
+the N3 extensions to RDF and the logic properties has allowed N3Logic to be
+extended with other properties to provide functionality such as th e expression of
+graph diﬀerences and updates (Berners-Lee and Connolly 2004).
+10 Acknowledgements
+We are grateful to Vladimir Kolovski, Sean Palmer, Dave Beckett, an d Jos de Roo
+for feedback on the N3 language resulting from their implementation s; to the Data
+Access Working Group for feedback resulting from their adoption o f N3 syntax for
+part of SPARQL grammar; to the RDF working group for their co-op eration in
+keeping NTriples a subset of N3; and to many in the W3C Semantic Web I nter-
+est Group for helpful advice and suggestions. This work is support ed in part by
+funding from US Defense Advanced Research Projects Agency (D ARPA) and Air
+Force Research Laboratory, Air Force Materiel Command, USAF, under agreement
+number F30602-00-2-0593, Semantic Web Development. This work was also funded
+under NSF ITR 04-012.
+References
+The Oﬃcial Python Programming Language Website. http://www.python.org/.
+Adida, B. and Birbeck, M. 2006. RDF/A Primer 1.0. Embedding RDF in XHTML.
+W3C Working Draft. http://www.w3.org/TR/xhtml-rdfa-primer/.
+Altheim, M. , Anderson, B. , Hayes, P. , Menzel, C. , Sow a, J. F., and Tammet, T.
+2005. SCL: Simple Common Logic. http://www.ihmc.us/users/phayes/CL/SCL2004.
+html.
+18 T. Berners-Lee
+Appel, A. W. and Felten, E. W. 1999. Proof-Carrying Authentication. In 6th ACM
+Conference on Computer and Communications Security .
+Baader, F. , Cal vanese, D., McGuinness, D. , Nardi, D. , and P atel-Schneider, P.,
+Eds. 2003. The Description Logic Handbook . Cambridge University Press.
+Beckett, D. 2006. Turtle - Terse RDF Triple Language. http://www.dajobe.org/2004/
+01/turtle/.
+Berners-Lee, T. 1980. ENQUIRE V 1.1 Manual. http://www.w3.org/History/1980/
+Enquire/.
+Berners-Lee, T. 1998. Notation 3 (N3) A readable RDF Syntax. http://www.w3.org/
+DesignIssues/Notation3.html.
+Berners-Lee, T. 2000. Cwm : General-purpose Data Processor for the Semantic Web.
+http://www.w3.org/2000/10/swap/doc/cwm.
+Berners-Lee, T. 2005. Primer: Getting into RDF and Semantic Web using N3. http:
+//www.w3.org/2000/10/swap/Primer.
+Berners-Lee, T. 2006. N3 BNF. http://www.w3.org/2000/10/swap/grammar/
+n3-report.html.
+Berners-Lee, T. and Connolly, D. 2004. Delta: an ontology for the distribution of
+diﬀerences between RDF graphs. http://www.w3.org/DesignIssues/Diff.
+Brickley, D. and Miller, L. 1999. Friend of a friend (foaf) project. http://www.
+foaf-project.org/.
+Carroll, J. J. and Klyne, G. 2004. Resource Description Framework (RDF): Concepts
+and Abstract Syntax . Tech. Rep. http://www.w3.org/TR/200 4/REC-rdf-concepts-
+20040210/, W3C. February.
+Dumbill, E. 2002. Finding friends with XML and RDF. http://www-128.ibm.com/
+developerworks/xml/library/x-foaf.html.
+Foundation, O. OpenID. http://openid.net/.
+Gallaire, H. and Minker, J. , Eds. 1978. Logic and Data Bases . Perseus Publishing.
+Genesereth, M. R. 1998. Knowledge Interchange Format. Draft proposed Americ an
+National Standard (dpANS). NCITS.T2/98-004. http://logic.stanford.edu/kif/
+dpans.html.
+Haza¨el-Massieux, D. and Connolly, D. 2005. Gleaning Resource Descriptions
+from Dialects of Languages (GRDDL), W3C Team Submission. http://www.w3.org/
+TeamSubmission/grddl/.
+Jacobs, I. and W alsh, N. 2004. The Architecture of the World Wide Web. W3C Rec-
+ommendation. http://www.w3.org/TR/webarch/.
+Kagal, L. , Berners-Lee, T. , Connolly, D., and Weitzner, D. 2006. Using Semantic
+Web Technologies for Open Policy Management on the Web. In 21st National Confer-
+ence on Artiﬁcial Intelligence .
+Kalyanpur, A. , P arsia, B., Sirin, E. , Cuenca-Grau, B. , and Hendler, J. 2005.
+Swoop: A ’Web’ Ontology Editing Browser. Journal of Web Semantics Vol 4(2) .
+Kolovski, V. , Katz, Y. , Hendler, J. , Weitzner, D. , and Berners-Lee, T. 2005.
+Towards a Policy-Aware Web. In Semantic Web and Policy Workshop at the 4th Inter-
+national Semantic Web Conference .
+P arsia, B., Katz, Y. , and Clark, K. 2005. Pychinko: Rete-based RDF friendly rule
+engine. http://www.mindswap.org/~katz/pychinko/.
+Roo, J. D. 2005. Euler proof mechanism. http://www.agfa.com/w3c/euler/.
+Shapiro, S. Fall 2005. Classical Logic. In The Stanford Encyclopedia of Philosophy , E. N.
+Zalta, Ed.
+Steele, G. L. and Sussman, G. J. Scheme. http://www.swiss.ai.mit.edu/projects/
+scheme/.
+N3Logic: A Logical Framework For the World Wide Web 19
+11 APPENDIX : N3 Concrete Syntax
+N3 provides a human-readable syntax for RDF and is a language that uses con-
+ventional unix-style punctuation, which is both more easily writable a nd readable
+than the RDF/XML syntax (Berners-Lee 2006). It provides quan tiﬁed variables
+and allows quoting so that statements about statements can be ma de.
+• It provides URI abbreviation using preﬁxes which are bound to a nam espace.
+@prefix j: <http://example.org/joe-foaf#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax -ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix conf: <http://example.org/conf#> .
+@prefix : <http://dig.csail.mit.edu/2006/Papers/TPLP/ example/exconf#> .
+The preﬁxes used in the above example are assumed throughout th e paper.
+• Qualiﬁed names using the default namespace have an empty preﬁx an d start
+with a colon.
+@prefix : <http://dig.csail.mit.edu/2006/Papers/TPLP/ example/exconf#> .
+ExConf a conf:Conference .
+• An N3 formula is comprised of a conjunctive set of triples.
+• Triples are formed of terms, which are symbols (URIs), strings, bla nk nodes,
+numeric literals, lists or quoted formulae.
+• A triple may be terminated by a period.
+ExConf conf:eventName "WWW2006 Workshop on Models of Trust for the Web" .
+• The repetition of another object for the same subject and predic ate is possible
+using a comma “,”
+ExConf conf:cochair <http://csail.mit.edu/~lkagal/foa f#me>,
+<http://umbc.edu/~finin/foaf#tim>.
+• The repetition of another predicate for the same subject is done u sing a
+semicolon “;”
+ExConf conf:eventName "WWW2006 Workshop on Models of Trust for the Web",
+conf:acronym "MTW06" .
+• Blank nodes with certain properties can be deﬁned by just putting t he prop-
+erties between “[“ and “]”. They can be used in two ways: [ ] togethe r followed
+by the properties or [ ] around the properties. The following examp le describes
+the same subject in these two ways.
+[ ] conf:homepage <http://www.l3s.de/~olmedilla/events /MTW06_Workshop.html> .
+[ conf:homepage <http://www.l3s.de/~olmedilla/events/ MTW06_Workshop.html> ] .
+• N3 allows has a special
+: namespace preﬁx. An identiﬁer of such a form (e.g.
+:xyz) represents an blank node.
+20 T. Berners-Lee
+• An empty URI reference, which refers to the document it is written in, can be
+written using “ <>”. The example document declares itself to be a Conference
+as deﬁned in the conf namespace.
+<> a conf:Conference .
+• Quoted formulae allow N3 formulae to be quoted within N3 formulae usin g
+“{“ and “ }”. In a quoted N3 formula, s p o, both s and o can be RDF graphs
+or N3 formulae.
+j:Joe says
+{ ex:ExConf conf:homepage <http://www.l3s.de/~olmedill a/events/MTW06_Workshop.html;
+conf:eventName "WWW2006 Workshop on Models of Trust for the Web";
+conf:acronym "MTW06" } .
+• N3 formula can have both existential and universal quantiﬁers. Ex istential
+variables can be indicated by an @forSome declaration and universal variables
+can be indicated by @forAll declarations. ?X is a shorthand notation and
+implies universal quantiﬁcation in the enclosing parent of the curren t formula.
+It can be used without an explicit @forAll declaration. The scope of the
+@forAll, which is used to deﬁne universal variables, is outside the sco pe of
+any @forSome, which is used to deﬁne existential variables. If both universal
+and existential quantiﬁcation are speciﬁed for the same context, then the
+scope of the universal quantiﬁcation is outside the scope of the ex istentials.
+• Keywords are a very limited set of alphanumeric strings which are in th e
+grammar preﬁxed by an “@” sign. If no @keywords directive is given, all
+qualiﬁed names need a “:” before them and all keywords except “a”, “is”,
+and “of” require an “@”. If the @keywords directive is given, then t he given
+set of bare strings (without either “:” or “@” before them) are key words and
+the others are qualiﬁed names in the default namespace.
+• The keywords “a”, “is”, and “of” can be used without an “@” even if the
+@keywords directive is not given. The keyword “a” maps to rdf:type whereas
+“of” and “is” provide syntactic sugar to describe triples in the reve rse direc-
+tion such as { object is predicate of subject}.
+• The keywords @true and @false are boolean literals.
+• Strings are deﬁned within double quotes “ “ such as “Joe Smith” and w ithin
+triple double quotes “ “ “ for multi-line values or values containing quot e
+marks.
+• Numerical literals such as integers, ﬂoats, and decimals are also sup ported.
+• Comments are identiﬁed with “#”. Everything that follows the “#” is ig nored
+till the end of the line.
+• The shorthand = > may be used for the implies property deﬁned in the log:
+namespace ( http://www.w3.org/2000/10/swap/log#). (Please refer to Sec-
+tion 5.4 for more information).
+• “=” is a shorthand notation for the sameAs property deﬁned in owl: names-
+pace ( http://www.w3.org/2002/07/owl#). (Please refer to Section 5.1 for
+more information).
+N3Logic: A Logical Framework For the World Wide Web 21
+• N3 supports RDF collections and uses them frequently as ordered c ontainers,
+as argument lists to N-ary functions such as crypto:sign in which the subject
+is a list of two things, a hash string and a key (containing private and p ublic
+parts) and the object is calculated as a signature string by signing t he hash
+with the key’s private part.
+For example, to describe Joe’s interests we would use a list as follows
+j:Joe interests ( "AI" "Semantic Web" "Logic" ) .

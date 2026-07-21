@@ -1,0 +1,19 @@
+Pages: 6
+Digging Into Prerequisite Annotation
+Chiara Alzetta, Ilenia Galluccio, Frosina Koceva,
+Samuele Passalacqua, Ilaria Torre
+DIBRIS, University of Genoa, Italy
+{chiara.alzetta,ilenia.galluccio,frosina.koceva}@edu.unige.it,
+samuele.passalacqua@dibris.unige.it, ilaria.torre@unige.it
+Abstract. Intelligent textbooks are often engineered with an explicit
+representationoftheirconceptsandprerequisiterelations(PR).PRiden-
+tificationishencecrucialforintelligenttextbooksbutstillpresentssome
+challenges,alsowhenperformedbyhumanexperts.ThismaycausePR-
+annotated datasets to be inconsistent and compromise the accuracy of
+automatic creation of enhanced learning materials. This paper investi-
+gates possible reasons for PR disagreement and the nature of PR itself,
+withtheaimofcontributingtothedevelopmentofsharedstrategiesfor
+PR annotation, analysis and modelling in textbooks.
+Keywords: prerequisite relation · annotation · agreement.
+1 Introduction
+Fundamentalfunctionalitiesofintelligenttextbooks,suchasconte

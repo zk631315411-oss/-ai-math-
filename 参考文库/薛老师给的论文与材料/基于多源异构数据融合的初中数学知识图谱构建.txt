@@ -1,0 +1,807 @@
+
+--- page 1 ---
+第 67 卷 第 2 期
+2021 年 4 月
+Vol . 67 No . 2
+Apr . 2021 ,118 ~126
+武汉大学学报 （理学版）
+J. Wuhan Univ .（Nat . Sci . Ed.）
+基于多源异构数据融合的初中数学知识图谱构建
+周炫余
+1
+，唐 祯
+1，2
+，唐丽蓉
+1
+，李 璇
+1
+，卢 笑
+3，4†
+1. 湖南师范大学 基础教育大数据研究与应用重点实验室 ，湖南 长沙 410006 ；
+2. 厦门大学 教育研究院 ，福建 厦门 361005 ；
+3. 湖南师范大学 工程与设计学院 ，湖南 长沙 410006 ；
+4. 武汉大学 计算机学院 ，湖北 武汉 430072
+收稿日期 ：2020 ⁃11⁃08 †通信联系人 E-mail ：xlu_hnu@ 163 . com
+基金项目 ：国家自然科学基金 （62007007 、61703155 ） ，湖南省自然科学基金 （2018 JJ3352 、2018 JJ3350） ，国家级大学生创新创业训练计划支持项
+目（S201910542076 ） ，湖南省大学生研究性学习和创新性实验计划项目 （S201910542075 ）
+作者简介 ：周炫余 ，男，讲师 ，现从事中文自然语言处理 、教育人工智能等方面的研究 。E-mail ：zhouxuanyu@whu . edu . cn
+摘 要 ：知 识 图 谱 可 以 为 智 能 问 答 和 自 动 推 荐 等 系 统 提 供 良 好 的 数 据 支 持。针 对 国 内 现 有 学 科 知 识 图 谱 构 建 数 据 来 源 单 一
+等问题 ，提出一种多源异构数据融合的方法构建初中数学知识图谱 。基于领域知识和学习者需求构建初中数学本体 ，确定概
+念、方法 、公式 、定理四种类型的实体 ；从教材等权威数据源和百度百科 、互动百科等网络数据源中获取非结构化与半结构化数
+据，基于 BERT（bidirectional encoder representations from transforms ）模型抽取出教材等非结构化数据的关系和实体 ；利用基于
+层次过滤思想的知识融合模型进行多源异构数据的融合 。实现了基于初中数学知识图谱的智能问答和自动推荐系统 ，为学习
+者提供及时且智能的学习支持服务 ，为破解初中数学在线教学个性化不足提供一条思路 。
+关 键 词 ：知识图谱 ；多源异构数据融合 ；层次过滤模型 ；初中数学
+中图分类号 ：TP 391 . 1 文献标志码 ：A 文章编号 ：1671 -8836（2021）02-0118 -09
+Construction of Junior High School Mathematics Knowledge Graph Based on
+Multi-Source Heterogeneous Data Fusion
+ZHOU Xuanyu
+1
+，TANG Zhen
+1，2
+，TANG Lirong
+1
+，LI Xuan
+1
+，LU Xiao
+3，4†
+1. Key Laboratory of Big Data Research and Application for Basic Education ，Hunan Normal University ，Changsha 410006 ，
+Hunan ，China ；
+2. Institute of Education ，Xiamen University ，Xiamen 361005 ，Fujian ，China ；
+3. College of Engineering and Design ，Hunan Normal University ，Changsha 410006 ，Hunan ，China ；
+4. School of Computer Science ，Wuhan University ，Wuhan 430072 ，Hubei ，China
+Abstract ：Knowledge graph can provide good data supporting for the intelligent question -answering system and automatic recom ⁃
+mendation system . This paper proposes a method of multi -source heterogeneous data fusion to construct junior high school mathe ⁃
+matics knowledge graph to solve the problem of a single data source of the existing subject knowledge graph in China . First , the ju ⁃
+nior high school mathematics ontology was constructed to determine four types of entities : concept , method , formula and theorem
+based on the domain knowledge and learners 􀆳 needs . Then , unstructured and semi -structured data were obtained from authoritative
+data sources such as textbooks and network data sources such as Baidu Wikipedia ，HDWiki , and the relationships and entities of
+unstructured data were extracted from the BERT (bidirectional encoder representations from transforms ) model . Then the
+knowl edge fusion model based on multi -pass sieve was used to fuse heterogeneous data from multiple sources . Finally , the intelli ⁃
+gent question -answering and automatic recommendation system based on the knowledge graph of junior high school mathematics
+引用格式 ：周炫余 ，唐祯 ，唐丽蓉 ，等 . 基于多源异构数据融合的初中数学知识图谱构建 ［J］. 武汉大学学报 （理学版 ） ，2021 ，67（2） ：118 -126 . DOI ：10. 14188 /
+j. 1671 -8836 . 2020 . 0273 .
+ZHOU Xuanyu ，TANG Zhen ，TANG Lirong ，et al . Construction of Junior High School Mathematics Knowledge Graph Based on Multi -Source Hetero ⁃
+geneous Data Fusion ［J］. J Wuhan Univ （Nat Sci Ed ），2021 ，67（2） ：118 -126 . DOI ：10. 14188 /j. 1671 -8836 . 2020 . 0273（Ch）.
+DOI : 10. 14188 /j. 1671 -8836 . 2020 . 0273
+is realized . This study can provide learners with timely and intelligent learning support services , so as to provide an idea for solving
+the insufficiency of personalization in the online teaching of junior high school mathematics .
+Key words ：knowledge graph ；multi -source heterogeneous data fusion ；multi -pass sieve model ；junior high school mathematics
+0 引 言
+新型冠状病毒感染肺炎疫情的出现使得教学过
+程不得不面对教与学分离的情况 ，为了解决教学分离
+期间学习者的居家学习问题 ，教育部发出了“停课不
+停学 ”的倡导（http：//www. moe. gov. cn/srcsite/A08/
+s7056/202002 /t20200205 _418138 . html） ，鼓励各学校
+充分利用人工智能 、网络资源等各种举措来保证在线
+学习与线下课堂教学质量的实质等效 。初中阶段是
+数学思维形成的关键时期
+［1］
+，师生在课堂上的有效交
+互可以引导学生逐步树立正确的数学思维模式 。目
+前在线教学在时空分离的情况下 ，大部分教师无法通
+过面对面观察学生来了解其知识掌握情况 ，难以同时
+兼顾所有学习者的需求 ，造成了学生不懂的知识点不
+断积累 ，影响了教学质量 。
+知 识 图 谱 作 为 人 工 智 能 在 知 识 组 织 和 表 示 方
+面 发 展 的 最 新 技 术，不 仅 能 在 不 同 知 识 点 之 间 建 立
+语 义 联 系，还 能 为 智 能 问 答 和 自 动 推 荐 等 功 能 提 供
+良 好 的 数 据 支 持。 因 此，知 识 图 谱 不 仅 能 从 知 识 点
+的 语 义 联 系 层 面 来 指 导 学 习 者 的 学 习，还 能 应 用 于
+个 性 化 学 习 系 统 中，解 决 在 线 教 学 中 教 师 答 疑 反 馈
+不 及 时 和 不 够 个 性 化 的 问 题。 教 育 领 域 的 知 识 图
+谱 构 建 方 法 主 要 包 括 人 工 构 建 和 自 动 构 建。 基 于
+人工构建的方法利用学科教学大纲
+［2］
+、教材 、教辅等
+非 结 构 化 文 本 数 据 在 领 域 专 家 的 指 导 下 通 过 构 建
+本 体、数 据 采 集、实 体 抽 取、关 系 抽 取、同 源 数 据 融
+合等过程完成知识图谱的构建
+［1，3，4］
+。这样的方法虽
+能 保 证 教 育 领 域 知 识 图 谱 的 专 业 性，但 耗 时 费 力，
+不 同 专 家 对 于 同 一 个 知 识 点 的 认 识 会 存 在 偏 差，对
+于基础数学来说 ，严谨性与一致性难以得到保证
+［5］
+。
+随 着 互 联 网 的 快 速 发 展，网 络 上 存 在 着 大 量 半 结 构
+化 数 据，有 研 究 者 提 出 了 自 动 构 建 的 方 法，从 网 络
+上 抽 取 半 结 构 化 文 本 中 的 实 体、实 体 关 系、实 体 属
+性自动构建学科知识图谱
+［6~10］
+。该类方法虽然可以
+节 省 大 量 构 建 成 本，迅 速 搭 建 一 个 知 识 图 谱，但 数
+据 的 准 确 性 无 法 得 到 保 障，这 对 于 逻 辑 严 谨 的 数 学
+学科来说 ，不是一个合适的选择 。
+目 前 学 科 知 识 图 谱 大 多 基 于 单 一 数 据 来 源，无
+法 同 时 保 证 构 建 的 效 率 和 准 确 度，也 不 能 充 分 覆 盖
+学 习 者 需 求。 因 此，本 文 提 出 一 种 多 源 异 构 融 合 方
+法 构 建 初 中 数 学 知 识 图 谱。 该 方 法 用 初 中 数 学 领
+域 中 的 教 材 知 识 定 义 本 体 并 基 于 BERT（bidirec ⁃
+tional encoder representations from transforms ）模
+型
+［11］
+对 教 材 这 类 非 结 构 数 据 中 的 关 系 和 实 体 进 行
+半 自 动 化 的 抽 取；基 于 层 次 过 滤 的 思 想，以 教 材 知
+识 为 主 体，融 合 百 度 百 科、互 动 百 科 等 半 结 构 化 网
+络数据源构建初中数学知识图谱 。
+1 初中数学知识图谱的构建
+1. 1 总体框架
+基 于 多 源 异 构 数 据 融 合 的 初 中 数 学 知 识 图 谱
+模 型 包 括 本 体 设 计、数 据 获 取、知 识 抽 取、知 识 融 合
+和知识更新 5 个部分 。总体框架如图 1 所示 。
+1. 2 本体设计
+本 体 是 针 对 概 念 建 模 而 确 立 的 规 则，是 对 现 实
+世 界 的 抽 象 描 述，通 过 使 用 形 式 化 的 方 式 来 对 概 念
+和 概 念 之 间 的 关 系 给 出 明 确 定 义
+［11］
+。 它 位 于 知 识
+图 谱 的 模 式 层，用 来 概 述 概 念 层 面 的 体 系，相 当 于
+知 识 库 的 模 具。 基 于 本 体 定 义 的 知 识 库 不 仅 具 有
+良 好 的 结 构，且 重 复 部 分 少。 尤 其 在 构 建 学 科 知 识
+图 谱 时，事 先 定 义 好 本 体 库，就 能 使 知 识 图 谱 具 有
+较强的泛化能力 。
+为 了 保 证 初 中 数 学 知 识 图 谱 的 结 构 合 理，本 体
+设 计 应 从 以 下 两 个 层 面 考 虑：一 是 初 中 数 学 学 科 的
+知 识 体 系 结 构，二 是 学 习 者 对 初 中 数 学 知 识 点 提 问
+的 需 求。 教 材 中 的 知 识 点 是 按 照 渐 进 分 化 和 融 会
+贯 通 原 则 组 织 的，因 此 知 识 点 之 间 存 在 上 下 位 的 包
+含 关 系 以 及 同 位 关 系，能 形 成 一 个 交 错 复 杂 的 知 识
+网 络。 同 时 具 体 每 个 知 识 点 与 其 他 知 识 点 的 关 系
+包 含 了 知 识 点 应 用 的 逻 辑，因 此 从 这 个 层 面 来 说，
+本体的设计应满足学习者掌握知识点应用的需求 。
+本 文 构 建 的 知 识 图 谱 主 要 用 于 支 持 教 学 系 统
+的 智 能 问 答 和 自 动 推 荐 功 能，即 除 了 为 学 习 者 解 决
+包 括 定 义 以 及 知 识 点 用 法 在 内 的 数 学 问 题，还 能 为
+学 习 者 推 荐 相 关 知 识 点 进 行 补 充 学 习。 知 识 点 是
+数 学 学 习 中 最 小 级 别 的 知 识 单 元，因 此 首 先 依 据 初
+中 数 学 领 域 内 重 要 术 语 的 特 性 将 描 述 知 识 点 的 实
+体 分 为 概 念、公 式、方 法、定 理 四 类（见 表 1） ；其 次 基
+于 对 智 能 问 答 功 能 的 考 虑，设 计 各 类 实 体 在 应 用 层
+面的关系 。
+初中数学实体之间的映射关系定义如下 。
+
+--- page 2 ---
+第 2 期 周炫余 等: 基于多源异构数据融合的初中数学知识图谱构建
+is realized . This study can provide learners with timely and intelligent learning support services , so as to provide an idea for solving
+the insufficiency of personalization in the online teaching of junior high school mathematics .
+Key words ：knowledge graph ；multi -source heterogeneous data fusion ；multi -pass sieve model ；junior high school mathematics
+0 引 言
+新型冠状病毒感染肺炎疫情的出现使得教学过
+程不得不面对教与学分离的情况 ，为了解决教学分离
+期间学习者的居家学习问题 ，教育部发出了“停课不
+停学 ”的倡导（http：//www. moe. gov. cn/srcsite/A08/
+s7056/202002 /t20200205 _418138 . html） ，鼓励各学校
+充分利用人工智能 、网络资源等各种举措来保证在线
+学习与线下课堂教学质量的实质等效 。初中阶段是
+数学思维形成的关键时期
+［1］
+，师生在课堂上的有效交
+互可以引导学生逐步树立正确的数学思维模式 。目
+前在线教学在时空分离的情况下 ，大部分教师无法通
+过面对面观察学生来了解其知识掌握情况 ，难以同时
+兼顾所有学习者的需求 ，造成了学生不懂的知识点不
+断积累 ，影响了教学质量 。
+知 识 图 谱 作 为 人 工 智 能 在 知 识 组 织 和 表 示 方
+面 发 展 的 最 新 技 术，不 仅 能 在 不 同 知 识 点 之 间 建 立
+语 义 联 系，还 能 为 智 能 问 答 和 自 动 推 荐 等 功 能 提 供
+良 好 的 数 据 支 持。 因 此，知 识 图 谱 不 仅 能 从 知 识 点
+的 语 义 联 系 层 面 来 指 导 学 习 者 的 学 习，还 能 应 用 于
+个 性 化 学 习 系 统 中，解 决 在 线 教 学 中 教 师 答 疑 反 馈
+不 及 时 和 不 够 个 性 化 的 问 题。 教 育 领 域 的 知 识 图
+谱 构 建 方 法 主 要 包 括 人 工 构 建 和 自 动 构 建。 基 于
+人工构建的方法利用学科教学大纲
+［2］
+、教材 、教辅等
+非 结 构 化 文 本 数 据 在 领 域 专 家 的 指 导 下 通 过 构 建
+本 体、数 据 采 集、实 体 抽 取、关 系 抽 取、同 源 数 据 融
+合等过程完成知识图谱的构建
+［1，3，4］
+。这样的方法虽
+能 保 证 教 育 领 域 知 识 图 谱 的 专 业 性，但 耗 时 费 力，
+不 同 专 家 对 于 同 一 个 知 识 点 的 认 识 会 存 在 偏 差，对
+于基础数学来说 ，严谨性与一致性难以得到保证
+［5］
+。
+随 着 互 联 网 的 快 速 发 展，网 络 上 存 在 着 大 量 半 结 构
+化 数 据，有 研 究 者 提 出 了 自 动 构 建 的 方 法，从 网 络
+上 抽 取 半 结 构 化 文 本 中 的 实 体、实 体 关 系、实 体 属
+性自动构建学科知识图谱
+［6~10］
+。该类方法虽然可以
+节 省 大 量 构 建 成 本，迅 速 搭 建 一 个 知 识 图 谱，但 数
+据 的 准 确 性 无 法 得 到 保 障，这 对 于 逻 辑 严 谨 的 数 学
+学科来说 ，不是一个合适的选择 。
+目 前 学 科 知 识 图 谱 大 多 基 于 单 一 数 据 来 源，无
+法 同 时 保 证 构 建 的 效 率 和 准 确 度，也 不 能 充 分 覆 盖
+学 习 者 需 求。 因 此，本 文 提 出 一 种 多 源 异 构 融 合 方
+法 构 建 初 中 数 学 知 识 图 谱。 该 方 法 用 初 中 数 学 领
+域 中 的 教 材 知 识 定 义 本 体 并 基 于 BERT（bidirec ⁃
+tional encoder representations from transforms ）模
+型
+［11］
+对 教 材 这 类 非 结 构 数 据 中 的 关 系 和 实 体 进 行
+半 自 动 化 的 抽 取；基 于 层 次 过 滤 的 思 想，以 教 材 知
+识 为 主 体，融 合 百 度 百 科、互 动 百 科 等 半 结 构 化 网
+络数据源构建初中数学知识图谱 。
+1 初中数学知识图谱的构建
+1. 1 总体框架
+基 于 多 源 异 构 数 据 融 合 的 初 中 数 学 知 识 图 谱
+模 型 包 括 本 体 设 计、数 据 获 取、知 识 抽 取、知 识 融 合
+和知识更新 5 个部分 。总体框架如图 1 所示 。
+1. 2 本体设计
+本 体 是 针 对 概 念 建 模 而 确 立 的 规 则，是 对 现 实
+世 界 的 抽 象 描 述，通 过 使 用 形 式 化 的 方 式 来 对 概 念
+和 概 念 之 间 的 关 系 给 出 明 确 定 义
+［11］
+。 它 位 于 知 识
+图 谱 的 模 式 层，用 来 概 述 概 念 层 面 的 体 系，相 当 于
+知 识 库 的 模 具。 基 于 本 体 定 义 的 知 识 库 不 仅 具 有
+良 好 的 结 构，且 重 复 部 分 少。 尤 其 在 构 建 学 科 知 识
+图 谱 时，事 先 定 义 好 本 体 库，就 能 使 知 识 图 谱 具 有
+较强的泛化能力 。
+为 了 保 证 初 中 数 学 知 识 图 谱 的 结 构 合 理，本 体
+设 计 应 从 以 下 两 个 层 面 考 虑：一 是 初 中 数 学 学 科 的
+知 识 体 系 结 构，二 是 学 习 者 对 初 中 数 学 知 识 点 提 问
+的 需 求。 教 材 中 的 知 识 点 是 按 照 渐 进 分 化 和 融 会
+贯 通 原 则 组 织 的，因 此 知 识 点 之 间 存 在 上 下 位 的 包
+含 关 系 以 及 同 位 关 系，能 形 成 一 个 交 错 复 杂 的 知 识
+网 络。 同 时 具 体 每 个 知 识 点 与 其 他 知 识 点 的 关 系
+包 含 了 知 识 点 应 用 的 逻 辑，因 此 从 这 个 层 面 来 说，
+本体的设计应满足学习者掌握知识点应用的需求 。
+本 文 构 建 的 知 识 图 谱 主 要 用 于 支 持 教 学 系 统
+的 智 能 问 答 和 自 动 推 荐 功 能，即 除 了 为 学 习 者 解 决
+包 括 定 义 以 及 知 识 点 用 法 在 内 的 数 学 问 题，还 能 为
+学 习 者 推 荐 相 关 知 识 点 进 行 补 充 学 习。 知 识 点 是
+数 学 学 习 中 最 小 级 别 的 知 识 单 元，因 此 首 先 依 据 初
+中 数 学 领 域 内 重 要 术 语 的 特 性 将 描 述 知 识 点 的 实
+体 分 为 概 念、公 式、方 法、定 理 四 类（见 表 1） ；其 次 基
+于 对 智 能 问 答 功 能 的 考 虑，设 计 各 类 实 体 在 应 用 层
+面的关系 。
+初中数学实体之间的映射关系定义如下 。
+119
+
+--- page 3 ---
+武汉大学学报 （理学版） 第 67 卷
+定 义 1 不 同 初 中 数 学 实 体 之 间 的 映 射 关 系
+R ( Ei，Ej )，其 中 Ei、Ej 为 初 中 数 学 知 识 点 实 体，R 为
+映射关系 ，映射关系包括 4 类：
+1）superior superior 表 示 的 是 上 位 关 系。 针
+对 实 体 类 型 的 不 同，superior 关 系分 为 superior_con ⁃
+cept 和 superior_method 。
+2）equative equative 指 的 是 同 位 关 系，即 在 知
+识 结 构 上 位 于 同 一 层 次 知 识 点 之 间 的 关 系，比 如
+“ 直 角 三 角 形”和“ 钝 角 三 角 形”就 属 于 同 一 层 次 的
+知 识 点。 针 对 实 体 类 型 的 不 同，equative 关 系分 为
+equative_concept 、equative_theorem 、equative_formu ⁃
+la 和 equative_method 。
+3）use use 为运用 关系，是知识点实体需要借助
+公式 、定理或方法来解决问题的一种关系 。比如“直
+角三角形可以通过使用勾股定理来求得三角形的边 ” ，
+“直角三角形 ”和“勾股定理 ”就存在着定理 use 关系。
+针 对 实 体 类 型 的 不 同，use 关 系 分 为 concept_use_
+theorem 、concept_use_method 、concept_use_formula 、
+theorem_use_formula 和 method_use_formula 。
+4）get get 为得到 关系 ，指的是知识点实体通过
+使用公式 、定理或方法求得新概念的一种关系 。比如
+直角三角形可以通过使用勾股定理来求得三角形的
+边， “勾股定理 ”和“边”就存在着 get 关系 。针对实体
+类 型 的 不 同 ，get 关 系 分 为 theorem_get_concept 、
+method_get_concept 和 formula_get_concept 。
+以 上 关 系 中，同 位 关 系 和 上 位 关 系 是 针 对 自 动
+推 荐 功 能 设 计 的，运 用 和 得 到 关 系 是 基 于 学 习 者 对
+知 识 点 如 何 应 用 设 计 的，各 种 关 系 类 型 及 其 含 义 如
+表 2 所示 。
+本 文 的 主 要 任 务 是 对 教 材 等 非 结 构 化 数 据 依
+照 设 计 的 本 体 结 构 构 建 知 识 图 谱，再 将 半 结 构 化 数
+据 与 非 结 构 化 数 据 进 行 融 合，以 构 建 出 多 源 异 构 融
+合 的 初 中 数 学 知 识 图 谱。 因 此，通 过 运 用 关 系 和 得
+到 关 系 可 以 得 到 一 个 知 识 点 的 应 用 逻 辑，而 这 恰 好
+也是智能问答功能的设计逻辑 。
+1. 3 数据获取
+数据来源主要包括两部分 ，一部分是数学教材 、
+辅导书等非结构化数据 ，另一部分是百度百科和互动
+图 1 基于多源异构数据融合的初中数学知识图谱模型框架图
+Fig . 1 The architecture of the junior high school mathematics knowledge graph model based on the fusion of multi -source
+heterogeneous data
+表 1 实体类型表
+Table 1 Table of entity type
+实体类型
+concept
+method
+formula
+theorem
+中文含义
+概念
+方法
+公式
+定理
+举例
+等腰三角形 、代数式
+合并同类项法则 、十字相乘法
+平方差公式 、完全平方公式
+勾股定理 、角平分线定理
+120
+
+--- page 4 ---
+第 2 期 周炫余 等: 基于多源异构数据融合的初中数学知识图谱构建
+百科等半结构化数据 。数据处理主要包括以下几个
+方面的工作 ：1）定义实体 、关系和属性类别 ：依据问答
+部分支持的提问类型 ，在领域专家的指导下完成对实
+体、关系以及实体类别的定义 ，确保实体类别的完整
+性，关系类别的实用性以及属性类别的全面性 ；2）数
+据清洗 ：对获取的数据进行筛选 ，将文本数据中重复
+以及无关的数据删除 ；3）分词和词性标注 ：由于领域
+内词汇的专业性非常强 ，直接用分词工具进行分词会
+导致未登录词过多 ，结果不理想 ，因此先利用结巴分
+词对非结构化数据进行初步的分词和词性标注处理 ，
+再人工对分词和标注结果进行校正 ；4）标注训练数据 ：
+基于领域专家对初中数学学科的整体把握 ，实现非结
+构化数据中实体和关系的标注 ，从而为知识抽取提供
+数据支持 。
+1. 4 知识抽取
+基 于 网 络 爬 虫 获 取 的 多 源 异 构 数 据，本 部 分 以
+初 中 数 学 知 识 图 谱 的 本 体 设 计 为 参 照，利 用 深 度 学
+习算法实现初中数学实体及关系的抽取 。
+1. 4. 1 关系抽取
+基 于 BERT 模 型
+［12］
+对 实 体 和 关 系 进 行 半 自 动
+化 的 抽 取。 首 先 针 对 实 体 和 关 系 类 型 定 义 字 典，并
+以 此 训 练 关 系 分 类 模 型。 分 类 的 类 别 就 是 基 于 本
+体 定 义 的 关 系 种 类。 因 为 一 句 话 可 能 包 含 多 个 关
+系 ，所 以 关 系 分 类 模 型 也 被 视 作 多 标 签 分 类 问 题。
+针 对 具 体 任 务，模 型 下 游 采 用 微 调 策 略，添 加 池 化
+层 和 全 连 接 层，并 通 过 Sigmoid 激 活 函 数 抽 取 大 于
+一 定 阈 值 的 关 系。 目 的 是 以 句 子 级 别 进 行 预 测，从
+而 得 到 一 句 话 中 包 含 的 多 个 关 系。 Sigmoid 层 关 系
+预测的概率计算如下
+P ( i ) = e
+i
+1 + e
+i （1）
+根 据 本 体 设 计 部 分 对 关 系 类 型 的 定 义，假 设 所
+有 关 系 的 类 别 为R = {r1，r2，⋯，ri}，i 表 示 当 前 句 子
+经 过 BERT 内 若 干 层 神 经 网 络 计 算 后 在 第i 个 关 系
+类 别 的 分 数，通 过（1）式 分 别 得 到 所 有 类 别 的 最 终
+分 数，最 后 将 分 数 大 于 一 定 阈 值 的 类 别ri 作 为 预 测
+结 果 输 出，本 文 中 1 ≤ i ≤ 14。 关 系 抽 取 工 作 原 理
+如图 2 所示 。
+1. 4. 2 实体抽取
+实体抽取模型是基于关系预测结果训练的 。当
+一句话包含多个关系时 ，使用分类模型输入一个句子
+只能预测出一个三元组 。为了抽取句子中包含的所
+有实体 ，将关系整合进实体抽取模型 ，针对一句话可
+能出现的 t 个关系 ，对待预测的句子重复 t 次。当前句
+子 被 视 作 实 体 抽 取 模 型 的Text_a ，当 前 关 系 被 视 作
+Text_b。此时实体抽取模型视作分类问题，根据 Text_a
+中包含的关系 ，预测每一个 tokens 的类别 。比如标签
+“B-SUB”表示第一个实体的开头 ， “I-SUB”表示第一
+个实体的后续字符。进而根据 tokens 类别抽取实体对，
+得到当前句子中包含的实体 。实体预测结果计算如下
+si = arg max e
+xi
+∑
+j = 1
+4
+e
+xj
+（2）
+根 据 本 体 设 计 部 分 对 实 体 类 型 的 定 义，假 设 所
+有实体的类别为 S = {s1，s2，s3，s4}，si 表示 4 种实体类
+别 中 针 对 当 前tokens 输 出 的 概 率 最 大 的 实 体 类 别。
+表 2 关系类型表
+Table 2 Table of relation type
+实体关系类型
+superior_concept
+superior_method
+equative_concept
+equative_theorem
+equative_formula
+equative_method
+concept_use_theorem
+theorem_get_concept
+concept_use_method
+method_get_concept
+concept_use_formula
+formula_get_concept
+theorem_use_formula
+method_use_formula
+中文含义
+概念间的上位关系
+方法间的上位关系
+概念间的同位关系
+定理间的同位关系
+公式间的同位关系
+方法间的同位关系
+概念运用了定理
+运用定理得到概念
+概念运用了方法
+运用方法得到概念
+概念运用了公式
+运用公式得到概念
+定理运用了公式
+方法运用了公式
+举例
+〈正方形 ,superior_concept ,四边形 〉
+〈十字相乘法 ,superior_method ,因式分解 〉
+〈三角形 ,equative_concept ,四边形 〉
+〈正弦定理 ,equative_theorem ,正切定理 〉
+〈完全平方公式 ,equative_formula ,平方差公式 〉
+〈交换律 ,equative_method ,结合律 〉
+〈直角三角形 ,concept_use_theorem ,勾股定理 〉
+〈勾股定理 ,theorem_get_concept ,边〉
+〈二元二次方程 ,concept_use_method ,代入法 〉
+〈代入法 ,method_get_concept ,一元二次方程 〉
+〈多项式 ,concept_use_formula ,平方差公式 〉
+〈求根公式 ,formula_get_concept ,实数根 〉
+〈勾股定理 ,theorem_use_formula ,单位圆方程 〉
+〈配方法 ,method_use_formula ,平方差公式 〉
+121
+
+--- page 5 ---
+武汉大学学报 （理学版） 第 67 卷
+（2）式 中 xi 表 示 当 前tokens 经 过 BERT 内 若 干 层 神
+经 网 络 计 算 后 在 第i 个 实 体 类 别 的 分 数，分 母 是 所
+有 实 体 类 别 分 数 指 数 的 和，此 时 起 归 一 化 作 用。 其
+中实体抽取工作原理如图 3 所示 。
+1. 5 知识融合
+本 文 通 过 网 络 爬 虫 技 术 获 取 了 百 度 百 科 和 互
+动 百 科（在 不 引 起 歧 义 的 情 况 下 简 称 百 科）的 半 结
+构 化 数 据，百 度 百 科 和 互 动 百 科 的 同 一 实 体 在 名
+称 、属 性 的 表 述 上 不 一 定 相 同，教 材 等 非 结 构 化 数
+据 与 百 度 百 科 和 互 动 百 科 等 半 结 构 化 数 据 之 间 未
+建 立 联 系，导 致 数 据 来 源 零 散，不 够 权 威，不 成 体
+系 。 基 于 此，在 综 合 考 虑 了 百 科 已 有 的 各 项 标 签 及
+教 材 等 非 结 构 化 文 本 的 情 况 下，提 出 一 种 基 于 层 次
+过 滤 思 想
+［13］
+的 知 识 融 合 模 型。 该 模 型 首 先 按 照 实
+体 对 齐 精 度 高 低 设 定 一 系 列 过 滤 模 块，分 别 实 现 百
+科 和 文 本 内 部 的 实 体 对 齐；再 以 教 材 知 识 为 主 体，
+对 两 类 数 据 进 行 实 体 链 接，建 立 起 半 结 构 化 数 据 和
+非 结 构 化 数 据 之 间 的 联 系，实 现 多 源 异 构 数 据 的 融
+合，融合处理逻辑如图 4 所示 ，其中以百科实体对齐
+为例进行介绍 ，教材文本对齐的逻辑类似 。
+1. 5. 1 实体对齐
+1）预处理层 ：爬虫获取的百科数据一般包含大
+量 重 复 冗 余 信 息，无 法 直 接 用 于 实 体 对 齐，且 后 续
+的 工 作 有 赖 于 各 个 实 体 的 描 述 信 息，因 此 本 层 主 要
+对 数 据 做 预 处 理。 对 百 科 数 据 来 说，具 体 包 括：利
+用 百 科 内 的 重 定 向 机 制 和 同 义 词 标 签 去 除 无 关 实
+体 ，扩 充 同 义 实 体，得 到 完 整 的 百 科 实 体 集 合；再 对
+实 体 集 合 中 的 描 述 信 息 进 行 分 词、词 性 标 注、过 滤
+图 2 关系抽取工作原理图
+Fig . 2 Working principle diagram of relation extraction
+图 3 实体抽取工作原理图
+Fig . 3 Working principle diagram of entity extraction
+122
+
+--- page 6 ---
+第 2 期 周炫余 等: 基于多源异构数据融合的初中数学知识图谱构建
+停 用 词 等 文 本 预 处 理 操 作；最 后 针 对 已 处 理 完 的 百
+科 内 实 体 进 行 百 科 间 的 实 体 对 齐（对 文 本 数 据，预
+处 理 为：分 词、词 性 标 注、过 滤 停 用 词 等 常 规 的 文 本
+预处理操作 ） 。
+2）字符串匹配层 ：主要用于匹配百科间名称和
+描 述 信 息 完 全 一 致 的 实 体，例 如 百 度 百 科 中 的“ 一
+元 一 次 方 程”和 互 动 百 科 中 的“ 一 元 一 次 方 程”是 完
+全匹配的两实体 ，此时只保留其中一个 。
+3）语义匹配层 ：实体对齐工作一般可以转化为
+对 实 体 语 义 相 似 度 的 判 断
+［14］
+。 大 多 数 情 况 下 会 利
+用 中 文 语 义 知 识 库（HowNet ）来 计 算 实 体 对 之 间 的
+语 义 相 似 度，基 于 HowNet 语 义 相 似 度 计 算 考 虑 的
+是两实体在知网中的义元相似度 ，计算公式如下
+Simh ( HAi,BAj ) = α
+s + α （3）
+其 中，HAi 和 BAj 分 别 表 示 互 动 百 科 和 百 度 百 科 中
+某 实 体 的 名 称，s 为 实 体HAi 和 BBAj 的 义 元 在 义 元
+层 次 体 系 中 的 距 离 ，α 是 一 个 可 调 节 的 参 数 ，当
+Simh ( HAi，BAj ) 大 于 0. 5 的 时 候，两 实 体 具 有 语 义
+相似性 。
+然 而 HowNet 规 模 较 小，不 能 完 全 计 算 出 所 有
+实 体 对 的 语 义 相 似 度。 因 此，本 层 在 本 地 语 义 知 识
+库 的 基 础 上，还 引 入Web 语 义 知 识 来 计 算 语 义 相 似
+度 。 基 于 Web 语 义 相 似 度 的 计 算 主 要 利 用 搜 索 引
+擎 索 引 出 的 网 页 信 息，并 以 此 计 算 两 实 体 的 语 义 相
+似度 ，计算公式如下
+NGD ( HAi，BAj ) =
+max { log f ( HAi ), log f ( BAj ) }- log f ( HAi,BAj )
+log M - min { log f ( HAi ), log f ( BAj ) }
+（4）
+其 中，M 指 的 是 谷 歌 搜 索 的 网 页 总 数，f ( HAi ) 指 的
+是 实 体 名 HAi 作 为 搜 索 词 在 网 页 中 的 命 中 数 量，
+f ( HAi，BAj ) 则是指同时出现两词的网页数量 。
+4）词形匹配层 ：词形匹配层主要是在语义相关
+的 基 础 上，计 算 属 性 标 签 和 摘 要 文 本 的 相 似 度。 属
+性 标 签 指 的 是 百 度 百 科 和 互 动 百 科 上 对 某 一 个 实
+体 信 息 的 描 述 内 容，摘 要 文 本 指 的 是 百 度 百 科 和 互
+动 百 科 上 对 某 个 概 念 用 相 对 精 炼 文 字 介 绍 的 内 容。
+属 性 标 签 的 相 似 度 用 编 辑 距 离 算 法 计 算。 考 虑 到
+属 性 匹 配 个 数 对 相 似 度 的 影 响
+［15］
+，本 文 对 公 式 做 了
+归一化处理 ，计算如下
+Sima ( h
+HA p
+，b
+BA q
+) =
+∑
+hm ∈ HA p，bn ∈ BA q
+simedit ( hˉHA p
+m ，bˉBA q
+n )
+l （5）
+其 中 ，h
+HA p
+= { h
+HA p
+1 ，h
+HA p
+2 ，⋯，h
+HA p
+m ，⋯ } 和 b
+BA q
+=
+{ b
+BA q
+1 ，b
+BA q
+2 ，⋯，b
+BA q
+n ，⋯ } 分 别 表 示 互 动 百 科 中 第p 个
+实 体 HAp 和 百 度 百 科 中 第q 个 实 体BAq 属 性 名 集，
+hˉHA p
+m ，bˉBA q
+n 指 的 h
+HA p
+m ，b
+BA q
+n 对 应 的 属 性 值 ，
+simedit ( hˉHA p
+m ，bˉBA q
+n ) 指 的 是 属 性 值hˉHA p
+m 和bˉBA q
+n 之 间 的 编
+辑距离 ，l 表示实体 BAq 的属性个数 。
+摘要文本相似度的计算使用的是基于 TF -IDF
+的 余 弦 相 似 度 算 法。 首 先 分 别 将 从 互 动 百 科 和 百
+度 百 科 提 取 的 关 键 词 转 换 成 长 度 为t 的 向 量HS1 =
+{ x1，x2，⋯，xt } 和 BS1 = { y1，y2，⋯，yt }，再 计 算 两 向
+量之间的余弦相似度 ，如下
+Sims ( HS1,BS1 ) =
+∑
+i = 1
+t
+( xi × yi )
+∑
+i = 1
+t
+( xi )
+2
+× ∑
+i = 1
+t
+( yi )
+2
+（6）
+5）实体融合层 ：融合词形匹配层的属性标签和
+摘 要 文 本 相 似 度 计 算 的 结 果，按 下 式 计 算 两 实 体 间
+的最终相似度
+SIM ( hep,beq ) = w1 × Sima ( h
+HA p
+,b
+BA q
+)+ w2 ×
+Sims ( HSp,BSq ) （7）
+图 4 基于层次过滤思想的知识融合模型处理逻辑示意图
+Fig . 4 Processing logic schematic diagram of knowledge fusion model based on hierarchical filtering idea
+123
+
+--- page 7 ---
+武汉大学学报 （理学版） 第 67 卷
+其中 ，hep 和 beq 分别代表互动百科和百度百科内的第
+p 和第 q 个实体 ，w1 和 w2 分别代表此次融合中属性标
+签的相似度和摘要文本的相似度所占权重 。若计算
+结果大于一定阈值 ，实体对齐 ；否则 ，不对齐 。
+1. 5. 2 实体链接
+实 体 链 接 指 的 是 将 百 科 文 本 中 的 实 体 指 称 项
+链 接 到 非 结 构 化 文 本 知 识 库 中 对 应 实 体 对 象 的 操
+作 。 一 般 包 括 文 本 实 体 抽 取、候 选 实 体 生 成、实 体
+指 称 项 链 接 三 部 分 的 工 作。 文 本 实 体 的 抽 取 工 作
+可 利 用 上 述 提 到 的 知 识 抽 取 模 型 完 成；候 选 实 体 生
+成 的 过 程 实 际 上 就 是 对 抽 取 的 实 体 指 称 项 生 成 可
+能 链 接 的 候 选 实 体 集 合，其 中 可 能 会 涉 及 一 词 多 义
+的 情 况，可 应 用 上 述 提 到 的 实 体 对 齐 框 架 来 同 步 完
+成 ；实 体 指 称 项 链 接 指 的 是 从 候 选 实 体 中 选 择 正 确
+的 链 接 对 象，将 实 体 指 称 项 与 知 识 库 中 的 实 体 建 立
+联 系。 通 过 以 上 三 个 步 骤 就 实 现 了 百 科 实 体 和 教
+材文本知识库的链接 。
+考 虑 到 知 识 库 中 的 实 体 无 属 性 内 容 的 描 述，因
+此 直 接 利 用 本 地 语 义 知 识 库 和Web 语 义 知 识 库，通
+过 计 算 实 体 指 称 项 和 候 选 实 体 之 间 的 语 义 相 似 度
+来 判 断 两 实 体 间 的 关 联 性，再 将 实 体 指 称 项 和 相 似
+度 高 的 候 选 实 体 链 接 起 来，实 现 多 源 异 构 数 据 的
+融合 。
+1. 6 知识更新
+知 识 图 谱 更 新 主 要 分 为 两 个 部 分，即 知 识 图 谱
+的 局 部 更 新 和 周 期 性 更 新。 知 识 图 谱 的 局 部 更 新
+是 以 教 材 等 非 结 构 化 数 据 为 基 础，利 用 网 络 资 源 等
+半 结 构 化 数 据 进 行 非 结 构 化 数 据 的 更 新；知 识 图 谱
+的 周 期 更 新 是 将 网 络 上 实 时 更 新 的 知 识 周 期 性 地
+融合进已有知识图谱 。
+2 可视化与应用
+2. 1 知识图谱可视化展示
+通过对抽取的知识进行融合 ，最终得到了 4 910
+个 数 学 实 体 和1 941 条 关 系。 考 虑 到 图 数 据 库 的 存
+储 方 式 与 知 识 图 谱 三 元 组 结 构 一 致，将 抽 取 的 知 识
+库 以 可 视 化 图 数 据 库Neo 4j 进 行 管 理，部 分 数 据 如
+图 5 所示 。
+2. 2 应用
+基 于 上 述 方 法 构 建 的 初 中 数 学 知 识 图 谱，我 们
+开 发 了 初 中 数 学 智 能 问 答 推 荐 系 统，主 要 从 智 能 问
+答 和 自 动 推 荐 功 能 出 发，以 提 供 个 性 化 和 智 能 化 学
+习 支 持 服 务 为 导 向，实 现 对 不 同 学 习 者 数 学 知 识 点
+的辅导 ，进而提升在线教学的效果 。
+2. 2. 1 及 时 提 供 在 线 教 学 辅 导，实 现 初 中 数 学 知
+识智能问答
+知 识 图 谱 具 有 结 构 化 和 关 联 化 的 特 征，能 为 各
+类 智 能 问 答 系 统 提 供 问 题 在 语 义 层 面 上 的 理 解，使
+得 计 算 机 理 解 用 户 提 出 的 问 题 成 为 可 能，免 去 了 用
+户 二 次 检 索 或 筛 选 的 过 程，大 幅 度 提 高 了 答 案 返 回
+的 准 确 性 和 用 户 的 使 用 体 验。 而 智 能 问 答 系 统 中，
+问 句 的 解 析 效 果 及 答 案 反 馈 的 准 确 性 取 决 于 知 识
+图 谱 的 数 据 量 大 小，例 如 搜 索“ 如 何 求 直 角 三 角 形
+的 边？ ” ，只 有 足 够 全 面 的 知 识 图 谱 才 可 以 充 分 挖 掘
+出 这 句 话 包 含 的 知 识 点 实 体，并 通 过 知 识 图 谱 建 立
+联 系 反 馈 答 案，如 图 6 所 示。 因 此 基 于 多 源 异 构 数
+据 融 合 的 初 中 数 学 知 识 图 谱 实 现 的 智 能 问 答 功 能，
+不 仅 能 照 顾 到 不 同 学 习 者 对 不 同 知 识 点 的 学 习 需
+求 ，使 每 个 问 题 得 到 及 时 有 效 地 解 决，还 减 轻 了 在
+线 教 学 教 师 的 工 作 负 担，使 其 可 以 将 工 作 重 心 更 多
+地放在教学设计上 ，促进教与学的共同发展 。
+2. 2. 2 按 需 推 送 相 关 知 识 点，实 现 初 中 数 学 知 识
+自动推荐
+智 慧 教 育 的 技 术 特 征 之 一 是 按 需 推 送，即 能 够
+根 据 学 习 者 的 偏 好 和 需 求 推 送 相 应 的 学 习 资 源 和
+信 息，为 学 习 者 提 供 个 性 化 和 适 应 性 服 务。 虽 然 目
+前 网 络 上 提 供 的 学 习 资 源 非 常 丰 富，能 从 多 方 面 满
+足 学 习 者 的 学 习 需 求，但 存 在 着 不 具 针 对 性，并 未
+考 虑 知 识 点 关 联 性 以 及 学 习 内 容 内 部 结 构 的 问 题。
+而 多 源 异 构 数 据 融 合 的 初 中 数 学 知 识 图 谱 包 含 了
+多 个 知 识 点，能 挖 掘 到 更 多 联 系，建 立 更 为 复 杂 的
+关 系，从 而 形 成 一 个 全 面 的 网 状 结 构 图。 因 此 基 于
+多 源 异 构 数 据 融 合 的 知 识 图 谱 实 现 的 自 动 推 荐 功
+能 ，能 够 对 学 习 者 的 提 问 进 行 充 分 分 析，并 基 于 问
+题 及 知 识 图 谱 中 知 识 点 的 复 杂 关 联 性 来 推 测 学 习
+者 感 兴 趣 甚 至 薄 弱 的 知 识 点，从 而 更 具 个 性 化 及 针
+图 5 多源异构融合初中数学知识图谱图 （部分）
+Fig . 5 Multi -source heterogeneous fusion of junior high
+school mathematics knowledge graph (partly )
+124
+
+--- page 8 ---
+第 2 期 周炫余 等: 基于多源异构数据融合的初中数学知识图谱构建
+对 性 地 为 学 习 者 提 供 学 习 支 持 服 务。 如 图 7 所 示，
+学 习 者 在 搜 索 与 代 数 式 相 关 的 知 识 点 后，可 以 得 到
+相 关 知 识 点 的 推 荐，点 击 链 接，即 可 跳 转 界 面 了 解
+其详细信息 。
+3 结 语
+本 文 通 过 融 合 多 源 异 构 数 据，并 利 用BERT 模
+型 半 自 动 构 建 初 中 数 学 知 识 图 谱。 在 知 识 融 合 部
+分 提 出 基 于 层 次 过 滤 思 想 的 知 识 融 合 模 型，并 引 入
+Web 语 义 知 识，将 结 构 化 数 据 和 半 结 构 化 数 据 中 的
+实 体 进 行 对 齐 和 链 接，将 知 识 图 谱 应 用 于 智 能 问 答
+和 自 动 推 荐 中，通 过 知 识 关 联 和 知 识 推 理 深 度 分 析
+学 习 者 的 需 求，从 而 更 具 个 性 化 地 为 学 习 者 提 供 学
+习 支 持。 本 文 的 研 究 为 教 育 领 域 知 识 图 谱 的 构 建，
+以 及 知 识 图 谱 在 教 育 领 域 的 智 能 化 应 用 提 供 了
+思路 。
+参考文献 ：
+［1］ 喻 平，董 林 伟 . 初 中 数 学 实 验 的 本 质 解 析［J］. 课 程·教
+材·教 法 ，2016 ，36（8） ：89-95. DOI ：10.19877 /j. cnki .
+图 6 智能问答功能示例图
+Fig . 6 Example diagram of smart question answering function
+图 7 自动推荐功能示例图
+Fig . 7 Example diagram of automatic recommendation function
+125
+
+--- page 9 ---
+武汉大学学报 （理学版） 第 67 卷
+kcjcjf .2016 .08.014 .
+YU P ，DONG L W . Analysis of nature of mathematics
+experiment in junior middle school ［J］. Curriculum ，Teaching
+Material and Method ，2016，36（8） ：89-95. DOI：10.19877/
+j.cnki .kcjcjf .2016 .08.014（Ch）.
+［2］ 李艳燕 ，张香玲 ，李新 ，等 . 面向智慧教育的学科知识图
+谱 构 建 与 创 新 应 用［J］. 电 化 教 育 研 究，2019 ，40（8） ：
+60-69. DOI ：10.13811 /j.cnki .eer .2019 .08.008 .
+LI Y Y ，ZHANG X L ，LI X ，et al . Construction and in ⁃
+novative application of discipline knowledge graph oriented
+to smart education ［J］. E-Education Research ，2019 ，40
+（8） ：60-69. DOI ：10.13811 /j.cnki .eer .2019 .08.008（Ch）.
+［3］ 朱 游 娟. 初 中 数 学 问 题 的 全 知 识 图 谱 设 计 与 实 现［D］. 成
+都：电子科技大学 ，2016 . DOI ：10.7666 /d.D00990642 .
+ZHU Y J . Design and Implementation of Full Knowledge
+Map for the Math Problems in Junior High School ［D］.
+Chengdu ：University of Electronic Science and Technolo ⁃
+gy of China ，2016 . DOI ：10.7666 /d.D00990642（Ch）.
+［4］ 徐 增 林，盛 泳 潘，贺 丽 荣，等 . 知 识 图 谱 技 术 综 述［J］. 电
+子 科 技 大 学 学 报，2016 ，45（4） ：589 -606 . DOI ：10.3969 /
+j.issn .1001 -0548 .2016 .04.012 .
+XU Z L，SHENG Y P ，HE L R，et al . Review on knowledge
+graph techniques ［J］. Journal of University of Electronic
+Science and Technology of China ，2016 ，45（4）：589 -
+606 . DOI ：10.3969 /j.issn .1001 -0548 .2016 .04.012（Ch）.
+［5］ 李 振，周 东 岱，王 勇 .“ 人 工 智 能+ ”视 域 下 的 教 育 知 识
+图 谱 ：内 涵 、技 术 框 架 与 应 用 研 究［J］. 远 程 教 育 杂 志，
+2019 ，37（4） ：42-53.
+LI Z ，ZHOU D D ，WANG Y . Research of educational
+knowledge graph from the perspective of “artificial In ⁃
+te11igence+ ” ：Connotation ， technical framework and
+application ［J］. Journal of Distance Education ， 2019 ，
+37（4） ：42-53（Ch）.
+［6］ VILLALON J ，CALVO R A . Concept extraction from
+student essays ，towards concept map mining ［C］// Pro ⁃
+ceedings of the 5th IEEE . Piscataway ：IEEE Press ，2009 ：
+221 -225 .
+［7］ WEN Y ，LOOI C K ，CHEN W . Appropriation of a repre ⁃
+sentational tool in a second -language classroom ［J］. Inter ⁃
+national Journal of Computer Supported Collaborative
+Learning ，2015 ，10（1） ：77-108 . DOI ：10.1007 /s11412 -
+015 -9208 -0.
+［8］ LIN Y S ，CHANG Y C ，LIEW K H . Effects of concept
+map extraction and a test -based diagnostic environment on
+learning achievement and learners 􀆳 perceptions ［J］. British
+Journal of Educational Technology ，2016 ，47（4）：649 -
+664 . DOI ：10.1111 /bjet . 12250 .
+［9］ 陆泉 ，谢祎玉 ，陈静 ，等 . 临床医学课程知识主题图谱构
+建研究［J］. 图书情报工作 ，2019 ，63（9） ：101 -108 .
+LU Q ，XIE Y Y ，CHEN J ，et al . Research on the con ⁃
+struction of clinical medicine course -knowledge topic graph
+［J］. Library and Information Service ，2019 ，63（9） ：101 -
+108（Ch）.
+［10］ 郭 琴 芳. 基 于 知 识 图 谱 的 初 中 数 学 在 线 学 习 系 统 及 应 用
+［D］. 西安 ：西安理工大学 ，2019 .
+GUO Q F . Junior High School Online Learning System
+Based on Knowledge Graph ［D］. Xi’an：Xi’an Universi ⁃
+ty of Technology ，2019（Ch）.
+［11］ 刘 峤，李 杨，段 宏，等 . 知 识图 谱构 建 技术 综述［J］. 计 算机
+研 究 与 发 展 ，2016 ，53（3）：582 -600 . DOI ：10.7544 /
+issn 1000 -1239 .2016 .20148228 .
+LIU Q ，LI Y ，DUAN H ，et al . Knowledge graph con ⁃
+struction techniques ［J］. Journal of Computer Research
+and Development ，2016 ，53（3） ：582 -600 . DOI ：10.7544 /
+issn 1000 -1239 .2016 .20148228（Ch）.
+［12］ HUI B ，LIU L ，CHEN J ，et al . Few -shot relation classifi ⁃
+cation by context attention -based prototypical networks
+with BERT ［J］. EURASIP Journal on Wireless Commu ⁃
+nications and Networking ，2020 ，118 ：1-17. DOI ：10.
+1186 /s13638 -020 -01720 -6.
+［13］ 周炫余 ，刘娟 ，邵鹏 ，等 . 基于层次过滤模型的中文指代
+消 解［J］. 吉 林 大 学 学 报（工 学 版），2016 ，46（4） ：1209 -
+1215 . DOI ：10.13229 /j.cnki .jdxbgxb 201604029 .
+ZHOU X Y ，LIU J ，SHAO P ，et al . Chinese Anaphora
+resolution based on multi -pass sieve model ［J］. Journal of
+Jilin University （Engineering and Technology Edition ），
+2016 ，46（4） ：1209 -1215 . DOI ：10.13229 /j.cnki .jdxbgxb
+201604029（Ch）.
+［14］ 付洋 ，刘茂福 ，乔瑞 . 心脏病中文知识图谱的构建 ［J］. 武
+汉 大 学 学 报（理 学 版），2020 ，66（3） ：261 -267 . DOI ：10.
+14188 /j.1671 -8836 .2018 .0217 .
+FU Y ， LIU M F ， QIAO R . Construction of Chinese
+knowledge graph of heart disease ［J］. Journal of Wuhan
+University （Natural Science Edition ）， 2020 ， 66（3）：
+261 -267 . DOI ：10.14188 /j.1671 -8836 .2018 . 0217（Ch）.
+［15］ 王雪鹏 ，刘康 ，何世柱 ，等 . 基于网络语义标签的多源知
+识 库 实 体 对 齐 算 法［J］. 计 算 机 学 报，2017 ，40（3） ：701 -
+711 . DOI ：10.11897 /SP .J.1016 .2017 .00701 .
+WANG X P ， LIU K ， HE S Z ， et al . Multi -source
+knowledge bases entity alignment by leveraging semantic
+tags［J］. Chinese Journal of Computers ，2017 ，40（3）：
+701 -711 . DOI ：10.11897 /SP .J.1016 .2017 .00701（Ch）.
+□
+126

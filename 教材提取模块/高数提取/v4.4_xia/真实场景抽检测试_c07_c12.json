@@ -1,0 +1,291 @@
+[
+  {
+    "id": "c07_node_vector",
+    "kind": "node_lookup",
+    "question": "C07：能否定位核心知识点：向量？",
+    "keyword": "向量",
+    "node_types": ["Concept"],
+    "min_results": 1,
+    "expected_terms_any": ["向量"]
+  },
+  {
+    "id": "c07_node_plane_point_normal_formula",
+    "kind": "node_lookup",
+    "question": "C07：能否定位平面的点法式方程？",
+    "keyword": "平面的点法式方程",
+    "node_types": ["Formula"],
+    "min_results": 1,
+    "expected_terms_any": ["点法式", "平面"]
+  },
+  {
+    "id": "c07_rule_unit_vector",
+    "kind": "rulecase_by_owner",
+    "question": "C07：能否整体返回单位向量的判定规则？",
+    "owner": "单位向量",
+    "owner_types": ["Concept"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["模等于 1", "单位向量"]
+  },
+  {
+    "id": "c08_node_partial_derivative",
+    "kind": "node_lookup",
+    "question": "C08：能否定位核心知识点：偏导数？",
+    "keyword": "偏导数",
+    "node_types": ["Concept", "Formula", "Theorem", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["偏导数", "偏导"]
+  },
+  {
+    "id": "c08_node_total_differential",
+    "kind": "node_lookup",
+    "question": "C08：能否定位核心知识点：全微分？",
+    "keyword": "全微分",
+    "node_types": ["Concept", "Formula", "Theorem", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["全微分"]
+  },
+  {
+    "id": "c08_recommend_implicit_function",
+    "kind": "method_recommendation",
+    "question": "C08：学生求隐函数导数时，能否推荐隐函数求导相关方法？",
+    "anchor": "隐函数",
+    "anchor_types": ["Concept"],
+    "max_depth": 4,
+    "min_results": 1,
+    "expected_terms_any": ["隐函数", "导数", "偏导", "方法"]
+  },
+  {
+    "id": "c08_path_partial_to_multivariable",
+    "kind": "path_between",
+    "question": "C08：偏导数是否能追溯到多元函数？",
+    "source": "偏导数",
+    "target": "多元函数",
+    "source_types": ["Concept"],
+    "target_types": ["Concept"],
+    "source_exact": true,
+    "target_exact": true,
+    "max_depth": 5,
+    "min_results": 1,
+    "expected_terms_all": ["偏导数", "多元函数"]
+  },
+  {
+    "id": "c09_node_directional_derivative",
+    "kind": "node_lookup",
+    "question": "C09：能否定位方向导数相关知识点？",
+    "keyword": "方向导数",
+    "node_types": ["Concept", "Formula", "Theorem"],
+    "min_results": 1,
+    "expected_terms_any": ["方向导数"]
+  },
+  {
+    "id": "c09_node_lagrange_multiplier_method",
+    "kind": "node_lookup",
+    "question": "C09：能否定位拉格朗日乘数法？",
+    "keyword": "拉格朗日乘数法",
+    "node_types": ["Method"],
+    "min_results": 1,
+    "expected_terms_any": ["拉格朗日乘数法", "拉格朗日"]
+  },
+  {
+    "id": "c09_recommend_extremum_methods",
+    "kind": "method_recommendation",
+    "question": "C09：学生求多元函数极值时，能否推荐拉格朗日乘数法、二阶偏导数判别等工具？",
+    "anchor": "多元函数的极值",
+    "anchor_types": ["Concept"],
+    "anchor_exact": true,
+    "max_depth": 4,
+    "min_results": 1,
+    "expected_terms_any": ["拉格朗日乘数法", "二阶偏导数判别", "极值", "充分条件"]
+  },
+  {
+    "id": "c10_node_double_integral",
+    "kind": "node_lookup",
+    "question": "C10：能否定位核心知识点：二重积分？",
+    "keyword": "二重积分",
+    "node_types": ["Concept", "Formula", "Theorem", "Method", "ProblemClass"],
+    "min_results": 1,
+    "expected_terms_any": ["二重积分"]
+  },
+  {
+    "id": "c10_node_triple_integral",
+    "kind": "node_lookup",
+    "question": "C10：能否定位核心知识点：三重积分？",
+    "keyword": "三重积分",
+    "node_types": ["Concept", "Formula", "Theorem", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["三重积分"]
+  },
+  {
+    "id": "c10_node_arc_length_integral",
+    "kind": "node_lookup",
+    "question": "C10：能否定位对弧长的曲线积分？",
+    "keyword": "对弧长的曲线积分",
+    "node_types": ["Concept", "Formula", "Theorem", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["对弧长", "曲线积分"]
+  },
+  {
+    "id": "c10_node_surface_integral",
+    "kind": "node_lookup",
+    "question": "C10：能否定位对面积的曲面积分？",
+    "keyword": "对面积的曲面积分",
+    "node_types": ["Concept", "Formula", "Theorem", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["对面积", "曲面积分"]
+  },
+  {
+    "id": "c10_recommend_double_integral_methods",
+    "kind": "method_recommendation",
+    "question": "C10：学生计算二重积分时，能否推荐二次积分、极坐标变换、换元法等工具？",
+    "anchor": "二重积分",
+    "anchor_types": ["Concept"],
+    "anchor_exact": true,
+    "max_depth": 4,
+    "min_results": 2,
+    "expected_terms_any": ["二次积分", "极坐标", "换元", "累次积分"]
+  },
+  {
+    "id": "c11_node_green_formula",
+    "kind": "node_lookup",
+    "question": "C11：能否定位格林公式？",
+    "keyword": "格林公式",
+    "node_types": ["Theorem", "Formula"],
+    "min_results": 1,
+    "expected_terms_any": ["格林公式"]
+  },
+  {
+    "id": "c11_node_gauss_formula",
+    "kind": "node_lookup",
+    "question": "C11：能否定位高斯公式定理？",
+    "keyword": "高斯公式",
+    "node_types": ["Theorem", "Formula", "Method"],
+    "min_results": 1,
+    "expected_terms_any": ["高斯公式"]
+  },
+  {
+    "id": "c11_node_stokes_formula",
+    "kind": "node_lookup",
+    "question": "C11：能否定位斯托克斯公式？",
+    "keyword": "斯托克斯公式",
+    "node_types": ["Theorem", "Formula"],
+    "min_results": 1,
+    "expected_terms_any": ["斯托克斯公式"]
+  },
+  {
+    "id": "c11_rule_green_formula",
+    "kind": "rulecase_by_owner",
+    "question": "C11：能否整体返回格林公式的适用条件和结论？",
+    "owner": "格林公式",
+    "owner_types": ["Theorem"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["连续偏导数", "正向边界曲线", "闭曲线积分", "二重积分"]
+  },
+  {
+    "id": "c11_rule_stokes_formula",
+    "kind": "rulecase_by_owner",
+    "question": "C11：能否整体返回斯托克斯公式的适用条件和结论？",
+    "owner": "斯托克斯公式",
+    "owner_types": ["Theorem"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["有向曲面", "边界曲线", "右手法则", "曲线积分", "曲面积分"]
+  },
+  {
+    "id": "c11_path_green_to_path_independent",
+    "kind": "path_between",
+    "question": "C11：格林公式是否能连接到曲线积分路径无关的等价条件？",
+    "source": "格林公式",
+    "target": "平面上曲线积分与路径无关的等价条件定理",
+    "source_types": ["Theorem"],
+    "target_types": ["Theorem"],
+    "source_exact": true,
+    "target_exact": true,
+    "max_depth": 3,
+    "min_results": 1,
+    "expected_terms_all": ["格林公式", "路径无关"]
+  },
+  {
+    "id": "c12_node_power_series",
+    "kind": "node_lookup",
+    "question": "C12：能否定位幂级数？",
+    "keyword": "幂级数",
+    "node_types": ["Concept", "Formula", "Theorem", "Method", "ProblemClass"],
+    "min_results": 1,
+    "expected_terms_any": ["幂级数"]
+  },
+  {
+    "id": "c12_node_radius_of_convergence",
+    "kind": "node_lookup",
+    "question": "C12：能否定位收敛半径？",
+    "keyword": "收敛半径",
+    "node_types": ["Concept", "Formula", "Theorem"],
+    "min_results": 1,
+    "expected_terms_any": ["收敛半径"]
+  },
+  {
+    "id": "c12_node_fourier_series",
+    "kind": "node_lookup",
+    "question": "C12：能否定位傅里叶级数？",
+    "keyword": "傅里叶级数",
+    "node_types": ["Concept", "Formula", "Theorem", "Method", "ProblemClass"],
+    "min_results": 1,
+    "expected_terms_any": ["傅里叶级数", "傅里叶"]
+  },
+  {
+    "id": "c12_rule_ratio_test",
+    "kind": "rulecase_by_owner",
+    "question": "C12：能否整体返回比值判别法的分情况规则？",
+    "owner": "比值判别法",
+    "owner_types": ["Theorem"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["收敛", "发散", "极限", "分情况"]
+  },
+  {
+    "id": "c12_rule_leibniz_test",
+    "kind": "rulecase_by_owner",
+    "question": "C12：能否整体返回莱布尼茨判别法的条件和结论？",
+    "owner": "莱布尼茨判别法",
+    "owner_types": ["Theorem"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["交错级数", "单调递减", "趋于零", "收敛", "余项估计"]
+  },
+  {
+    "id": "c12_rule_taylor_series_condition",
+    "kind": "rulecase_by_owner",
+    "question": "C12：能否整体返回函数展开成泰勒级数的充要条件？",
+    "owner": "函数展开成泰勒级数的充要条件",
+    "owner_types": ["Theorem"],
+    "exact": true,
+    "min_results": 1,
+    "expected_terms_any": ["泰勒级数", "充要条件", "余项", "趋于零"]
+  },
+  {
+    "id": "c12_recommend_power_series_expansion",
+    "kind": "method_recommendation",
+    "question": "C12：学生做函数展开成幂级数题时，能否推荐直接法、间接法或泰勒展开？",
+    "anchor": "函数展开成幂级数",
+    "anchor_types": ["ProblemClass", "Method"],
+    "anchor_exact": false,
+    "max_depth": 4,
+    "min_results": 1,
+    "expected_terms_any": ["直接方法", "间接方法", "泰勒", "幂级数"]
+  },
+  {
+    "id": "c12_path_power_series_to_radius",
+    "kind": "path_between",
+    "question": "C12：幂级数是否能连接到收敛半径？",
+    "source": "幂级数",
+    "target": "收敛半径",
+    "source_types": ["Concept"],
+    "target_types": ["Concept"],
+    "source_exact": true,
+    "target_exact": true,
+    "max_depth": 3,
+    "min_results": 1,
+    "expected_terms_all": ["幂级数", "收敛半径"]
+  }
+]

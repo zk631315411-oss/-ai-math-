@@ -1,0 +1,408 @@
+arXiv:1109.0633v1  [cs.LO]  3 Sep 2011
+Noname manuscript No.
+(will be inserted by the editor)
+Eliciting implicit assumptions of proofs in the Mizar
+Mathematical Library by property omission
+Jesse Alama 1
+the date of receipt and acceptance should be inserted later
+Abstract When formalizing proofs with interactive theorem provers, it often
+happens that extra background knowledge (declarative or proce dural) about
+mathematical concepts is employed without the formalizer explicitly in voking
+it, to help the formalizer focus on the relevant details of the proof. In the
+contexts of producing and studying a formalized mathematical arg ument, such
+mechanisms are clearly valuable. But we may not always wish to suppre ss
+background knowledge. For certain purposes, it is important to kn ow, as far
+as possible, precisely what background knowledge was implicitly employ ed
+in a formal proof. In this note we describe an experiment conducte d on the
+Mizar Mathematical Library of formal mathematical proofs to elicit one s uch
+class of implicitly employed background knowledge: properties of fun ctions
+and relations (e.g., commutativity, asymmetry, etc.).
+1 Introduction
+When formalizing mathematical proofs with interactive theorem pro vers, it
+often happens that extra background knowledge is employed witho ut the for-
+malizer explicitly invoking it. The eﬀect is clear: thanks to such facilities , the
+formalizer can focus more on the relevant details of the proof he is w orking
+on, rather than (relatively more) tedious “details”. In the contex ts of produc-
+ing and studying a formalized mathematical argument, such mechan isms are
+important and deserve to be strengthened.
+But we may not always wish to suppress background knowledge. For certain
+purposes, it is important to know, as far as possible, precisely what background
+The author was supported by the FCT project “Dialogical Foun dations of Semantics” (Di-
+FoS) in the ESF EuroCoRes programme LogICCC (FCT LogICCC/00 01/2007).
+Center for Artiﬁcial Intelligence
+New University of Lisbon
+E-mail: j.alama@fct.unl.pt
+2
+knowledge was implicitly employed in a formal proof. There are a numbe r of
+practical applications of such information, such as facilitating theo ry explo-
+ration [ ?] , library recompilation [ ?], improved machine learning about formal
+proofs, premise selection heuristics, etc. The aim of eliciting exactly what is
+used is also important philosophically, because we come closer to ﬁndin g what
+is truly necessary for the success of a theorem. Our project thu s aligns in a
+modest way with the overall aims of reverse mathematics [ ?], a vibrant branch
+of contemporary proof theory whose aim is to discover axioms from theorems
+(rather than the other way around).
+The task of eliciting all implicit information of a formalized mathematical
+proof is a stimulating challenge. Various approaches can be used dep ending on
+the ITP and its associated logic(s). (For a comparison of how this ca n be done
+for Mizar as compared to Coq, see [ ?].) In this note we describe an experiment
+conducted on the Mizar Mathematical Library ( MML) of formal mathematical
+proofs to elicit one such class of implicitly employed background knowle dge:
+properties of functions and relations (e.g., commutativity, asymme try, etc.).
+We employ the term constructor to mean function or relation in a formal
+mathematical library. 1 The MML is a large collection of formal mathematical
+proofs expressed in classical ﬁrst-order set theory and a natur al deduction-style
+declarative proof formalism. (For an introduction to Mizar, see [ ?].) Analogous
+experiments could clearly be performed on other libraries of formaliz ed math-
+ematical knowledge. The Mizar system is especially attractive for this kind of
+experiment because of the clear semantics of the properties that can be implic-
+itly attached to functions and relations (they are simple universal ﬁ rst-order
+formulas) and the relative ease of manipulating these properties.
+Section 2 outlines some previous related work and sketches some of the
+intended applications of the constructor property dependency d ata. Section 3
+gives two examples of how constructor properties can be implicitly us ed in
+formal proofs in Mizar. Section 4 describes the method we used to make explicit
+the constructor properties that are needed for Mizar inferences. The heart of
+the paper is Section 5, where we give the results of our computation about
+needed and unneeded constructor properties for the entire Mizar Mathematical
+Library.
+2 Applications and previous work
+Mizar’s notion of constructor properties (and another mechanism for s uppress-
+ing the premises of an inference, so-called requirements) are a rela tively new
+invention for Mizar [?]. The information that a constructor property is needed
+for an inference can be exploited in various ways. One potential app lication
+is to use the needed-property information as an indication of what f ormula
+shapes are useful in the search for a successful proof. Building o n the ideas of
+1 The term “constructor” is in fact part of the Mizar idiolect for formal mathematics.
+There are more kinds of objects that count as “constructors” in Mizar—such as structures—
+but in this paper we are interested only in functions and pred icates.
+3
+S. Shulz [ ?], one would strip away the actual symbols employed in a proof that
+implicitly relies on some constructor property, thereby learning som e structural
+information about what contributes to the success of a theorem. One could
+proﬁtably using this information to assist in the problem of selecting c andi-
+date premises in large ATP problems [ ?]. More generally, such a structural
+approach can give us some information about shapes of successfu l patterns of
+formal reasoning.
+The information that a property of a constructor is not needed ind icates,
+prima facie, that one is dealing with a kind of generalization. It may not
+always be clear, though, how to use this information to craft gener alizations.
+The problem problem lies in the familiar distinction in logic between reason ing
+formally about a class of structures or about a single structure. I t would seem
+that information that a property is not needed information is more u seful in
+cases of reasoning about classes of structure (e.g., about ﬁelds) , but in the
+case of reasoning about “concrete” mathematical objects (a sin gle structure,
+e.g., the real numbers). Thus, we may ﬁnd in a theorem about real n umbers
+that commutativity of addition is not used. One could immediately cons truct
+a generalization of such a theorem to a class of structures that ar e just like
+the real numbers, but in which the commutativity of addition is not as sumed.
+The value of such a generalization may not be clear. By contrast, ima gine we
+encounter a theorem about ﬁelds in which the commutativity of the ﬁ eld’s
+addition operation is not used. In this case, the generalization proc edure is
+similar to the procedure used in the case of the reals. By contrast, though, the
+signiﬁcance and utility of such a generalization is clearer because the reasoning
+was already about a wide class of structures, the properties of wh ose functions
+and relations enjoyed some ﬂexibility.
+One might imagine an advisor attached to an interactive theorem pro ver
+that can use the information that a constructor property is need ed to help one
+investigate and formulate suitable generalizations. As discussed ea rlier, one
+relevant task (which seems quite interesting from the perspective of artiﬁcial
+intelligence) would be to decide whether a generalization is even warra nted.
+It’s intuitively clear that when we use a mathematical concept in a pro of we
+use only some aspects of it and not others; at some steps, we requ ire one thing
+of a concept, but at other steps we require something else. Dividing a concept
+so that we never require from it nothing less than its “full content” every time
+it is used seems like a drastic suggestion. Still, we may ﬁnd value in a mitiga ted
+form of this advice.
+3 Omitting properties of functions and relations
+In Mizar, one can attach properties to functions and relations; Tables 1 and 2
+lays out all nine properties currently supported by Mizar. These properties are
+used by the Mizar veriﬁer as “background knowledge” that doesn’t need to be
+cited by a formalizer.
+4
+Relation Property Formula
+reﬂexivity ∀x[R(x, x)]
+symmetry ∀x∀y[R(x, y) → R(y, x)]
+asymmetry ∀x∀y[R(x, y) → ¬ R(y, x)]
+connectedness ∀x∀y[R(x, y) ∨ R(y, x)]
+irreﬂexivity ∀x[¬ R(x, x)]
+T able 1 Properties of relations in Mizar
+Function Property Formula
+projectivity ∀x[f (f (x)) = f (x)]
+involutiveness ∀x[f (f (x)) = x]
+idempotence ∀x[g(x, x) = x]
+commutativity ∀x∀y[g(x, y) = g(y, x)]
+T able 2 Properties of functions in Mizar
+3.1 Example 1: Relation property
+Consider the deﬁnition of the proper subset relation:
+1 d e f i n i t i o n
+2 let X , Y be set ;
+3 pred
+4 X c < Y
+5 means
+6 X c = Y & X <> Y ;
+7 i r r e f l e x i v i t y ;
+8 a s y m m e t r y;
+This example, taken from the Mizar article XBOOLE 0, deﬁnes the predicate
+(pred) of one set X being a proper subset c< of another Y. The symbols c=
+and <> denote the subset relation and disequality, respectively. The keyw ords
+irreflexivity and asymmetry included in the deﬁnition indicate that the
+proper subset relation will henceforth have the properties of irre ﬂexivity and
+asymmetry; inferences involving the proper subset relation will implic itly use
+these properties.
+There are 58 occurrences in the Mizar Mathematical Library in which the
+irreﬂexivity of the proper subset relation is implicitly used. Here is one exam-
+ple, taken from the article TREES 1:
+1 t h e o r e m
+2 not <* n * > i s _ a _ p r o p e r _ p r e f i x _ o f <* m * >
+3 proof
+4 assume A1 : not thesis ;
+5 then <* n * > i s _ a _ p r e f i x _ o f <* m * > by X B O O L E _ 0: def 8;
+6 hence c o n t r a d i c t i o n by A1 , Th16 ;
+5
+7 end ;
+The theorem says that the one-term sequence whose sole term is t he number n
+is not a proper preﬁx of the one-term sequence whose sole term is t he number
+m. The binary relation is a prefix of on ﬁnite sequences is deﬁned simply
+as set inclusion. The reference Th16 refers to the theorem that says that a one-
+term ﬁnite sequence ⟨s⟩ is a preﬁx of the one-term ﬁnite sequence ⟨t⟩ iﬀ s = t.
+The proof of our theorem goes by contradiction. Note that the sy mbol for the
+proper subset relation, c<, occurs neither in the theorem nor in the proof. In
+the absence of the assumption that c< is irreﬂexive, the contradiction at the
+end of the proof does not follow. A contradiction indeed does not fo llow: we
+get from Th16 that n = m, but this is compatible with the one-term sequence
+<*n*> being a proper subset of <*m*>, if we haven’t assumed that the proper
+subset relation is irreﬂexive.
+3.2 Example 2: Function property
+Additive magmas come equipped, of course, with an addition operatio n +. In
+the case of abelian additive magmas, we know that + is commutative:
+1 d e f i n i t i o n
+2 let V be A b e l i a n addMagma ,
+3 v be E l e m e n t of V ,
+4 w be E l e m e n t of V ;
+5 r e d e f i n e func v + w ;
+6 c o m m u t a t i v i t y ;
+7 end ;
+This example is taken from the Mizar article RLVECT 1. The keyword redefine
+here does not indicate that we are changing the deﬁniens of the bina ry function
++ on elements of additive magmas (which in any event is essentially unde ﬁned);
+rather, we are attaching the property of commutativity to +. Suc h an opera-
+tion is obviously admissible because of the deﬁnition of what it means fo r an
+additive magma to be abelian.
+As an example of an inference that implicitly depends on the commutat ivity
+of +, consider:
+1 t h e o r e m
+2 for L being add - a s s o c i a t i v e r i g h t _ z e r o e d
+3 r i g h t _ c o m p l e m e n t a b l e A b e l i a n
+4 non empty addLoopStr ,
+5 b , c being E l e m e n t of L
+6 holds c = b - ( b - c )
+7 proof
+8 let L be add - a s s o c i a t i v e r i g h t _ z e r o e d
+9 r i g h t _ c o m p l e m e n t a b l e A b e l i a n
+6
+10 non empty addLoopStr ,
+11 b , c be E l e m e n t of L ;
+12 set a = b - c ;
+13 a +c - a = c - a + a by R L V E C T _ 1 :28
+14 .= c by Th1 ;
+15 hence thesis by Th1 ;
+16 end ;
+Ignoring the deﬁnition of all the attributes that are being attache d to the type
+addLoopStr (viz., an additive Moufang loop structure), the crucial step here
+is the equation on line 17. Note that the terms a and c are being swapped
+without reference to the commutativity of + (the reference to the theorem
+RLVECT 1:28 is not relevant here).
+4 Eliciting needed implicit constructor properties
+To elicit the constructor properties that are needed for an item of the Mizar
+Mathematical Library, we exploit Mizar’s separation of (i) the construction of
+the environment in which veriﬁcation will be carried out from (ii) the pr ocess
+of veriﬁcation properly speaking.
+In step (i), Mizar constructs an environment for veriﬁcation, importing all
+constructors that occur explicitly or implicitly in a Mizar text. If a constructor
+has a property associated with it, the environment will contain the p roperty
+attached to the constructor, regardless of whether it is truly ne eded. The
+environment is thus a conservative overestimate of what is truly ne eded for
+the veriﬁcation to succeed. By intervening between the construc tion of the
+environment and the veriﬁcation proper, one can manipulate the en vironment
+in which the veriﬁcation is carried out. We simply remove a property at tached
+to a constructor and carry out the veriﬁcation; if the veriﬁcation succeeds, we
+know that the property of the construction was not actually need ed.
+Thanks to the use of XML as the representation of the environmen t for
+Mizar articles [ ?], conducting our experiment is as simple as applying certain
+XSL stylesheets to the environment ﬁles.
+Rather than operating on whole Mizar articles, which generally contain
+dozens if not hundreds of toplevel items, we operate on a individual theorems of
+the MML. This is made possible by dividing the MML into ﬁne-grained “items”
+(which are in fact valid Mizar “microarticle”); see [ ?] for more information on
+how this decomposition of the MML is carried out.
+5 Usage of properties throughout the MML
+We have so far said that a veriﬁable item I of the Mizar Mathematical Library
+depends on property P of constructor C just in case I, in the absence of
+the attachment of P to C, is not veriﬁable. This deﬁnition of dependence
+upon a constructor property fails to capture the dependence of one item upon
+7
+Property Direct Items Indirect Items
+reﬂexivity 54113 102426
+symmetry 29744 97220
+asymmetry 256 82585
+connectedness 5020 83083
+irreﬂexivity 91 65951
+projectivity 153 10002
+involutiveness 533 67853
+idempotence 535 70132
+commutativity 14055 92580
+T able 3 Direct and indirect dependence upon properties in the MML
+another. For example, suppose that an item I does not depend on property P
+of constructor C, that is, I is veriﬁable if one detaches from C the property
+P . Suppose, though, that item I depends on some other item I ′ which does
+need property P of C. Such a though experiment suggest that we distinguish
+two sense of “need”: direct and indirect.
+Deﬁnition 1 Item I directly needs property P of constructor C iﬀ veriﬁ-
+cation of I will fail if P is detached from C.
+Item I indirectly needs property P of C iﬀ I directly needs P of C or
+there exists an item I ′ such that I depends on I ′ and I ′ needs P of C.
+Both senses of “need” are useful. Table 3 gives statistics about va rious
+constructor properties that are needed directly and indirectly in t he MML.
+There are a number of fascinating details behind these statistics:
+– Reﬂexivity is directly needed by nearly half of the items of the Mizar Math-
+ematical Library, and is indirectly needed by nearly the entire library . Re-
+ﬂexivity of equality of sets accounts for this: it is indirectly needed b y fully
+102242 items. It is perhaps not surprising that such a fundamenta l property
+of a built-in logical notion pervades the library.
+Putting aside equality, the next most important reﬂexive construc tor is
+subset inclusion, which is indirectly needed by 93284 items. A redeﬁnit ion
+of subset inclusion for ordinals is indirectly used by 8279 items. Puttin g
+aside these “logical” or “set theoretical” examples, the most import ant
+reﬂexive “mathematical” relation is the less-than-or-equal-to rela tion ≤ on
+(extended) real numbers, whose reﬂexivity is indirectly needed by 67196
+items.
+– Irreﬂexivity is directly needed by only a handful of items in the library ,
+but indirectly it supports about 2/3 of the library. The explanation is the
+proper subset relation: the irreﬂexivity of this constructor is nee ded by
+65546 items. The most important “mathematical” example is the relat ion
+of one element of a relation being strictly less than another.
+– Asymmetry is attached to only ﬁve constructors in the entire MML:
+– ∈ (set membership);
+8
+– the proper subset relation;
+– a variant of ∈ , deﬁned for many-sorted set structures;
+– the strictly-lexicographically-less-than relation on ﬁnite tuples of n atu-
+ral numbers;
+– the strictly-lexicographically-less-than relation on bags of ordinals .
+– The asymmetry, of ∈ , is foundationally signiﬁcant in the sense of mathe-
+matical logic (it expresses a weak form of the axiom of foundation) a nd for
+the Mizar Mathematical Library. The asymmetry of this constructor alone
+accounts for essentially all items that need the asymmetry of any c onstruc-
+tor: 82581 items indirectly need this weak form of foundation, wher eas only
+283 items directly depend on this property of ∈ .2
+– Likewise, projectivity is rarely directly needed, but supports a sub stantial
+piece of the library. Interestingly, it is the closure operation deﬁne d on
+subsets of a topological space 3 that accounts for the lion’s share of the
+items that indirectly need an projective constructor: 7536 items d epend on
+the projectivity of the closure operation.
+– Connectedness is attached to very few constructors of the Mizar Mathemat-
+ical Library, but the constructors to which this property is attac hed have a
+signiﬁcant inﬂuence across the MML. The constructor whose connectedness
+is used indirectly by the greatest number of items is the subset relat ion,
+restricted to ordinals. The connectedness of this constructor e xpresses a
+rather signiﬁcant fact about ordinals (any two ordinals are compar able).
+The proof of this fact in Mizar uses a trichotomy-like principle for ordinals,
+saying that for any two ordinals A and B, either A ∈ B, A = B, or B ∈ A.
+The connectedness of the subset relation on ordinals is indirectly ne eded by
+82490 items. The next most signiﬁcant example is ≤ on rational numbers,
+indirectly needed by 71313 items.
+– Involutiveness also requires some explanation. There are two items that vie
+for the most important here:
+– The sign-changing operation x ↦→ − x on real numbers is needed by
+65501 items.
+– The reciprocal operation z ↦→ 1/z on complex numbers is needed by
+65105 items.
+The constructor with the next highest number of items that indirec tly
+depend on its involutiveness is the relative complement operation, wh ich
+is indirectly needed by 8847 items.
+– The constructor whose idempotence is most frequently needed ind irectly is
+the binary union of two sets, which is indirectly needed by 69184 items . The
+idempotence of binary set intersection takes second place: it is indir ectly
+needed by 24249 items.
+2 This is arguably a curiosity of the organization of the MML. It turns out that asymmetry
+of ∈ is used very early on in the logical construction of the MML, hence its outsized inﬂuence.
+3 To be precise, the operation is deﬁned not on topological spaces, but on topological
+structures, which one can think of simply as a class of structures that ha s a carrier and a
+topology, viz., a collection of subsets of the carrier. A top ological structure on its own is not
+assumed to have any properties beyond these.
+9
+– Several items in the Mizar Mathematical Library indirectly depend on more
+than 100 constructor properties. The item with the greatest num ber of
+dependencies is taken from the proof of the Jordan curve theore m:
+1 t h e o r e m
+2 for n being E l e m e n t of NAT
+3 for C being b e i n g _ s i m p l e _ c l o s e d _ c u r v e
+4 Subset of ( TOP - REAL 2)
+5 st n i s _ s u f f i c i e n t l y _ l a r g e _ f o r C
+6 holds cell ( Gauge (C , n ) ,
+7 X - S p a n S t a r t(C , n ) - ’1 ,
+8 Y - S p a n S t a r t(C , n ))
+9 misses C
+10 proof
+11 assume n i s _ s u f f i c i e n t l y _ l a r g e _ f o r C ;
+12 then cell ( Gauge (C , n ) ,
+13 X - S p a n S t a r t(C , n ) - ’1 ,
+14 Y - S p a n S t a r t(C , n )) c = BDD C by Th6 ;
+15 hence thesis by J O R D A N 1 A :15 , X B O O L E _ 1 :63;
+16 end ;
+The precise mathematical deﬁnitions, the theorem references ( Th6, JORDAN1A:15,
+etc.) and the proof here are not important. What is important is tha t we
+are dealing here with a very short proof (it has only three steps) of a the-
+orem along the way to a substantial landmark in formal mathematics . De-
+spite appearances, this theorem indirectly depends on fully 113 con structor
+properties.
+The formalization in Mizar of the Jordan curve theorem required a great
+deal of work and made heavy use of the Mizar system’s features, such as
+its support for constructor properties under discussion here. W e see this by
+virtue of the fact that the theorems of the series of Mizar articles leading
+to the ﬁnal proof of the Jordan curve theorem indirectly need, on average,
+several dozen constructor properties.
+6 Conclusion and future work
+The abstractions discovered here in the context of an interactive theorem
+prover could, in all probability, be discovered equally well by an ATP. W ith
+an automated theorem prover one could, in principle, go much furth er than
+we have gone here. An infrastructure for carrying out such explo ration (sound
+translation of Mizar proofs to a vanilla unsorted ﬁrst-order language, infras-
+tructure for constructing and working with the associated ATP pr oblems, etc.)
+already exists [ ?]. One could even verify the dependency claims made here out-
+side of Mizar, in the style of [ ?].
+When we discover that some property of a function or relation is nee ded, we
+are discovering not that the property is logically or mathematically ne eded for
+10
+the success of the theorem in question; instead, we are discoverin g only that
+there exists a formal deduction (viz., a Mizar proof) where this property is
+used. It is certainly quite possible that there would exist other form al proofs
+of the same theorem that do not use the property. This suggests a much
+more ambitious project: discovering new proofs of theorems that use much
+less than what an interactively constructed proof uses. Such pro spects are
+enticing, and deserve to be carried out. Such a project naturally a lso bears on
+the philosophical problem of when two proofs are “the same”: it cou ld very
+well be that there are two proofs of the same theorem, one which e xploits
+a property of a function or relation, and another which doesn’t, bu t which
+should nonetheless, from another perspective, be considered ide ntical.
+Constructor properties are but one mechanism in Mizar that hides premises
+of inferences. Mizar also supports so-called requirements, which also help to
+allow one to reason validly without having to be explicit about precisely w hat
+premises are needed for every inference of a proof. Mizar also has some built-in
+functionality concerning arithmetic. Both of these mechanisms are of great
+value for the formalizer when constructing a formal proof, but if o ne is in-
+terested in making explicit premises that were suppressed during pr oof con-
+struction, Mizar’s requirements and arithmetic facilities need to be taken into
+account.
+One might wonder why there are only the nine constructor propert ies sup-
+ported by Mizar. Binary relation transitivity, unary function surjectivity and
+injectivity, for example, are conspicuously absent. Supporting su ch additional
+function and relation properties could be quite valuable; Mizar itself and tools
+using its library could exploit function injectivity and surjectivity, fo r exam-
+ple, to help rule out the solution for certain search problems that re quire the
+domain of discourse to be ﬁnite (see [ ?]). But more generally, it would be valu-
+able to mine the Mizar Mathematical Library for common shapes of formulas
+that play a large inferential role, and which could naturally be promot ed to
+the level of constructor properties. One might discover fruitful properties that
+could help make formalization in Mizar even more appealing and practical.

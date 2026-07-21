@@ -1,0 +1,1039 @@
+
+--- PAGE 1 ---
+Using Prerequisites to Extract Concept Maps from
+Textbooks
+Shuting Wang†, Alexander G. Ororbia II‡, Zhaohui Wu†, Kyle Williams‡,
+Chen Liang‡, Bart Pursel∗, C. Lee Giles‡†
+†ComputerScienceandEngineering
+‡InformationSciencesandTechnology
+∗TeachingandLearningwithTechnology
+PennsylvaniaStateUniversity,UniversityPark,PA16802,USA
+sxw327@cse.psu.edu, ago109@ist.psu.edu,
+{zzw109,kwilliams}@psu.edu, cul226@ist.psu.edu,bkp10@psu.edu,
+giles@ist.psu.edu
+ABSTRACT knowledge graphs (DBpedia [1] and YAGO [33]), and for
+real world facts [26], there has been little effort in orga-
+We present a framework for constructing a specific type of
+nizing knowledge for educational purposes. Applications of
+knowledge graph, a concept map from textbooks. Using
+such knowledge structures in education have been widely
+Wikipedia,wederiveprerequisiterelationsamongthesecon-
+used in teaching and learning assessment [17].
+cepts. A traditional approach for concept map extraction
+Therearemanyinterestingchallengesinextractingknowl-
+consists of two sub-problems: key concept extraction and
+edge graphs for education. In some cases, nodes in an edu-
+concept relationship identification. Previous work for the
+cational knowledge graph can be scientific and mathemati-
+most part had considered these two sub-problems indepen-
+cal concepts, such as“Lasso”and“Regularization”, instead
+dently. Weproposeaframeworkthatjointlyoptimizesthese
+oftypicalentitiessuchasindividuals,locations,ororganiza-
+sub-problemsandinvestigatesmethodsthatidentifyconcept
+tions. Assuch,insteadofusinggeneralconceptrelationships
+relationships. Experimentsonconceptmapsthataremanu-
+suchas“is-a”and“part-of”,wefocusontheprerequisite de-
+ally extracted in six educational areas (computer networks,
+pendencies among concepts. A prerequisite dependency re-
+macroeconomics,precalculus,databases,physics,andgeom-
+quiresthatlearningoneconceptisnecessarybeforelearning
+etry) show that our model outperforms supervised learning
+the next. For instance, we need to have basic knowledge of
+baselinesthatsolvethetwosub-problemsseparately. More-
+“Regularization”inordertolearn“Lasso”(orL1-regularized
+over, we observe that incorporating textbook information
+regression).
+helps with concept map extraction.
+We present a method for constructing a specific type of
+knowledge graph, a concept map, which is widely used
+CategoriesandSubjectDescriptors
+in the learning sciences [41]. In such a directed graph,
+I.2.6 [Learning]: Knowledge acquisition; Concept learn- each node is a scientific concept and directed links between
+ing; I.7.5 [Document and Text Processing]: Document these nodes imply their prerequisite dependencies. Figure 1
+Capture—Document Analysis; H.3.3 [Information Stor- shows an example of an extracted concept map in the eco-
+age And Retrieval]: Information Search and Retrieval nomicsareawhereeachnodeisaneconomicalconceptsuch
+as “Gross domestic product” and “Consumer price index”
+Keywords and links indicate prerequisite dependencies relating these
+concepts (from prerequisites to subsequents).
+Openeducation;conceptmaps; textbooks;Webknowledge;
+1. INTRODUCTION
+Export Investment
+A knowledge graph organizes knowledge by linking enti-
+Consump�on
+ties with their relationships and is applicable to many NLP
+tasks such as question answering [43] and knowledge acqui- Government
+Spending
+sition [10]. While recent work has addressed reasoning in
+Gross Domes�c
+Price Level
+Product
+Permissiontomakedigitalorhardcopiesofallorpartofthisworkforpersonalor
+classroomuseisgrantedwithoutfeeprovidedthatcopiesarenotmadeordistributed
+forprofitorcommercialadvantageandthatcopiesbearthisnoticeandthefullcita-
+tiononthefirstpage. Copyrightsforcomponentsofthisworkownedbyothersthan Unemployment Unemployment Rate Consumer Price
+ACMmustbehonored.Abstractingwithcreditispermitted.Tocopyotherwise,orre-
+Index
+publish,topostonserversortoredistributetolists,requirespriorspecificpermission
+and/orafee.Requestpermissionsfrompermissions@acm.org.
+CIKM’16,October24-28,2016,Indianapolis,IN,USA
+Figure 1: Example of an extracted concept map in eco-
+⃝c 2016ACM.ISBN978-1-4503-4073-1/16/10...$15.00
+nomics.
+DOI:http://dx.doi.org/10.1145/2983323.2983725
+317
+--- PAGE 2 ---
+Traditional approaches to knowledge graph extraction More recently, ontology was used in the construction of a
+generally consist of two separate steps: 1) Extracting key knowledge graph [13, 27]. [13] refined a knowledge base
+conceptsand, 2)Identifyingrelationshipsbetweenkeycon- using relations and candidate facts found in an ontology.
+cepts. Whilethesetwocommoninformationextractiontasks Building on earlier work [13], a probabilistic soft modeling
+havebeenwellstudied[7,33,2],solvingthesetwotasksin- framework [27] was used to jointly infer entities, categories
+dependently for educational content poses problems. We and relations. Knowledge graph completion uses external
+argue that these two problems are actually strongly cou- sources (e.g., free text) to extract text patterns for certain
+pled, meaning that the results of one affects the results of relationships[3,23,29,12,34,45,8,37]. Inthislineofwork,
+the other. Thus, solving these sub-problems independently relational facts are considered among existing word entities
+might lead to sub-optimal performance. For example, in with a focus mainly on completing and extending an exist-
+educational resources, a concept is often presented by first ing knowledge base. Our work differs from these work in
+introducing its prerequisites. Thus the order in which two that we consider scientific and mathematical concepts and
+conceptsappearinadocumentsourcecanhelpidentifytheir the prerequisite dependencies between these concepts.
+prerequisite relation. If a concept in this ordered chain is OtherrelatedresearchiskeyphrasedetectionusingWiki
+not correctly extracted, its prerequisite relation to other pedia. Early work [4] explored Wikipedia as a resource for
+concepts will be lost. Furthermore, if this concept is the detecting key phrases in open text and used a disambigua-
+prerequisite to many others, we may no longer identify an tion statistical learning method to compare lexical context
+important key concept. around an ambiguous named entity in the content of can-
+Leveraginginformationfromexistingeducationalresources, didate Wikipedia pages. Previous work also identified key
+weproposeaconceptmapextractionmodelthatjointlyop- phrasebyconsideringtheinterdependencebetweenWikipedia
+timizes these two sub-problems. It then utilizes identified candidates [9, 11, 19, 22, 15, 28] to obtain coherent key
+prerequisites to refine the extracted key concepts and vice phrases for documents.
+versa. This model produces a related key concept set with Morerelatedwefeel,conceptshavebeenextractedfrom
+prerequisite relations among those concepts. textbooks[38] and the textbook structure was used to or-
+Therearemanyeducationresourcesfromwhichonecould ganize the concepts, but this was done without considering
+build concept maps. For this work, we focus on textbooks explicit relationships between concepts. Instead of solely
+sincetheyoftenprovideacomprehensivelistofdomaincon- extracting entities from documents, our work constructs a
+cepts and are often used as major educational resources conceptmapwithbothkeyconceptsandtheirrelationships.
+in schools, colleges and universities. Educational resources Moreover,ouroptimizationmodelreinforcesthemutualim-
+suchastextbooksandslidescanprovideimplicitknowledge portance between the key concept extraction and prerequi-
+structures for knowledge graph extraction. For example, siterelationshipidentificationandjointlyoptimizesthetwo
+structuralinformationsuchastableofcontents(TOC)ofa sub-problems.
+textbook can be very useful in identifying concept relation- For concept prerequisite inference, [35] utilized PageR-
+ships. We feel this method could be easily generalized to ank and a random walk with restart scores [35]. The differ-
+other education resources with structured information such ence between reference links in any two Wikipedia articles
+as slides and courses. We then augment“inside-the-book” [16]wasalsoconsideredandalearning-to-rankmethod[44]
+knowledge with web content (for now, Wikipedia), thus en- constructed a concept graph with prerequisite relationships
+riching the content of a specific book with complementary between courses.
+information. As described in Section 4.4, we will empir- Extractingconceptmapswithprerequisiterelationships
+ically verify that using such complementary resources can have also been studied in e-learning [36, 14, 39]. Concept
+givequalityconceptinformationatthesecondaryschooland maps [36] were derived from prerequisite relationships from
+undergraduate level. In summary, our contributions are: ontologies by translating instances and interactions among
+•Thefirstattempt,tothebestofourknowledge,touse instances into concept relationships in a knowledge graph.
+textbookstoextractconceptmapswithexplicitprerequisite Association rule mining [14] was applied on learners’ test
+relationships among the concepts. records to derive concept maps with prerequisite relations.
+• A set of principled methods that utilize both Web [39] explored prerequisite relationships among concepts by
+knowledge (Wikipedia) and the rich structure in textbooks looking at topic coverage of each concept.
+to identify prerequisite relationships among domain con-
+cepts.
+3. JOINTKNOWLEDGEGRAPHEXTRAC-
+•Anoptimizationframeworkthatjointlysolvesthetwo
+sub-problems of concept map extraction and linkage. TIONFROMTEXTBOOKS
+• The generation of datasets from books in six different
+Here, we introduce our notation and describe how we
+educational domains to show how our methods work.
+jointly extract key concepts as well as the prerequisite re-
+Related work is introduced in Section 2. The joint op-
+lations. We define c ∈ C as a concept where C is a set
+timization model for concept map extraction is presented
+of Wikipedia concepts, s ∈ S for a subchapter in the text-
+in Section 3. We discuss the data preparation and baseline
+book. The term“subchapter”refers to all the headings in
+models in Section 4 and experimental results in Section 5.
+the TOC. For instance, both 1.1 and 1.1.1 are subchapters.
+AcasestudyonthesubjectofgeometryispresentedinSec-
+A key concept in a book chapter is a concept which is not
+tion 6 followed by conclusions and future work.
+only mentioned but also discussed and studied in the sub-
+chapter. Theinputtoourextractorconsistsofadigitalbook
+2. RELATEDWORK
+B with a list of titles, chapter number and contents for all
+Earlyworkontheproblemofidentifyingknowledgegraphs its chapters. Each chapter contains one or more key con-
+[6]inferredknowledgebasesfromacollectionofnoisyfacts. cepts. Theoutputisaconcept map G,whichisrepresented
+318
+--- PAGE 3 ---
+as a set of triples in the form {(c ,c ,r)|c ,c ∈C, r ∈R}, another one is advanced. We denote complexity level of a
+1 2 1 2
+where R = {0,1} is the prerequisite relationship, r takes conceptasl(·)andlaterdiscussthedefinitionofl(·). Given
+value 0 when c and c have no prerequisite relation; and l(·), we define the following optimization function for R:
+1 2
+takes value 1 when c is c ’s prerequisite. We use CS =
+1 2
+{csip ∈{0,1}|1≤i≤|C|,1≤p≤|S|}, to indicate concept
+|C| |C|
+a
+it
+p
+h
+p
+c
+e
+o
+a
+n
+r
+c
+a
+e
+n
+p
+c
+t
+e
+i
+i
+s
+n
+a
+su
+k
+b
+ey
+ch
+c
+a
+o
+p
+n
+t
+c
+e
+e
+r
+p
+,
+t
+w
+i
+h
+n
+e
+t
+r
+h
+e
+e
+cs
+p
+i
+t
+p
+h
+t
+s
+a
+u
+k
+b
+e
+c
+s
+h
+v
+a
+a
+p
+lu
+te
+e
+r;
+1
+o
+w
+th
+h
+e
+e
+r
+n
+w
+t
+i
+h
+s
+e
+e
+P
+2
+(R)=α
+3
+rijf(ci,cj)+α
+4
+rij(l(ci)−l(cj)). (3)
+takes0. OurgoalistooptimizeCSandRinordertoobtain
+i,j=!1,i̸=j i
+!
+,j=1
+a global concept map. ThefirsttermcorrespondstotheTopicallyRelatedattributes
+andshouldbemaximized. Thesecondtermisusedtomea-
+3.1 ConceptMapExtraction sure the Complexity Level Difference between two concepts
+and we want this value to be maximized.
+3.1.1 KeyConceptExtraction
+3.1.3 JointModeling
+Intuitively, if concept c is a key concept in subchapter
+Toreinforcethemutualbenefitbetweentwosub-problems,
+s, it should have these few properties: 1). Local Relat-
+wepropose5). Ordercoherence: Conceptsshouldnotbe
+edness: Key concept c should be strongly related to sub-
+discussedwithoutintroducingtheirprerequisites,i.e.,given
+chapters. Forinstance,theconceptandbookchaptershare
+aconcept,prerequisiteconceptsshouldbeintroducedbefore
+similar topics; 2). Global Coherence: We argue that ex-
+this concept and subsequent concepts should be introduced
+tractedkeyconceptsshouldbecoherentinthefollowingway:
+after the concept. The following function is proposed to
+Less redundancy: Chapters do not always discuss all of
+derive this mutual benefit property:
+thesameconcepts. Informationoverlapbetweenconceptsin
+different chapters should be minimized. For instance, given
+a geometry textbook, if subchapter 2.1 covers“Triangle”in |C| |S|
+detail,subchapter3.1shouldnotcoverthisconceptindetail P 3 (CS,R)=α 5 I(p<q)csipcsjqrij. (4)
+again. i,j=1p,q=1
+! !
+Notethatherewementionbothconcept-conceptrelated-
+Insummary,theglobalobjectivefunctionΛ(CS,R)=P (CS)+
+nessandconcept-chapterrelatedness. Wedenoteallrelated- 1
+P (R)+P (CS,R)+β ∥CS∥+β ∥R∥consistsofP forkey
+ness as one symmetric similarity function f(·,·), which can 2 3 1 2 1
+concept extraction, P for prerequisite relationship extrac-
+take both the concept and chapter as arguments. We will 2
+tion, P for mutual benefit modeling and L regularization
+discuss the definition of f(·,·) later in this section. Given 3 1
+terms to control model complexity and is maximized.
+f(·,·),thefollowingobjectivefunctionisproposedtoderive
+theconcept-subchaptermatrixCS fromtheaforementioned 3.1.4 Optimization
+properties:
+We maximize Λ to obtain the optimal concept map by
+adopting the Metropolis-Hasting algorithm to optimize CS
+|C| |S| and R respectively. ∀cs ∈ CS, we calculate the value of Λ
+P
+1
+(CS)=α
+1
+csipf(ci,sp) (1) usingcurrentvalueofcsandtheflippedvalueofcs(denoted
+′
+i=1p=1 as cs ). We follow the following update rule to update CS.
+!!
+|C| |S|
++α 2 csipcsjqf(ci,cj), (2) 1, if Λ(R(n),CS(n),cs ′ )≤Λ(R(n),CS(n),cs).
+′
+i ! ,j=1 ! p̸=q σCS(cs,cs )= "e−β(Λ(R(n),CS(n),cs ′ )−Λ(R(n),CS(n),cs)),
+otherwise.
+where I(·)∈{1,−1} is an indicator function and returns 1
+ifthestatementholdsandreturns−1otherwise. αsarethe Similarly, ∀r ∈R, we perform updates according to the
+term weights. following update rule:
+The first term corresponds to the local relatedness at-
+tributes and captures the relatedness between candidates 1, if Λ(R(n),CS(n),r ′ )≤Λ(R(n),CS(n),r).
+a
+ca
+n
+n
+d
+d
+b
+id
+o
+a
+o
+t
+k
+es
+ch
+s
+a
+im
+pt
+i
+e
+la
+r.
+r
+T
+to
+hi
+t
+s
+h
+t
+e
+er
+b
+m
+oo
+s
+k
+ho
+c
+u
+h
+l
+a
+d
+p
+b
+te
+e
+r
+m
+.
+a
+T
+x
+h
+im
+e
+i
+s
+z
+e
+e
+c
+d
+on
+to
+d
+s
+t
+e
+e
+le
+r
+c
+m
+t σR(r,r ′ )= "e−β(Λ(R(n),CS(n),r ′ )−Λ(R(n),CS(n),r)),
+otherwise.
+is used to reduce redundancy in the concept map. For this
+3.2 RepresentationSchemes
+term, we calculate the pairwise similarity between selected
+concepts in different chapters as the redundancy in the ex- We explore different schema for book chapter/concept
+tracted concept map and this value should be minimized. content representation and then derive measures for con-
+cept/book chapter similarity f(·,·) and the concept com-
+3.1.2 PrerequisiteRelationship
+plexity level l(·). If multiple measures are derived for the
+We consider a pair of concepts to have a prerequisite sameattribute,weadoptanequalweightedsumofdifferent
+relationship if they are: 3). Topically Related: If two measures as the value of this attribute.
+concepts cover different topics, it is unlikely that they have
+3.2.1 WordBasedSimilarity
+prerequisite relationships. 4). Complexity Level Dif-
+ference: Not all pairs of concepts with similar topics have Werepresenteachchapterusingwordsappearinginthe
+prerequisite relationships. For example,“isosceles triangle” chapter and each concept using a bag-of-word representa-
+and“right angled triangle”cover similar topics but do not tion from the word content in their Wikipedia pages. Stan-
+have learning dependencies. Thus, given two concepts, it dard text preprocessing/weight procedures, including case-
+is necessary to identify whether one concept is basic while folding, stop-word removal and term frequency-inverse doc-
+319
+--- PAGE 4 ---
+umentfrequency(TF-IDF)areapplied. Basedonthisrepre- on their Wikipedia links [42].
+sentation, we define the concept-chapter similarity function
+f(·,·) (applied in Equation 1) as a combination of the fol- 1−
+max(log|Qi|,log|Qj|)−log|Qi∩Qj|)
+,
+lowing measures:
+logW
+all
+−min(log|Qi|,log|Qj|)
+• Title match: This feature measures the relatedness be- where Qi is the set of Wikipedia concepts which link to wi
+tweentheconcepttileandthechapter/concepttitle. Given and W be the total number of concepts in Wikipedia.
+all
+a book chapter/concept title tb and a Wikipedia candidate We also derive the following measures for a Wikipedia
+title tw, if tw is in tb or tw is tb , Titlematch(tb,tw) = 1; concept’s complexity level and use these three measures in
+Otherwise, Titlematch(tb,tw)=0. the second term in Equation 3.
+• Content cosine similarity: This feature measures the co- • Number of in-links/out-links: This feature returns the
+sine similarity between the word TF-IDF vectors of chap- numberofin-links/out-linksintheconceptWikipediapage.
+ter/concept contents. •Relationalstrengthintextbook/Wikipedia: Relationalstrength
+• Title Jaccard similarity: This feature computes the Jac- RS(wi,wj) measures the semantic relatedness between two
+card similarity between the chapter/concept title. concepts using concept co-occurrence and distance in the
+• Sustained periods in subchapters: A sustained period of a same sentence [5]:
+concept in a subchapter is the period from its first appear-
+ancetoitslastappearance. Whenthesustainedperiodofa log(
+nij/max(n)
+),i̸=j,
+candidateconceptinasubchapterislonger,itismorelikely avg d2 ij /max(avg d2)
+that this concept is important in this chapter.
+where nij is the co-occurrence of concept i and j within a
+sentenceandavg d2 issumofthedistanceoftwokeywords
+ij
+Weintroduceoneadditionalmeasureforconcept-concept
+divided by the number of times two keywords appeared in
+similarity. This concept-concept measure together with the
+the same sentence. If two concepts are close within in a lot
+other four aforementioned measures are used for concept-
+ofsentenceinarticles,impliesthattheirrelationshipisalso
+concept similarity and applied in Equation 2, and the first
+stronger than the others.
+term in Equation 3.
+• Concept co-occurrences: by counting the co-occurrences
+nij
+of two concepts lies within a sentence from either a book d2
+m
+chapters or a Wikipedia page. avg d2 = m=1 ,i̸=j,
+We also derive the following measures for a concept’s ij #nij
+complexitylevelbasedonitsWikipediaanchors. Thesemea-
+• RefD: [16] defines a new metrics measuring the prereq-
+sures are used in the second term in Equation 3.
+uisite relationships between concepts using Wikipedia links
+• Supportive relationship in concept definition: A is likely
+betweentwoconcepts. IfmostrelatedconceptsofAreferto
+to be B’s prerequisite if A is used in B’s definition. Here,
+B but few related concepts of B refer to A, then B is more
+we use the first sentence in the concept’s Wikipedia page
+likely to be a prerequisite of A.
+as its definition. Supportive(A,B) = 1 if A appears in
+B’s definition. For instance,“Logarithm”is used to define !|
+i
+W
+=1
+|v(wi,B)·u(wi,A)
+−
+!|
+i
+W
+=1
+|v(wi,A)·u(wi,B),
+“Natural logarithm”whose definition is“The natural loga- !|
+i
+W
+=1
+|w(wi,A) !|
+i
+W
+=1
+|w(wi,B)
+rithm of a number is its logarithm to the base e... ” and
+where W = {w ,...,w } is the concept space and |W|
+Supportive(logarithm ,natural logarithm)=1. 1 |W|
+is the size of the concept space; u(wi,A) weights the im-
+portance of wi to A; and v(wi,A) is an indicator showing
+3.2.2 WordEmbeddings
+whether wi has a Wikipedia link to A.
+Thismethodmapsconceptsfromthevocabularytovec- 3.2.4 TextbookStructure
+tors of real numbers in a low-dimensional space [21]. We TheTOCoftextbookscontainsimplicitprerequisitere-
+useword2vecwhichdiscoverslowerdimensionalvectorswith lationships between concepts since textbooks usually intro-
+two-layer neural networks using the contexts and syntactic duceconceptsbasedontheirlearningdependencies. There-
+of concepts. The concept similarity is defined as the co- fore, we define TOC distance between two concepts as the
+sine similarity of two concepts’ embeddings, which is used distance between their subchapter numbers. This feature
+in Equation 2 and the first term in Equation 3. is used to measure complexity level difference between con-
+cepts and applied in the second term in Equation 3.
+GiventwoconceptsAandB,aiandbiareusedtodenote
+3.2.3 WikipediaAnchors
+theirchapternumberarrays. ForexampleifAisinchapter
+Besides the content information, millions of cross-page 1.1, then a = 1 and a = 1. We define the TOC distance
+1 2
+linksinWikipediaarealsousefulindetectingconceptrelat- in textbooks between A and B as: TOCdistance(a,b) =
+edness and concept complexity levels. Given two concepts, (ai−bi)/(βi−1)whereiisthesmallestindexsuchasai ̸=bi
+we calculate the following measures as their similarity and and β is a pre-specified decay parameter which is empiri-
+usethesemeasuresinEquation2,andthefirstterminEqua- cally set as 2. For instance, given a concept“HTTP”from
+tion 3. chapter2.3.1and“HTTPmessagebody”fromchapter2.3.2,
+• Wikipedia link based Jaccard similarity: Given two con- TOC distance between them is 0.25 and“HTTP”could be
+cept,thisfeaturecomputestheJaccardsimilarityofthein- “HTTPmessagebody”’sprerequisite. Noticethataconcept
+links/out-links of their Wikipedia page. can serve as the key concept in multiple chapters and the
+• Wikipedia link based semantic similarity: This feature value of the TOC distance feature between two concepts is
+computes the semantic relatedness of two concepts based the average TOC distance of all pairs of TOC of these two
+320
+--- PAGE 5 ---
+concepts. Thismeasureisusedinsecondterminthesecond Local Features: We use features defined in Section 3.2
+term in Equation 3. which capture the relatedness between concepts and book
+subchapters,i.e.,TitleMatch,Contentcosinesimilarity,Ti-
+4. EXPERIMENTSETTINGS
+tleJaccardsimilarity,Sustainedperiodsinsubchaptersofthe
+concept, are used as local features in concept extraction.
+4.1 Dataset
+Global Features: Global features include two sub-set of
+In order to build a test bed for concept map extraction, features: redundancyfeaturesandordercoherencefeatures.
+we manually construct concept maps using six widely-used RedundancyFeatures: Thissetoffeaturesmeasuretheinfor-
+textbooks: computer networking 1, macroeconomics 2, pre- mation overlap that a candidate ci can possibly bring into
+calculus 3, databases 4, physics 5, and geometry 6. the extracted concept set. Given the ith candidate in jth
+To construct the final dataset, we first manually label chapter, we calculate the similarity between this candidate
+key concepts: 1) Extract all Wikipedia concepts that ap- and other candidates in different subchapters as the value
+pear in each book chapter. 2) Given a candidate concept of the redundancy feature of this candidate:
+ci with title tw, we select it as a key candidate of subchap-
+ter j if Titlematch(tw,tbj)=1 where tbj is the title of the |C| |S|
+subchapterj,orci isrankedwithintop−30amongallcan-
+Red(csi)= csipcsjqf(ci,cj),
+didates in subchapter j based on Content cosine similarity i ! ,j=1 ! p̸=q
+feature. 3) Label the candidates as“key concept”or“not where f(cs
+ki
+,cspj) is the similarity between candidate cs
+ki
+key concept”and obtain a set of key concepts for this area. and cspj and where I(·) ∈ {1,−1} is an indicator function
+Then for each pair of key concepts A and B , we manually and returns 1 if the statement holds and returns −1 other-
+labelthemas“AisB’sprerequisite”,“BisA’sprerequisite” wise.
+or“No prerequisite relationship”. Table 1 shows character- Section 3.2 defines different semantic relatedness mea-
+isticsofthedataset. Foreacharea,threegraduatestudents surements and all these measurements can be applied to
+with corresponding background knowledge are recruited to calculate redundancy features.
+labelthedataandwetakeamajorityvoteoftheannotators OrderCoherenceFeatures: Besideslessredundancyattributes,
+to create final labels. We achieve an average 79% correla- wealsoexpectconsistentlearningorderinconceptsextracted
+tion for the key concept labeling task and an average 83% fromthebook,i.e.,givenaconceptcs insubchapteri,we
+ki
+correlation for the concept relationship labeling task. expectthatallcs ’sprerequisitesappearinsubchaptersbe-
+ki
+4.2 Baseline-KeyConceptExtraction foreiandallcs ki ’ssubsequentconceptsappearinsubchap-
+ters after i. Given candidate cs in the kth subchapter,
+ki
+4.2.1 TextRank we define features orderCorr to capture the global learning
+order of the extracted concepts :
+TextRank is a method widely used in key sentence and
+keyphrase extraction [20]. The general procedure of text |C| |S|
+rankistobuildupagraphusingcandidatekeyconceptsas I(p<q)csipcsjqrij
+v
+te
+e
+n
+rt
+c
+i
+e
+ce
+a
+s
+s
+a
+t
+n
+h
+d
+e
+c
+w
+o
+e
+-
+i
+o
+g
+c
+h
+c
+t
+ur
+o
+r
+n
+en
+t
+c
+h
+e
+e
+o
+e
+f
+d
+t
+g
+w
+e
+o
+b
+c
+e
+a
+t
+n
+w
+d
+e
+i
+e
+d
+n
+at
+t
+e
+h
+s
+em
+wi
+.
+th
+T
+in
+he
+a
+n
+s
+t
+e
+h
+n
+e
+- orderCorr(ci)= j
+#
+=1p
+|C
+,
+#
+q
+|
+=1
+|S|
+.
+algorithmiteratesoverthegraphuntilitconvergesandsorts
+csijcsjq|rij|
+j=1p,q=1
+vertices based on their final scores to identify key concepts. # #
+Equation4.2.3computesthepercentageofconceptsthat
+4.2.2 Wikify are appropriately ordered based on the ci’s prerequisite re-
+WikifydetectssignificantWikipediaconceptswithinun- lationships.
+structuredtexts. WeuseWikipediaMinerdevelopedin [22] WeuseSVMrank topredictrankingsofWikipediacan-
+to link book contents with Wikipedia concepts. didatesforeachsubchapterwithdatafromonebookastest-
+ing data and data from other five as training data.
+4.2.3 SupervisedKeyConceptExtraction(Supervised
+KCE): 4.3 Baseline - Prerequisite Relationship Iden-
+tification
+Based on the local relatedness and global coherence at-
+tributes proposed in Section 3.2, we propose the following
+4.3.1 Hyponym-Hypernym
+features for key concept learning from each subchapter.
+1Kurose, James. F. (2005). Computer networking: a top- Ahyponymisaconceptwhosesemanticfieldisincluded
+down approach featuring the Internet. Pearson Education withinthatofanotherconcept(hypernym)andinthiswork,
+India. weusehyponym-Hypernymtoasabaselinemethodofderiv-
+2Mankiw,N.Gregory.(2014). Principlesofmacroeconomics. ing prerequisite relationships. Lexico-syntax pattern based
+Cengage Learning. extraction methods are popular methods for extracting hy-
+3Stewart, James, Lothar Redlin, and Saleem Watson. Pre- ponymrelationshipsbetweenconceptsbecausetheyofferef-
+calculus: Mathematics for calculus. Cengage Learning, fectivetextprocessingtext. Weadoptthe10lexico-syntactic
+2015.
+patterns selected for hyponymy-hypernymy pattern match-
+4Ramakrishnan, Raghu, and Johannes Gehrke. ”Database
+ing in [40], as shown in Table 2.
+management systems.”, 2000.
+5MarkHorner,SamuelHalliday,SarahBlyth,RoryAdams, 4.3.2 SupervisedRelationshipIdentification(Supervised
+Spencer Wheaton, ”Textbooks for High School Students RI)
+Studying the Sciences”, 2008
+6Dan Greenberg, Lori Jordan, Andrew Gloag, Victor Ci- For concept relationship extraction, we utilize Topically
+farelli,JimSconyers,BillZahnerm,”CK-12BasicGeometry” Relatedness Features and Complexity Level Difference Fea-
+321
+--- PAGE 6 ---
+Domain Network Economics Precalculus Geometry Database Physics
+# subchapter 98 37 23 48 90 152
+# Key concepts per chapter 3.72 4.54 3.09 3.16 1.41 3.54
+Candidate concepts per subchapter 70.53 84.16 70.21 55.89 49.17 68.94
+# labeled pairs 1500 877 1171 1305 529 1517
+# pairs with relationships 257 157 222 186 96 208
+Table 1: Physical characteristics of books. # labeled pairs is the number of candidate concept pairs labeled as whether
+two concepts have prerequisite relationships. # pairs with relationships is the number of concept pairs with prerequisite
+relationships in all the labeled pairs.
+NP2 such as NP1 NP1, one of NP2 mizationfunctionandβsaretheweightofL1-regularization.
+such NP2 as NP1 NP1 (and|or) other NP2 Wetestdifferentmethodsina“leaveonebookout”manner,
+NP1 is (a|an) NP2 NP2 consist(s) of NP1 i.e,whentestingononebook,wetrainourmodelusingthe
+NP2 includ(s|es|ing) NP1 NP2 (like|, specially) NP1 other 5 booksto select the optimal combinationofparame-
+NP1 (is|are) called NP2 NP1 (in|belong to) NP2 ters.
+4.6 ModelInitialization
+Table 2: Extracted Lexico-syntax patterns. NP1 represents
+a subsequent Noun Phrase (NP) and NP2 represents a pre- •Concept-SubchapterMatrixInitialization: ToinitializeCS(·),
+requisite Noun Phrase (NP). we use two features Title match and Content cosine simi-
+larity proposed in Section 3.2 which measure the local sim-
+ilarity between a candidate and a book chapter. We set
+tures introduced in Section 3.2 to identify concept prereq- csij =1, i.e., candidate ci is a key concept in subchapter j,
+uisite relationship. Topically Relatedness measures include if Titlematch(ci,tbj) = 1 where tbj is the title of the sub-
+Title match, Content cosine similarity, Title Jaccard sim- chapter j, or ci is ranked within top−5 based on cosine
+ilarity, Wikipedia link based Jaccard similarity, Wikipedia similarity between chapter/concept contents feature.
+link based semantic similarity, Relational strength in text- • Concept Relationship Matrix Initialization: To initialize
+book/Wikipedia. Complexity Level Difference features in- the concept relationship matrix R(·), given two concepts ci
+cludeSupportiverelationshipinconceptdefinition,RefD,Number and cj, we set rij =1 if their complexity level difference is
+of in-links/out-links, TOC Distance. higher than threshold t and topically relatedness is higher
+1
+ThenweperformabinaryclassclassificationusingSVM thanthresholdt . Empirically,t issetasmeanvalueofthe
+2 1
+toidentifyprerequisiterelationshipswithfivebooksastrain- overall complexity level difference and t as mean value of
+2
+ing data and one book as testing data. the overall topically relatedness.
+4.4 WikipediaCoverageofConcepts
+5. EXPERIMENTALRESULTS
+Wikipedia has previously been utilized as a controlled
+vocabulary for topic indexing [18, 19] and key phrase ex- 5.1 EffectofTextbookInformation
+traction [24]. A few studies have examined Wikipedia cov-
+Inthissection,wepresenthowtextbookstructureshelp
+erageofacademicallyrelatedtopics[25,30,31,32]. Though
+concept map extraction.
+some work showed that Wikipedia does not properly cover
+Figure2showsrankingprecisionsofkeyconceptextrac-
+academiccontentonthefrontendofscience,previousstud-
+tion on six books. For the baseline methods presented, we
+ies [25, 32] have demonstrated that Wikipedia’s coverage of
+needed to manually decide the number of key concepts in
+topicsiscomprehensiveforsecondaryschoolandundergrad-
+eachsubchapter. Wethuspresenttheperformanceoftop−1,
+uate education.
+top−3,andtop−5candidatesfromtheconceptextraction
+Inordertofurthervalidatethecoverageoftheextracted
+phaserespectively. Asshown,wetestdifferentcombinations
+conceptmaps,weconductedthefollowingexperiments. For
+offeatures,withthelocalfeaturesderivedfromdifferentas-
+eachbook,threegraduatestudentswithcorrespondingback-
+pectsofrelatednessbetweenbooksubchapterandWikipedia
+groundknowledgearerecruitedtomanuallyextractallcon-
+candidates, and global features which consider the global
+cepts from each subchapter (randomly sampled from the
+coherence of the book structure. The results show that in-
+book),andlabelwhethertheseconceptshaveacorrespond-
+corporating our proposed global features (See“Supervised
+ing Wikipedia page. We found that 88% of the concepts
+KCE” in Figure 2) into the extractor does achieve signif-
+(Computernetwork: 85%,Macroeconomics: 86%,Precalcu-
+icantly higher precision than other methods which do not
+lus: 91% , Geometry: 97%, Physics: 85%, Database: 89%)
+consider book structure (TextRank, Wikify and Local fea-
+in the books are covered by Wikipedia and this provides
+tures).
+some empirical evidence of reasonable coverage of the ex-
+In Table 3, we present the F-1 score of concept rela-
+tracted concept maps.
+tionship identification using top−1, top−3, and top−5
+candidates from the concept extraction phase respectively.
+4.5 ParameterSelection
+TheresultsshowthatbothfeaturesderivedfromWikipedia
+As shown in Equation 2 and Equation 3, our concept andtextbooksfeaturesachievesignificantlyhigherF-1score
+maps are shaped by parameters α = {αi,i = 1,2,3,4} and than hyponym-hypernym pattern does. Moreover, we ob-
+β ={βj,j =1,2}whereαsarethetermweightintheopti- servethattextbookfeaturesoutperformWikipediafeatures
+322
+--- PAGE 7 ---
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+)5,3,1=n(
+n@noisicerP
+0.8
+Top-1 candidates
+Top-3 candidates 0.7
+Top-5 candidates
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+(a)Computernetwork
+)5,3,1=n(
+n@noisicerP
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+(b)Macroeconomics
+)5,3,1=n(
+n@noisicerP
+(c)Precalculus
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+)5,3,1=n(
+n@noisicerP
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+(d)Geometry
+)5,3,1=n(
+n@noisicerP
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Local Supervised KCE
+(e)Database
+)5,3,1=n(
+n@noisicerP
+(f)Physics
+Figure2: Precision@n(n=1,3,5)forkeyconceptextractionfromsixtextbooks. Local referstothesupervisedlearningmodel
+using local features defined in Section 4.2.3 with same experiment settings as Supervised KCE.
+Hyponym Wiki Textbook 5.2 JointOptimization
+#candidate 1 3 5 1 3 5 1 3 5
+Network 0.21 0.32 0.19 0.45 0.56∗ 0.54 0.49 0.6∗ 0.57 Table 3 shows the prediction accuracy of the baseline
+Economics 0.25 0.36 0.3 0.55 0.56 0.5 0.55 0.58 0.52 methods and the joint optimization model.
+Precalculus 0.29 0.42 0.36 0.52 0.56 0.47 0.44 0.52 0.57 The proposed optimization model often outperforms all
+Geometry 0.28 0.36 0.41 0.48 0.56∗ 0.53 0.55 0.61∗ 0.59
+others with only an exception on precision@1 of database,
+Database 0.17 0.38 0.44 0.49 0.55 0.45 0.5 0.53 0.52
+Physics 0.23 0.37 0.44 0.5 0.55 0.58∗ 0.6 0.58 0.62∗ as a trade-off to performance of concept relationship pre-
+diction, as shown in Table 4. Our joint optimization model
+Table 3: F-1 score for concept relationship prediction. Hy- consistentlyoutperformsthestronglybaselineinF1-scoreon
+ponym refers to the hyponym-hypernym baseline method. all the six textbooks. In addition, the proposed model can
+Textbook/Wikipedia are supervised learning methods with decidethenumberofconceptsineachsubchapterautomat-
+features textbooks/Wikipedia features using same experi- ically by optimizing the proposed objective function while
+ment settings as Supervised RI. ∗ indicates when textbook the baseline models depend on a manually decided value.
+featuresarestatisticallysignificantlybetter(p<0.01)than
+the Wikipedia features. Supervised RI Joint Opt
+# candidate 1 3 5
+Network 0.52 0.62 0.57 0.63
+Macroeconomics 0.55 0.67∗ 0.63 0.7∗
+Precalculus 0.54 0.61 0.63∗ 0.66∗
+(Textbook features include Concept co-occurrence in book
+chapters, Relational strength in book contents and TOC Geometry 0.52 0.64 0.67∗ 0.71
+distance measures. Wikipedia features include concept co- Database 0.51 0.58 0.49 0.55
+occurrence in Wiki pages, Content cosine similarity, RefD, Physics 0.58 0.65∗ 0.62 0.69∗
+Wikipedialinkbasedsemanticsimilarity,Relationalstrength
+in Wikipedia and Supportive relationship in concept defini- Table 4: F-1 score for concept relationship prediction
+tion measures.). This is because textbooks are designed for with/withoutjointoptimization. ∗indicateswhenthejoint
+education purpose and provides a better knowledge struc- optimization model is statistically significantly (p < 0.01)
+ture than web knowledge base does. Another potential rea- better.
+sonisthatfeaturesthatutilizeTOCinformation(TOCdis-
+tancefeature)considernotonlyconceptcomplexityleveldif-
+5.3 MeasurementImportance
+ference but also their semantic relatedness. If two concepts
+are introduced in neighbor subchapters (say subchapter 1.1 In this section, we develop some insights regarding fea-
+and1.2),thisfeaturerevealsthattwoconceptsmightbese- ture importance by reporting performance of the concept
+manticsimilarbetweenauthorsusuallyputrelatedconcepts extractor and relationship identifier using different feature
+in neighbor chapters. combinations.
+323
+--- PAGE 8 ---
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+)5,3,1=n(
+n@noisicerP
+0.9
+Top-1 candidates
+0.8
+Top-3 candidates
+Top-5 candidates 0.7
+Joint Opt
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+(a)Computernetwork
+)5,3,1=n(
+n@noisicerP
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+(b)Macroeconomics
+)5,3,1=n(
+n@noisicerP
+(c)Precalculus
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+)5,3,1=n(
+n@noisicerP
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+(d)Geometry
+)5,3,1=n(
+n@noisicerP
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0
+TextRank Wikify Supervised KCE Joint Opt
+(e)Database
+)5,3,1=n(
+n@noisicerP
+(f)Physics
+Figure 3: Precision@n (n=1,3,5) for key concept extraction from six textbooks with/without joint optimization.
+TitleFeatures ContentSimilarityFeatures TopicallyRelatedness ConceptComplexityLevel
+#candidate 1 3 5 1 3 5 #candidate 1 3 5 1 3 5
+Network 0.32 0.29 0.19 0.61 0.64 0.65 Network 0.41 0.49 0.46 0.56 0.58 0.5
+Macroeconomics 0.43 0.39 0.32 0.72 0.65 0.54 Macroeconomics 0.47 0.52 0.43 0.55 0.6 0.51
+Precalculus 0.41 0.36 0.27 0.66 0.68 0.59 Precalculus 0.53 0.58 0.61 0.55 0.6 0.62
+Geometry 0.46 0.38 0.32 0.79 0.76 0.7 Geometry 0.42 0.45 0.53 0.49 0.53 0.56
+Database 0.24 0.18 0.11 0.66 0.69 0.58 Database 0.52 0.59 0.56 0.53 0.59 0.61
+Physics 0.3 0.22 0.16 0.68 0.62 0.59 Physics 0.3 0.22 0.16 0.64 0.62 0.59
+Table 5: Precision@n (n=1,3,5) for key concept extrac- Table 6: F1-score@n (n=1,3,5) for the relationship predic-
+tion from six textbooks using different feature combina- tion using different measures.
+tions. Title/Content features include local and global fea-
+tures derived from title/content information as defined in
+Section 4.2.3. textbooks organize knowledge quite differently. However,
+this remains to be determined.
+6. CASESTUDY
+Table 5 shows the ranking precisions of measurements
+using title information and that using content information. Herewepresentacasestudyonconceptmapsextracted
+As shown, content similarity features outperform title fea- for geometry. From Figure 4c and 4d, we can observe that
+tures since compared to subchapter titles, subchapter con- by considering both the lexical similarity and semantic re-
+tentscontainmoreinformationandachievemuchhigherre- latedness, the Supervised KCE + Supervised RI method,
+call rate in key concept extraction. here and after, the supervised learning method, and joint
+Figure 6 shows the performance of relationship predic- optimization modelachievebetterperformanceinbothcon-
+tion using Topically Relatedness features and Complexity cept extraction from book chapters and relationship iden-
+Level Difference features defined in Section 4.3.2 respec- tification than the TextRank+Hyponym-hypernym method
+tively. We observe that complexity level difference features (see Figure 4a) and Wikify+Hyponym-hypernym method
+perform better than content similarity features. This sug- (see Figure 4b). Moreover, supervised method and joint
+gests that by capturing which feature is more basic, we can optmizationmodelconsiderbookstructureinformationand
+achieve better performance than only considering topic re- this reaffirm the effectiveness of textbook structure in key
+latedness between features. We also observe that more fun- concept extraction and concept relationship identification.
+damentalsubjectssuchasprecalculus,geometryandphysics Bycapturingthemutualdependenciesbetweentwosub-
+have better performance than advanced subjects such as problems, the joint optimization model achieves better pre-
+computernetworksanddatabase. Apotentialreasonisthat diction accuracy than the supervised learning method. For
+for those domains, different textbooks provide very similar instance, supervised learning method fails to extract“Ray”
+learning and TOC structures, while for advanced subjects andtheprerequisitedependencybetween“Ray”and“Angle”
+324

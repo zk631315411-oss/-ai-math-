@@ -1,0 +1,1939 @@
+Ontology-based Knowledge Graph for Industrial Standards with
+Hierarchical and Conditional Structuring
+Anonymous ACL submission
+Abstract001
+Industrial standards documents contain com-002
+plex conditional statements and table-based003
+rules, making them challenging to interpret004
+using conventional text-based approaches. Al-005
+though large language model–based document006
+understanding methods have been actively stud-007
+ied, they often fail to capture hierarchical008
+and conditional document structures, limit-009
+ing their ability to model complex conditions010
+and table-driven rules. To address this chal-011
+lenge, we propose an Ontology-based knowl-012
+edge graph (KG) construction method that in-013
+tegrates ontologies with conditional-structure-014
+based triplet extraction, and evaluate its ef-015
+fectiveness using question answering datasets016
+constructed from multiple industrial standards017
+documents. Experimental results show statis-018
+tically significant performance improvements019
+over baseline models, with particularly notable020
+gains on reasoning tasks involving table-based021
+rules and multi-condition reasoning, demon-022
+strating that the proposed Ontology-based KG023
+effectively captures document structure for re-024
+liable question answering. Code is available025
+at: https://anonymous.4open.science/r/026
+ontology_based_kg_paper-F5CE027
+1 Introduction028
+Industrial standards documents are used as author-029
+itative references to ensure the quality of mate-030
+rials and processes in decision-making processes031
+such as design reviews, technical comparisons, and032
+contract drafting across various industries, includ-033
+ing shipbuilding, construction, and energy. These034
+documents typically follow a hierarchical structure035
+in the form of SECTION –S UBSECTION –CLAUSE ,036
+and they incorporate diverse forms of expression037
+such as tables, multiple conditions, unit constraints,038
+and footnotes. As a result, the meaning of rules is039
+determined within the global hierarchical context040
+of the document rather than in isolation. Due to041
+this structural complexity, the interpretation of in-042
+Industrial Standard Document
+CE maxThicknessGrade0.39≤ 40mmGrade 500.4140-90 mm0.42≤ 40mmGrade 60
+5. Chemical Requirements6. Mechanical RequirementsGrade 60Grade 50Property414-621345–517Yield Strength 517448Tensile Strength 2223Elongation
+Table 2 —Carbon Equivalent MaximumsTable 3 —Tensile Requirements
+What is the maximum carbon equivalentfor Grade 50 steel when the plate thicknessis 30mm?
+Existing MethodsOntology-based KG (ours)
+According to Table 2(Section 5), for Grade 50steel with thickness ≤ 40mm, the maximum carbon equivalent is 0.39The maximum CE for Grade 50 is 345–517 MPa
+5. Chemical RequirementsTable2 –Carbon Equivalent Maximums
+CE Max = 0.39
+Triplet Extraction (Grade 50,has_CE_max,0.39)(Grade 50,has_CE_max,0.41)(Grade 60,has_CE_max,0.42)(Grade 50,has_yield_strength,345-517)(Grade 50,has_tensile_strength,448)
+Disconnected context, Information Missing!
+Figure 1: Comparison between Conventional KG and
+Ontology-based KG. In industrial standards documents,
+the same term (e.g., Grade 50) may appear in differ-
+ent sections with different meanings. Conventional ap-
+proaches lose section-level context and conditional in-
+formation during triplet extraction, which often leads to
+incorrect answers. In contrast, the proposed Ontology-
+based KG preserves the document’s hierarchical struc-
+ture and conditions, enabling accurate reasoning.
+dustrial standards documents inherently requires 043
+domain expertise (Kabzhan et al., 2025). In real 044
+industrial settings, experts manually review large 045
+volumes of such documents, which entails signifi- 046
+cant operational costs. 047
+With the rapid advancement of large language 048
+models (LLMs), cost efficiency has been intro- 049
+duced to a wide range of industrial domains, lead- 050
+ing to the active adoption of LLMs for industrial 051
+standards documents in tasks such as retrieval- 052
+augmented generation (RAG)–based question an- 053
+swering (QA) and contract drafting (Boecking 054
+et al., 2025). Most existing LLM-based approaches 055
+process text at the sentence or chunk level. How- 056
+1
+ever, unlike general-domain text, the document057
+structure itself is a core component of seman-058
+tic interpretation in industrial standards. Specif-059
+ically, the same term may denote entirely dif-060
+ferent rules depending on the section, and cer-061
+tain rules require the combination of conditional062
+statements scattered across the document. Conse-063
+quently, the meaning of a rule is not determined064
+independently at the sentence level but is defined065
+through the document’s hierarchical structure and066
+the composition of conditions (Kabzhan et al.,067
+2025). Because existing methods perform retrieval068
+after removing document structure, hallucinations069
+frequently occur, such as mixing rules from dif-070
+ferent sections or generating answers with miss-071
+ing conditions (see Figure 1). Moreover, conven-072
+tional triplet extraction methods are designed to ex-073
+tract subject-relation-object independently074
+from individual sentences (Zhang and Soh, 2024a),075
+which makes it difficult to faithfully represent table-076
+based rules that combine row and column condi-077
+tions, if–then conditional statements, or exception078
+clauses. As a result, the loss of document structural079
+information leads to critical errors in downstream080
+tasks and significantly degrades the reliability of081
+RAG-based systems (Tufek, 2023).082
+To address these limitations, this study intro-083
+duces ontology concepts tailored to industrial stan-084
+dards documents in order to represent rules while085
+preserving both the hierarchical structure and the086
+document-level semantics. Specifically, we propose087
+an Ontology-based pipeline consisting of three088
+stages. (1) Hierarchical Ontology Modeling —089
+formalizing the document’s hierarchical structure090
+as an ontology schema. (2) Sentence-level Condi-091
+tional Structure Modeling — extracting triplets092
+by modeling conditional structures derived from093
+conditional statements and tables. (3) Ontology-094
+based KG Construction — performing synonym095
+normalization and pruning on the extracted triplets,096
+and linking them to the ontology schema to con-097
+struct an Ontology-based knowledge graph (KG).098
+We apply the proposed pipeline to three repre-099
+sentative industrial standards documents (ASTM100
+A578/A578M, API_2W, and ASTM A6/A6M) to101
+construct Ontology-based KG. To evaluate the per-102
+formance of the constructed KGs, we generate103
+QA datasets covering rule, multi-hop, and table-104
+based queries, and conduct comparative experi-105
+ments against existing approaches (Chen et al.,106
+2025; Wen et al., 2024).107
+The contributions of this study are summarized108
+as follows: 109
+• We propose a novel Ontology-based KG con- 110
+struction method that structures industrial stan- 111
+dards documents according to their hierarchical 112
+organization and rule semantics. 113
+• We provide a domain-specific benchmark by 114
+constructing QA datasets of rule, multi-hop, and 115
+table types based on real-world industrial stan- 116
+dards documents. 117
+• We demonstrate, through both quantitative 118
+and qualitative evaluations, that the proposed 119
+Ontology-based KG-RAG pipeline outperforms 120
+existing LLM-, RAG-, and KG-based systems 121
+in reasoning and QA quality. 122
+2 Related Works 123
+2.1 Ontology 124
+Previous studies have defined an ontology as a for- 125
+mal representation of core concepts used within a 126
+specific domain and the relationships among those 127
+concepts (Miller, 1995; Ashburner et al., 2000). 128
+Building on this definition, research on ontology 129
+learning, which aims to automatically construct on- 130
+tologies within a domain, has primarily evolved 131
+around concept discovery and relation extraction. 132
+More recently, attempts have emerged to leverage 133
+LLMs to expand schemas without predefined struc- 134
+tures or to generate ontologies in an end-to-end 135
+manner (Funk et al., 2023; Lo et al., 2025). How- 136
+ever, while these approaches mainly focus on lexi- 137
+cal or taxonomic relationships (e.g., is-a relations), 138
+this study distinguishes itself from prior ontology 139
+research by proposing a domain-specific ontology 140
+that explicitly reflects the hierarchical structure and 141
+rule-oriented concepts inherent in industrial stan- 142
+dards documents. 143
+2.2 Knowledge Graph 144
+KG represents entities and relations in the form of 145
+triplets, enabling structured knowledge storage and 146
+reasoning. Early extracted triplets using rule-based 147
+or statistical methods (Etzioni et al., 2004; Yates 148
+et al., 2007), and the advent of neural models signif- 149
+icantly improved relation extraction performance at 150
+the sentence level (Wei et al., 2020; Qi et al., 2018). 151
+More recently, LLM-based approaches have been 152
+proposed to extract triplets or to construct KGs via 153
+prompt-driven methods that can be applied across 154
+diverse domains (Huguet Cabot and Navigli, 2021; 155
+Zhang and Soh, 2024b; Hu et al., 2024; Wang et al., 156
+2
+2025). However, while these approaches are effec-157
+tive at modeling simple sentence structures, they158
+struggle to adequately represent compound sen-159
+tences in which multiple conditions are nested or160
+combined. In contrast, this study structures intra-161
+sentence conditions and their logical compositions162
+based on an ontology, and constructs a KG that163
+reflects these structures, thereby enabling the accu-164
+rate modeling of complex sentences with multiple165
+overlapping conditions.166
+3 Method167
+This section presents a pipeline for transforming in-168
+dustrial standards documents into structured knowl-169
+edge by formalizing the document’s hierarchical170
+structure as an ontology and extracting triplets171
+based on condition–consequence rules. The pro-172
+posed ontology is designed to jointly represent the173
+document hierarchy and conditional rules, and the174
+overall pipeline consists of three stages, as illus-175
+trated in Figure 2.176
+3.1 Hierarchical Ontology Modeling177
+Industrial standards documents have a hi-178
+erarchical structure organized into SEC-179
+TION –SUBSECTION –CLAUSE levels, and180
+the meanings of various elements, such as tables,181
+conditional statements, and exception rules, are de-182
+termined by this hierarchical context. Accordingly,183
+this study defines each document section as a core184
+concept and constructs an ontology that captures185
+the relationships among sections. To this end, we186
+design the following two-step procedure.187
+Hierarchical Structural Decomposition of Doc-188
+uments Sections, clauses, tables, and footnotes189
+in industrial standards documents are identified,190
+and heterogeneous numbering schemes are normal-191
+ized using rule-based methods to form a consistent192
+hierarchical structure. Tables and footnotes are as-193
+signed to their corresponding sections based on194
+their positions, thereby preserving the logical struc-195
+ture of the document. Through this process, the196
+document is represented as the following hierarchi-197
+cal ontology structure:198
+H = {Section → Subsection → Subsubsection
+→ (Text ∪ Table) → Footnote}. (1)199
+This hierarchical structure enables the valid scope200
+of each rule to be constrained in subsequent stages,201
+providing a foundation for preserving the structural202
+semantics unique to industrial standards documents 203
+without loss. 204
+Knowledge Unit Construction Based on the nor- 205
+malized hierarchical structure, we transform the 206
+document into knowledge units Ui in the form of 207
+title–text pairs: 208
+D = {U1, U2, . . . , UN }, U i = (t(i)
+title, t(i)
+text), (2) 209
+where N denotes the total number of title–text pairs 210
+generated according to the document’s hierarchi- 211
+cal structure. The title serves as an anchor that 212
+represents the hierarchical context (e.g., section, 213
+subsection, or clause) to which the rule belongs. 214
+The text contains the rule content, including de- 215
+scriptions, table cell entries, conditional statements, 216
+and numerical constraints within the corresponding 217
+section (see Figure 3). This structure preserves the 218
+rule applicability scope during triplet extraction, 219
+thereby capturing the characteristics of industrial 220
+standards documents in which the meaning of the 221
+same term varies depending on the rule’s valid 222
+scope. 223
+3.2 Sentence-level Conditional Structure 224
+Modeling 225
+Industrial standard documents extensively rely on 226
+conditional statements of the form “ifA then B” to 227
+specify manufacturing constraints and applicability 228
+criteria. Tabular specifications can likewise be in- 229
+terpreted as conditional structures, where rows and 230
+columns define conditions and the corresponding 231
+cell values represent consequences, forming a uni- 232
+fied Condition–Consequence abstraction. How- 233
+ever, existing triplet extraction methodologies are 234
+limited in their ability to represent such conditional 235
+relationships. To address this limitation, we intro- 236
+duce Sentence-level Conditional Structure Mod- 237
+eling, which explicitly incorporates conditional 238
+characteristics into the triplet extraction process. 239
+Sentence-level Conditional Structure Modeling 240
+Algorithm We adopt a triplet extraction algo- 241
+rithm tailored to conditional structures to model 242
+conditions at the sentence and table-cell levels. 243
+As illustrated in Algorithm 1, each input sentence 244
+or cell is decomposed into a condition compo- 245
+nent and a consequence component, from which 246
+triplets are generated based on the structural pat- 247
+tern. For a structure consisting of a single ele- 248
+ment (Algorithm 1, line 11), a base relation (e.g., 249
+[has_condition]) is used to generate a triplet. 250
+When multiple elements are connected by the same 251
+3
+(1) Hierarchical Ontology Modeling (2) Sentence-level Conditional Structure Modeling
+Large Language Models
+Hierarchical 
+Ontology Structure
+Text: 
+Title: Notch Toughness Testing → Alternative Toughness Tests
+→ Different CVN Values
+(Impact tests, has_condition_AND, temperatures lower than those 
+specified in Table 4), 
+(Impact tests, has_condition_AND, temperatures other than those 
+specified in Table C.1),
+(testing temperature, specified_by, purchaser),
+(testing temperature, available_by_agreement, material manufacturer), 
+…
+API 2W
+Section
+Subsection Subsubsection
+Text/Table
+Document
+7 Notch Toughness Testing
+7.4 Alternative Toughness Tests
+7.4.2 Different CVN Values
+Impact tests may be made at
+temperatures lower than those
+specified in Table 4 and other
+than those specified in Table C.1.
+The testing temperature shall be
+specified by the purchaser …
+Impact tests may be made at temperatures lower than
+those specified in Table 4 and other than those specified
+in Table C.1. The testing temperature shall be specified
+by the purchaser and agreed to by the material
+manufacturer.
+(3) Ontology-based KG Construction
+Text, Context, Struct
+Embedding
+𝑻𝒅𝒖𝒑
+Pruning
+[mention]
+[has_child]
+𝑻𝒊𝒏𝒗
+𝑻𝒔𝒆𝒍𝒇
+HDBSCAN
+Entity 
+Dictionary
+Relation 
+Dictionary
+Normalization 
+Figure 2: (1) Hierarchical Ontology Modeling normalizes the document into a hierarchical schema, thereby
+assigning an explicit ontology structure. (2) Sentence-level Conditional Structure Modeling leverages an LLM to
+extract condition–consequence–based triplets from both textual descriptions and tables. (3) Ontology-based KG
+Construction refines the final graph through synonym-dictionary–based normalization and pruning.
+1. Procedure1.1Scanningthe major plate axis, on 3-in. [75-mm] or smaller centers. Measure the lines from the center or one corner of the plate with an additional path within 2 in.[50mm] of all edges of the plate on the searching surface.
+Industrial Standard Document
+Title (𝒕𝒕𝒊𝒕𝒍𝒆(𝒊)): Procedure ➔ScanningText (𝒕𝒕𝒆𝒙𝒕(𝒊)): the major plate axis, on 3-in. [75-mm] or smaller centers. Measure the lines from the center or one corner of the plate with an additional path within 2 in. [50 mm] of all edges of the plate on the searching surface.
+Title-Text Mapping
+Figure 3: Example of Title–Text Mapping.This figure
+illustrates how title and text blocks extracted from the
+industrial standards document A578/A578M are orga-
+nized according to the hierarchical structure.
+logical operator (Algorithm 1, line 13), a relation re-252
+flecting the operator (e.g.,[has_condition_AND])253
+is applied. In cases where different logical oper-254
+ators are combined (Algorithm 1, line 16), the255
+structure is decomposed into substructures and the256
+same rules are applied recursively. In this process, a257
+logic_group node is introduced to represent com-258
+posite conjunctions. Examples of triplet extraction259
+produced by this algorithm are provided in Figure 7260
+and Appendix C.261
+Conditional-aware Triplet Extraction Finally,262
+we construct a prompt P that integrates the previ-263
+ously defined triplet extraction rules for conditional264
+structures with additional rules for non-conditional265
+sentences. To ensure consistency in numerical ex-266
+pressions, we introduce conversion rules to the In-267
+ternational System of Units (SI) and provide few-268
+shot examples based on real-world standard docu-269
+ments. The prompt is presented in Appendix I. Sub-270
+sequently, the constructed prompt P and a knowl-271
+edge unit Ui are jointly provided to an LLM, con-272
+verting implicit relationships in the text into triplets273
+in the form of subject–relation–object. This274
+process can be expressed as follows:275
+Ti = ExtractT riplets(P, Ui), (3)276
+where ExtractT riplets denotes a function that 277
+extracts triplets from both conditional and non- 278
+conditional sentences, and Ti represents the set 279
+of triplets extracted from Ui. The complete set of 280
+triplets for a document D is defined as: 281
+T (D) =
+N[
+i=1
+Ti. (4) 282
+The resulting document-level triplet set T (D) 283
+serves as the fundamental input for constructing an 284
+Ontology-based KG. 285
+3.3 Ontology-based KG Construction 286
+In this section, a three-stage procedure is applied 287
+to consolidate redundant expressions from the pre- 288
+viously extracted triplets and to remove structural 289
+noise, resulting in a coherent KG. 290
+3.3.1 Entity–Relation Synonym Dictionary 291
+Construction 292
+To ensure conceptual consistency by unifying syn- 293
+onymous expressions of entities and relations, we 294
+construct a synonym dictionary to normalize rep- 295
+resentations within the KG. In this study, entities 296
+and relations are clustered by jointly considering 297
+not only text similarity but also contextual and 298
+graph-structural information. For relations, we fur- 299
+ther apply selectional preference based on the sub- 300
+ject–object entity type distributions. The centroid 301
+of each cluster is selected as the canonical represen- 302
+tation to normalize the KG. Detailed construction 303
+procedures are provided in Appendix D. 304
+3.3.2 KG Refinement and Pruning 305
+First, we perform conceptual normalization by uni- 306
+fying entities and relations into their canonical 307
+forms using the constructed synonym dictionary, 308
+4
+Algorithm 1 Triplet Extraction from Conditional Sentences
+1: Input: Sentence or table cell s
+2: Output: Triplet set T
+3: Initialize an empty triplet set T
+4: Create a case node c
+5: Parse s into a condition structure C and a consequence
+structure R
+6: T ← T ∪ M CT (c, has_condition, C )
+7: T ← T ∪ M CT (c, has_consequence, R )
+8: ▷ M CT denotes ModelConditionalTriplets
+9: return T
+10: Procedure M CT (p, rel, S)
+11: Initialize an empty triplet set TS
+12: if S contains only one condition or consequence then
+13: TS ← TS ∪ ⟨p, rel, S⟩
+14: else if all items in S are combined using the same logical
+operator then
+15: op ← shared operator of S
+16: TS ← TS ∪ ⟨p, rel_op, S⟩
+17: else
+18: Separate S into grouped parts and remaining parts
+19: op ← logical operator connecting these parts
+20: for each grouped part G do
+21: ▷ Introduce a logic_group node to connect grouped
+substructures to the parent node
+22: Create a logic_group node g
+23: TS ← TS ∪ ⟨p, rel_op, g⟩
+24: TS ← TS ∪ M CT (g, rel, G)
+25: end for
+26: for each remaining part e do
+27: ▷ Directly connect remaining elements to the par-
+ent node
+28: TS ← TS ∪ ⟨p, rel_op, e⟩
+29: end for
+30: end if
+31: return TS
+thereby reducing conceptual redundancy and pre-309
+venting the dispersion of semantically identical310
+nodes. Next, to improve structural efficiency, we ap-311
+ply a multi-stage structural pruning procedure that312
+removes low-information or redundant elements.313
+In this process, nodes are represented as a set V314
+containing subject and object concepts, while se-315
+mantic relations between nodes are represented as316
+a set R. Each knowledge triplet is expressed in the317
+form (u, r, v), consisting of a subject node u ∈ V ,318
+a relation r ∈ R, and an object node v ∈ V . The319
+pruning procedure is conducted in three stages as320
+follows:321
+(i) Self-loop Pruning : Self-referential relations322
+Tself = {(u, r, v) ∈ T | u = v} are semantically323
+uninformative and are therefore removed.324
+(ii) Reciprocal Edge Pruning: When bidirectional325
+edges coexist, the edge with the lower occurrence326
+frequency is removed, as defined in Eq. 5.327
+Tinv = arg min
+t∈{(u,v),(v,u)}
+w(t) | (u, v), (v, u) ∈ T	. (5)328
+If the weights w are identical, no principled di-329
+rectional preference exists; thus, both edges are330
+retained to avoid arbitrary information loss. 331
+(iii) Duplicate Triplet Pruning : When identical 332
+triplets are extracted multiple times from the same 333
+document, only a single instance is retained: 334
+Tdup = {(u, r, v)1, . . . ,(u, r, v)k |
+(u, r, v)i ∈ T, k > 1}. (6) 335
+After these steps, isolated nodes are removed, yield- 336
+ing the final triplet set as defined in Eq. 7: 337
+Tfinal = T \ (Tself ∪ Tinv ∪ Tdup). (7) 338
+The resulting Tfinal is subsequently used for KG 339
+construction. 340
+3.3.3 Schema Design for Integrated 341
+Ontology-based KG 342
+We design a connection schema to integrate the 343
+hierarchical ontology of documents and the KG 344
+into a unified graph structure. Each section in a 345
+document is defined as a structural unit, and the 346
+containment relationship between parent and child 347
+sections is modeled using the [has_child] re- 348
+lation. In addition, to explicitly connect content- 349
+based knowledge contained within each section, 350
+we define a [mention] relation between section 351
+nodes and KG entity nodes referenced in the cor- 352
+responding section. This relation aligns individual 353
+knowledge entities with specific structural loca- 354
+tions in the document, enabling a linkage between 355
+contextual positional information and Ontology- 356
+based structural information that is not provided by 357
+conventional KGs. The resulting Ontology-based 358
+KG, which unifies hierarchical document structures 359
+with content-based knowledge, is implemented in 360
+the graph database management systemNeo4j us- 361
+ing the proposed integrated schema. 362
+4 Experiments 363
+This experiment evaluates how effectively the pro- 364
+posed Ontology-based KG captures the complex 365
+rules and document structure of industrial standards 366
+documents to improve LLM-based reasoning per- 367
+formance. To this end, we conduct comprehensive 368
+baseline comparisons and an ablation study. 369
+4.1 Ontology-based KG-RAG 370
+Since the Ontology-based KG constructed in this 371
+study does not have an explicit ground-truth set, 372
+we evaluate it indirectly through QA performance. 373
+To this end, we design an Ontology-based KG- 374
+RAG that uses an Ontology-based KG as its knowl- 375
+5
+Table 1: Statistics of the KG constructed from three
+industrial standards.
+A578/A578M API_2W A6/A6M
+Nodes 606 1320 10976
+Relations 52 121 216
+Triplets 1986 5128 53508
+Table 2:IndusSpec-QA dataset statistics. The dataset is
+constructed from three industrial standard documents
+and comprises three types of QA—rule, multi-hop, and
+table —derived from the original texts.
+A578/A578M API_2W A6/A6M
+Rule 414 179 200
+Multi-hop 79 86 63
+Table 8 119 400
+Total 501 384 663
+edge base and extend two existing KG-RAG ap-376
+proaches—MindMap (Wen et al., 2024) and KG-377
+Retriever (Chen et al., 2025)—into Ontology-based378
+variants with different internal mechanisms and re-379
+trieval strategies. The detailed pipeline and imple-380
+mentation specifics are described in Appendix A.381
+4.2 Setups382
+Dataset To evaluate how the proposed method383
+operates under different rule structures, we use384
+three industrial standard documents with varying385
+lengths, table structures, and levels of conditional386
+complexity. These documents are widely used in387
+industrial practice, and their structural differences388
+naturally induce varying levels of reasoning diffi-389
+culty.390
+• ASTM A578/A578M1 is a short, rule-centric391
+document that primarily consists of sentence-392
+based rules, making it suitable for evaluating393
+basic rule QA.394
+• API 2W2 contains a large number of table-based395
+rules, resulting in a higher level of difficulty for396
+table reasoning.397
+• ASTM A6/A6M3 is the most extensive docu-398
+ment, encompassing exceptions, multi-hop con-399
+ditional rules, and large-scale tables, and is400
+therefore suitable for evaluating complex rea-401
+soning.402
+Using these three documents, we construct an403
+Ontology-based KG as shown in Table 1 by ap-404
+plying the proposed method described in Section 3.405
+1https://standards.globalspec.com/std/4055316/
+astm-a578-a578m-17
+2https://standards.globalspec.com/std/921032/
+api-spec-2w
+3https://standards.globalspec.com/std/
+14621695/astm-a6-a6m-22
+In addition, to validate the constructed Ontology- 406
+based KG as described in Section 4.1, we build 407
+a QA dataset, IndusSpec-QA (see Table 2). The 408
+dataset is created by designing question scopes 409
+based on the titles (ttitle) and the main text and ta- 410
+bles (ttext) of the units Ui defined in Section 3.1. 411
+Question drafts are generated using an LLM and 412
+then finalized through validation by domain experts. 413
+The final dataset covers three types: rule, multi-hop, 414
+and table. Specifically, rule refers to queries that 415
+explicitly ask about a single sentence or a single 416
+condition; multi-hop refers to queries that require 417
+stepwise combination of multiple sections or multi- 418
+ple conditions to answer; and table refers to queries 419
+that require deriving answers based on information 420
+contained in tables. 421
+Baselines To evaluate how effectively the 422
+Ontology-based KG reflects the rules and doc- 423
+ument structure inherent in industrial standards 424
+documents, we define four categories of base- 425
+lines with different levels of knowledge utiliza- 426
+tion. (1) LLM-only generates answers solely from 427
+the query without using any external knowledge. 428
+(2) LLM w/full doc directly injects the entire 429
+document into the prompt without retrieval, pro- 430
+viding the maximum available information and 431
+serving as an upper-bound baseline. (3) Text-only 432
+RAG is a conventional RAG approach that per- 433
+forms text chunk–based retrieval without consid- 434
+ering document structure, using BM25 (Robertson 435
+and Zaragoza, 2009) andAda-002 (OpenAI, 2022). 436
+(4) KG-RAG leverages a KG constructed from the 437
+document but does not apply an ontology, repre- 438
+senting a conventional graph-based approach; com- 439
+parison with Ontology-based KG-RAG enables 440
+analysis of the contribution of the ontology. Im- 441
+plementation details of each baseline are provided 442
+in Appendix B. 443
+Evaluation Metrics To evaluate response qual- 444
+ity, we use F1, BERTScore, BLEU, and Rouge. F1 445
+measures classification accuracy, BERTScore cap- 446
+tures semantic similarity, and BLEU and Rouge 447
+assess n-gram– and phrase-level textual alignment. 448
+4.3 Main Results 449
+Table 3 presents the performance comparison re- 450
+sults against four baseline model categories across 451
+three industrial standards documents. From this 452
+experiment, we derive the following key observa- 453
+tions: 454
+6
+Table 3: Performance comparison across datasets on three industrial standard documents. Scores are weighted
+averages over rule-based, table-based, and multi-hop QA tasks, computed according to the data proportions. Best
+and second-best results are shown in bold and underlined, respectively.
+Type Method A578/A578M API_2W A6/A6M
+F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge
+LLM-only
+GPT-4o-mini 0.013 0.806 0.004 0.020 0.010 0.800 0.003 0.014 0.002 0.790 0.002 0.003
+gemini-2.0-flash 0.000 0.802 0.000 0.004 0.000 0.797 0.000 0.002 0.003 0.790 0.002 0.003
+DeepSeek-v3.1 0.043 0.817 0.016 0.049 0.040 0.809 0.018 0.046 0.036 0.800 0.016 0.039
+LLM w/full doc
+GPT-4o-mini 0.308 0.867 0.157 0.357 0.298 0.864 0.120 0.361 0.152 0.826 0.066 0.174
+gemini-2.0-flash 0.282 0.861 0.159 0.315 0.276 0.853 0.142 0.314 0.206 0.834 0.083 0.273
+DeepSeek-v3.1 0.077 0.874 0.165 0.384 0.382 0.884 0.156 0.463 0.130 0.824 0.069 0.152
+Text-only RAG
+BM25+Qwen1.5-14B 0.306 0.876 0.129 0.381 0.306 0.881 0.124 0.431 0.154 0.837 0.054 0.208
+BM25+Mistral-7B 0.279 0.865 0.118 0.346 0.242 0.859 0.112 0.300 0.128 0.837 0.050 0.183
+BM25+GPT-4o-mini 0.366 0.880 0.193 0.433 0.308 0.868 0.140 0.357 0.160 0.831 0.070 0.195
+BM25+gemini-2.0 0.340 0.876 0.184 0.405 0.291 0.859 0.137 0.350 0.159 0.825 0.076 0.184
+Dense+Qwen1.5-14B 0.264 0.870 0.104 0.322 0.372 0.891 0.134 0.475 0.179 0.852 0.067 0.223
+Dense+Mistral-7B 0.255 0.859 0.100 0.318 0.277 0.864 0.112 0.348 0.152 0.840 0.059 0.223
+Dense+GPT-4o-mini 0.314 0.871 0.499 0.370 0.413 0.888 0.160 0.476 0.175 0.828 0.079 0.205
+Dense+gemini-2.0 0.309 0.870 0.167 0.359 0.348 0.875 0.164 0.471 0.167 0.825 0.077 0.203
+KG-RAG MindMap (Wen et al., 2024) 0.370 0.879 0.224 0.426 0.334 0.887 0.145 0.412 0.223 0.851 0.113 0.255
+KG Retriever (Chen et al., 2024) 0.319 0.874 0.170 0.476 0.223 0.862 0.090 0.301 0.190 0.853 0.067 0.281
+Ontology-based Ontology-based MindMap0.511 0.911 0.313 0.5850.494 0.915 0.265 0.5690.441 0.892 0.186 0.518
+KG-RAG Ontology-based KG-Retriever0.639 0.933 0.424 0.6530.448 0.909 0.268 0.5270.191 0.854 0.084 0.194
+• Ontology-based KG-RAG achieves dominant455
+performance across all datasets. The aver-456
+age F1 score reaches 0.454, showing a substan-457
+tial improvement over existing methods. This458
+demonstrates that Ontology-based KGs are a459
+critical factor for performance gains in special-460
+ized domains such as industrial standards docu-461
+ments.462
+• LLM-only methods are limited in specialized463
+domains. With an average F1 of only 0.016, the464
+results indicate that LLMs alone cannot gener-465
+ate meaningful answers in domains such as in-466
+dustrial standards without external knowledge.467
+• LLM w/full doc suffers from information468
+overload. Although the average F1 improves to469
+0.235 compared to LLM-only, it remains far be-470
+low the performance of the proposed Ontology-471
+based KG-RAG. This suggests that naively in-472
+jecting entire documents leads to information473
+overload and fails to support effective reason-474
+ing.475
+• KG-RAG shows limited gains over Text-only476
+RAG. The performance gap between Text-only477
+RAG (average F1: 0.262) and conventional KG-478
+RAG (average F1: 0.277) is relatively small,479
+indicating that existing KG-RAG approaches480
+do not fully exploit the potential of structural481
+knowledge during KG construction. In contrast,482
+Ontology-based KG-RAG achieves a 64% im-483
+provement over conventional KG-RAG (0.277484
+→ 0.454), empirically validating the importance485
+of domain-specific ontology design.486
+• Ontology-based KG-RAG maintains stable487
+performance regardless of document length.488
+rule multi-hop table0.0
+0.1
+0.2
+0.3
+0.4
+0.5F1
+0.027 0.020 0.004
+0.328
+0.292
+0.102
+0.345 0.320
+0.081
+0.367
+0.231
+0.158
+0.412
+0.369
+0.306
+LLM-only LLM w/ full doc Text-only RAG
+MindMap Ontology-based MindMap
+Figure 4: Comparison of F1 Performance by QA Data
+Type. For three documents, we compare the average
+F1 of five model categories across three QA data types:
+rule, multi-hop, and table.
+Overall, performance is relatively lower on the 489
+longest document, A6/A6M (63 pages), com- 490
+pared to the shortest document, A578/A578M 491
+(5 pages), suggesting increased difficulty in ev- 492
+idence extraction as document length grows. 493
+Nevertheless, Ontology-based KG-RAG main- 494
+tains comparatively stable performance and 495
+demonstrates robustness on longer documents. 496
+In addition, Figure 4 presents a comparison of 497
+the average F1 performance of models across dif- 498
+ferent methodologies, showing that model perfor- 499
+mance varies by task type. Ontology-based KG- 500
+RAG achieves the highest average F1 across all 501
+task types. In particular, it shows a 93.7% im- 502
+provement in the table task over conventional KG- 503
+RAG (0.158 → 0.306), a 12.3% improvement in 504
+the rule task (0.367 → 0.412), and a 59.7% im- 505
+provement in the multi-hop task (0.231 → 0.369). 506
+These results can be attributed to the accurate rep- 507
+resentation of row–column conditions and appli- 508
+cability scopes of table-based rules as structured 509
+relations, which preserves the logical composition 510
+among rules. This suggests that table-based rules 511
+7
+Table 4: Ablation study on API_2W rule data. This table
+presents a performance comparison of the LLM under
+four settings: with documents only, with ontology, with
+KG, and with both ontology and KG.
+F1 BERTScore BLEU Rouge
+LLM w/doc 0.298 0.864 0.120 0.361
++ KG 0.334 0.887 0.145 0.412
++ Ontology 0.413 0.888 0.160 0.476
++ Ontology + KG 0.494 0.915 0.265 0.569
+and hierarchical constraints, which frequently ap-512
+pear in industrial standards documents, are prone513
+to distortion in text-based LLMs or simple RAG ap-514
+proaches, whereas structural knowledge represen-515
+tations such as Ontology-based KGs enable more516
+accurate reasoning. The details of Figure 4 are pro-517
+vided in the Appendix Table 5,6,7. Overall, these518
+results demonstrate that an Ontology-based KG ap-519
+proach is essential for specialized domains such520
+as industrial standards documents. In particular,521
+the performance gains over the LLM-only baseline522
+clearly demonstrate the importance of integrating523
+external knowledge and constructing a systematic,524
+domain-specific KG.525
+4.4 Additional Analyses526
+Effect of KG and Ontology Integration To an-527
+alyze the impact of using Ontology and KG indi-528
+vidually and in combination, we conduct an ab-529
+lation study on the API_2W dataset. Specifically,530
+we compare four configurations: (i) an LLM us-531
+ing only document information, (ii) a KG-only set-532
+ting, (iii) an ontology-only setting that captures533
+document structural information, and (iv) a setting534
+that jointly uses both the ontology and the KG.535
+As shown in Table 4, the combined configuration536
+achieves the highest performance across all eval-537
+uation metrics, with the F1 score improving from538
+0.298 (document-only) to 0.494, corresponding to539
+an approximately 65% increase. Compared to the540
+KG-only setting (F1: 0.334), the combined model541
+attatins an improvement of approximately 47%. No-542
+tably, the ontology-only configuration outperforms543
+the KG-only configuration. This observation sug-544
+gests that explicitly encoding the hierarchical docu-545
+ment structure and rule context through an ontology546
+plays a more critical role in enhancing rule-based547
+reasoning performance than relational information548
+among individual entities alone. Overall, the KG549
+complements the structural context provided by550
+the ontology, and the most effective reasoning is551
+achieved when both modules are used together.552
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003
+/uni00000030/uni0000004c/uni00000051/uni00000047/uni00000030/uni00000044/uni00000053
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003
+/uni0000002e/uni0000002a/uni00000010/uni00000035/uni00000048/uni00000057/uni00000055/uni0000004c/uni00000048/uni00000059/uni00000048/uni00000055
+/uni00000013/uni00000011/uni00000016
+/uni00000013/uni00000011/uni00000017
+/uni00000013/uni00000011/uni00000018
+/uni00000013/uni00000011/uni00000019
+/uni00000013/uni00000011/uni0000001a/uni00000029/uni00000014
+/uni00000013/uni00000011/uni00000016/uni0000001c/uni00000018
+/uni00000013/uni00000011/uni00000019/uni00000015/uni00000019
+/uni00000013/uni00000011/uni00000017/uni00000014/uni00000015
+/uni00000013/uni00000011/uni00000019/uni00000014/uni00000018
+/uni00000013/uni00000011/uni00000017/uni00000014/uni00000017
+/uni00000013/uni00000011/uni00000019/uni00000015/uni00000017
+/uni00000013/uni00000011/uni00000018/uni00000015/uni0000001c
+/uni00000013/uni00000011/uni00000019/uni00000017/uni00000019
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003
+/uni00000030/uni0000004c/uni00000051/uni00000047/uni00000030/uni00000044/uni00000053
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003
+/uni0000002e/uni0000002a/uni00000010/uni00000035/uni00000048/uni00000057/uni00000055/uni0000004c/uni00000048/uni00000059/uni00000048/uni00000055
+/uni00000013/uni00000011/uni00000016
+/uni00000013/uni00000011/uni00000017
+/uni00000013/uni00000011/uni00000018
+/uni00000013/uni00000011/uni00000019
+/uni00000013/uni00000011/uni0000001a/uni00000035/uni00000052/uni00000058/uni0000004a/uni00000048/uni00000013/uni00000011/uni00000017/uni00000017/uni0000001c
+/uni00000013/uni00000011/uni00000019/uni00000019/uni0000001c
+/uni00000013/uni00000011/uni00000017/uni0000001a/uni00000018
+/uni00000013/uni00000011/uni00000019/uni00000018/uni0000001c
+/uni00000013/uni00000011/uni00000017/uni00000019/uni0000001c
+/uni00000013/uni00000011/uni00000019/uni00000019/uni0000001a
+/uni00000013/uni00000011/uni00000019/uni00000013/uni00000018
+/uni00000013/uni00000011/uni00000019/uni0000001a/uni0000001c
+/uni00000039/uni00000044/uni00000051/uni0000004c/uni0000004f/uni0000004f/uni00000044/uni0000000e/uni00000003/uni00000036/uni0000005c/uni00000051/uni00000052/uni00000051/uni0000005c/uni00000050/uni0000000e/uni00000003/uni00000033/uni00000055/uni00000058/uni00000051/uni0000004c/uni00000051/uni0000004a/uni0000000e/uni00000003/uni00000033/uni00000055/uni00000058/uni00000051/uni0000004c/uni00000051/uni0000004a/uni00000003/uni00000009/uni00000003/uni00000036/uni0000005c/uni00000051/uni00000052/uni00000051/uni0000005c/uni00000050
+Figure 5: Effect of the synonym dictionary and prun-
+ing modules on QA performance (F1 and Rouge) on
+API_2W rule dataset. Ontology-based MindMap shows
+progressive performance gains with sequential module
+application, whereas Ontology-based KG-Retriever per-
+forms best only when both modules are applied together.
+Effect of Synonym Dictionary and Pruning In 553
+this experiment, we compare the contributions of 554
+the synonym dictionary and pruning modules in 555
+the KG construction process using F1 and Rouge 556
+scores. As shown in Figure 5, the performance of 557
+Ontology-based MindMap improves gradually as 558
+the two modules are applied sequentially. In con- 559
+trast, for Ontology-based KG-Retriever, a slight 560
+decrease in F1 or Rouge is observed when either 561
+the synonym dictionary or pruning is applied in 562
+isolation, suggesting that partial information loss 563
+may occur when individual modules are used alone. 564
+However, when both modules are applied jointly, 565
+performance improves most substantially, demon- 566
+strating that the two procedures operate in a com- 567
+plementary manner. These results support the ne- 568
+cessity of combining synonym dictionary–based 569
+normalization and pruning in the KG refinement 570
+process. 571
+5 Conclusion 572
+This study presents an Ontology-based KG con- 573
+struction method that integrates hierarchical ontol- 574
+ogy modeling with logic-aware triplet extraction 575
+to transform industrial standards documents into 576
+structured knowledge. By explicitly encoding doc- 577
+ument hierarchy, conditional logic, and table-based 578
+constraints, the proposed approach addresses key 579
+limitations of conventional text-based methods. We 580
+further validate the effectiveness of the proposed 581
+pipeline through an Ontology-based KG-RAG sys- 582
+tem, which demonstrates strong performance gains, 583
+particularly in conditional reasoning and table inter- 584
+pretation. These results highlight the importance of 585
+structured domain knowledge and provide a foun- 586
+dation for future domain-specific RAG systems and 587
+automated standards interpretation in industrial ap- 588
+plications. 589
+8
+Limitations590
+The proposed approach is optimized for documents591
+with explicit structural cues, such as hierarchical592
+sections, conditional rules, and tables, which ef-593
+fectively stabilize LLM-based reasoning. Conse-594
+quently, its direct applicability to fully unstruc-595
+tured open-domain texts, where such structural sig-596
+nals are scarce, may be limited. Nevertheless, the597
+pipeline is not confined to industrial standards and598
+can be applied to other rule-centric documents with599
+explicit structural units, including technical manu-600
+als, legal or contractual texts, and policy documents.601
+Moreover, the proposed Sentence-level Conditional602
+Structure Modeling provides a general mechanism603
+for decomposing complex nested conditions and604
+multi-exception rules into logical units, making it605
+applicable across domains with complex rule struc-606
+tures. Finally, as the approach relies on LLM-based607
+knowledge extraction, its performance depends on608
+model stability. Future work will explore training609
+domain-specific local models using the extracted610
+ontology and rule patterns, thereby reducing re-611
+liance on external LLMs and improving reliability,612
+reproducibility, and operational robustness.613
+Ethical statement614
+This study proposes an automated system for ques-615
+tion answering based on industrial standards doc-616
+uments. In conducting this research, we carefully617
+considered the following aspects to ensure com-618
+pliance with research ethics. First, regarding data619
+usage and copyright, the industrial standards docu-620
+ments used in the experiments were utilized strictly621
+for academic research purposes, and neither distri-622
+bution of the original data nor any form of commer-623
+cial use was permitted. Second, concerning safety624
+and potential misuse, although the proposed model625
+demonstrates high accuracy, decision-making in626
+industrial settings is closely tied to safety and there-627
+fore the model outputs should not be blindly trusted628
+without expert review. The proposed system is de-629
+signed as a decision-support tool for engineers, and630
+we explicitly acknowledge that the possibility of631
+errors caused by hallucinations cannot be entirely632
+eliminated.633
+References634
+M.M. Ashburner, C.A.C. Ball, Judith Blake, David635
+Botstein, Heather Butler, J.M.J. Cherry, Allan Pe-636
+ter Davis, Kara Dolinski, Selina Dwight, Janan Ep-637
+pig, Midori Harris, D.P. Hill, Laurie Issel-Tarver,638
+A Kasarskis, Suzanna Lewis, John Matese, J.E. 639
+Richardson, M Ringwald, and G.M. Rubin. 2000. 640
+Gene ontology: tool for the unification of biology. 641
+the gene ontology consortium. Nat Genet, 25:25–29. 642
+Jinze Bai, Shuai Bai, Yunfei Chu, Zeyu Cui, Kai Dang, 643
+Xiaodong Deng, Yang Fan, Wenbin Ge, Yu Han, Fei 644
+Huang, Binyuan Hui, Luo Ji, Mei Li, Junyang Lin, 645
+Runji Lin, Dayiheng Liu, Gao Liu, Chengqiang Lu, 646
+Keming Lu, and 29 others. 2023. Qwen technical 647
+report. Preprint, arXiv:2309.16609. 648
+Mikhail Belkin and Partha Niyogi. 2001. Laplacian 649
+eigenmaps and spectral techniques for embedding 650
+and clustering. In Proceedings of the 15th Interna- 651
+tional Conference on Neural Information Process- 652
+ing Systems: Natural and Synthetic, NIPS’01, page 653
+585–591, Cambridge, MA, USA. MIT Press. 654
+Nils Wakan Boecking, Parastou Azari Gargari, Sarah 655
+Reichel, Sven Hoffmann, Tobias Richter, and V olker 656
+Wulf. 2025. Chat with standards: An assistant for 657
+the provision of normative knowledge for practical 658
+use in welding. In Proceedings of the 2025 ACM 659
+Designing Interactive Systems Conference, DIS ’25, 660
+page 2171–2188, New York, NY , USA. Association 661
+for Computing Machinery. 662
+Weijie Chen, Ting Bai, Jinbo Su, Jian Luan, Wei Liu, 663
+and Chuan Shi. 2025. Kg-retriever: Efficient knowl- 664
+edge indexing for retrieval-augmented large language 665
+models. Preprint, arXiv:2412.05547. 666
+DeepMind / Google. 2025. Gemini 2.0 flash. https: 667
+//deepmind.google/models/gemini/flash/. 668
+DeepSeek-AI, Aixin Liu, Bei Feng, Bing Xue, Bingxuan 669
+Wang, Bochao Wu, Chengda Lu, Chenggang Zhao, 670
+Chengqi Deng, Chenyu Zhang, Chong Ruan, and 1 671
+others. 2025. Deepseek-v3 technical report. Preprint, 672
+arXiv:2412.19437. 673
+Oren Etzioni, Michael Cafarella, Doug Downey, Stanley 674
+Kok, Ana-Maria Popescu, Tal Shaked, Stephen Soder- 675
+land, Daniel S. Weld, and Alexander Yates. 2004. 676
+Web-scale information extraction in knowitall: (pre- 677
+liminary results). In Proceedings of the 13th Interna- 678
+tional Conference on World Wide Web, WWW ’04, 679
+page 100–110, New York, NY , USA. Association for 680
+Computing Machinery. 681
+Maurice Funk, Simon Hosemann, Jean Christoph 682
+Jung, and Carsten Lutz. 2023. Towards ontol- 683
+ogy construction with language models. Preprint, 684
+arXiv:2309.09898. 685
+Johannes Gasteiger, Aleksandar Bojchevski, and 686
+Stephan Günnemann. 2022. Predict then propagate: 687
+Graph neural networks meet personalized pagerank. 688
+Preprint, arXiv:1810.05997. 689
+Yuelin Hu, Futai Zou, Jiajia Han, Xin Sun, and Yilei 690
+Wang. 2024. Llm-tikg: Threat intelligence knowl- 691
+edge graph construction utilizing large language 692
+model. Computers & Security, 145:103999. 693
+9
+Pere-Lluís Huguet Cabot and Roberto Navigli. 2021.694
+REBEL: Relation extraction by end-to-end language695
+generation. In Findings of the Association for Com-696
+putational Linguistics: EMNLP 2021, pages 2370–697
+2381, Punta Cana, Dominican Republic. Association698
+for Computational Linguistics.699
+Zarina Kabzhan, Alexandr Shakhnovich, Sergey Gor-700
+shkov, Yussuf Yemenov, Fedor Gorshkov, and Nazym701
+Shogelova. 2025. Semantic and ontology-based anal-702
+ysis of regulatory documents for construction indus-703
+try digitalization. Frontiers in Built Environment ,704
+11:1575913.705
+Andy Lo, Albert Q. Jiang, Wenda Li, and Mateja Jam-706
+nik. 2025. End-to-end ontology learning with large707
+language models. In Proceedings of the 38th Interna-708
+tional Conference on Neural Information Processing709
+Systems, NIPS ’24, Red Hook, NY , USA. Curran710
+Associates Inc.711
+Leland McInnes, John Healy, and Steve Astels. 2017.712
+hdbscan: Hierarchical density based clustering. Jour-713
+nal of Open Source Software, 2(11):205.714
+George A. Miller. 1995. Wordnet: a lexical database for715
+english. Commun. ACM, 38(11):39–41.716
+Mistral AI team. 2023. Mistral 7b. https://mistral.717
+ai/news/announcing-mistral-7b.718
+OpenAI. 2022. New and improved embed-719
+ding model. https://openai.com/index/720
+new-and-improved-embedding-model/ .721
+OpenAI. 2025. GPT-5 System Card. https://openai.722
+com/index/introducing-gpt-5/.723
+OpenAI, Josh Achiam, Steven Adler, Sandhini Agar-724
+wal, and Lama Ahmad. 2024. Gpt-4 technical report.725
+Preprint, arXiv:2303.08774.726
+Siyuan Qi, Wenguan Wang, Baoxiong Jia, Jianbing727
+Shen, and Song-Chun Zhu. 2018. Learning human-728
+object interactions by graph parsing neural networks.729
+Preprint, arXiv:1808.07962.730
+Nils Reimers and Iryna Gurevych. 2019. Sentence-bert:731
+Sentence embeddings using siamese bert-networks.732
+Preprint, arXiv:1908.10084.733
+Stephen Robertson and Hugo Zaragoza. 2009. The prob-734
+abilistic relevance framework: Bm25 and beyond.735
+Foundations and Trends® in Information Retrieval,736
+3(4):333–389.737
+Nilay Tufek. 2023. Semantic information extraction738
+from multi-modal technical document. In 2023 18th739
+Iberian Conference on Information Systems and Tech-740
+nologies (CISTI), pages 1–4.741
+Qingwang Wang, Chaohui Li, Yi Liu, Qiubai Zhu, Jian742
+Song, and Tao Shen. 2025. An adaptive framework743
+embedded with llm for knowledge graph construction.744
+IEEE Transactions on Multimedia, 27:2912–2923.745
+Zhepei Wei, Jianlin Su, Yue Wang, Yuan Tian, and 746
+Yi Chang. 2020. A novel cascade binary tagging 747
+framework for relational triple extraction. In Pro- 748
+ceedings of the 58th Annual Meeting of the Associa- 749
+tion for Computational Linguistics, pages 1476–1488, 750
+Online. Association for Computational Linguistics. 751
+Yilin Wen, Zifeng Wang, and Jimeng Sun. 2024. 752
+MindMap: Knowledge graph prompting sparks graph 753
+of thoughts in large language models. In Proceedings 754
+of the 62nd Annual Meeting of the Association for 755
+Computational Linguistics (Volume 1: Long Papers), 756
+pages 10370–10388, Bangkok, Thailand. Association 757
+for Computational Linguistics. 758
+Alexander Yates, Michele Banko, Matthew Broadhead, 759
+Michael Cafarella, Oren Etzioni, and Stephen Soder- 760
+land. 2007. TextRunner: Open information extrac- 761
+tion on the web. In Proceedings of Human Lan- 762
+guage Technologies: The Annual Conference of the 763
+North American Chapter of the Association for Com- 764
+putational Linguistics (NAACL-HLT), pages 25–26, 765
+Rochester, New York, USA. Association for Compu- 766
+tational Linguistics. 767
+Bowen Zhang and Harold Soh. 2024a. Extract, define, 768
+canonicalize: An LLM-based framework for knowl- 769
+edge graph construction. In Proceedings of the 2024 770
+Conference on Empirical Methods in Natural Lan- 771
+guage Processing, pages 9820–9836, Miami, Florida, 772
+USA. Association for Computational Linguistics. 773
+Bowen Zhang and Harold Soh. 2024b. Extract, 774
+define, canonicalize: An llm-based framework 775
+for knowledge graph construction. Preprint, 776
+arXiv:2404.03868. 777
+10
+Contents778
+A Ontology-based KG-RAG Details . . . . . . 11779
+A.1 Ontology-based MindMap . . . . . . . . . . 11780
+A.2 Ontology-based KG-Retriever . . . . . . . 11781
+A.3 Implementation Details . . . . . . . . . . . . 13782
+B Baselines & Implementation Details . . . . 14783
+C Conditional Structure Modeling Details . 15784
+D Synonym Dictionary Construction Details 16785
+E Additional Results . . . . . . . . . . . . . . . . . . 16786
+E.1 Performance on Toxic Clause Detection787
+Task . . . . . . . . . . . . . . . . . . . . . . . . . . 16788
+E.2 Performance under Different k-Hop789
+Neighborhoods . . . . . . . . . . . . . . . . . . 17790
+F Dataset Details . . . . . . . . . . . . . . . . . . . . 17791
+G Synonym Dictionary Visualization . . . . . 18792
+H Ontology-based KG Visualization . . . . . . 18793
+I Prompt Templates for Conditional-based794
+triplet Extraction . . . . . . . . . . . . . . . . . . 19795
+A Ontology-based KG-RAG Details796
+A.1 Ontology-based MindMap797
+Ontology-based MindMap integrates the original798
+MindMap pipeline with the Ontology-based KG,799
+such that the entire process of evidence retrieval800
+and reasoning is constrained by the hierarchical801
+document structure and rule-level semantic con-802
+text (see Figure 6). The proposed methodology con-803
+sists of four stages: Entity Extraction, Ontology-804
+Constrained Evidence Graph Mining, Evidence805
+Graph Aggregation, and LLM-integrated Rea-806
+soning.807
+In the Entity Extraction stage, key domain en-808
+tity candidates are identified from the query using809
+an LLM-based extractor. Rather than being used810
+directly, the extracted entities are mapped to actual811
+KG entities via cosine similarity matching with pre-812
+constructed Ontology-based KG entity embeddings.813
+The resulting entity set serves as anchor points for814
+subsequent graph exploration.815
+In the Ontology-Constrained Evidence Graph816
+Mining stage, an evidence graph is explored start-817
+ing from the matched entities, while all explo-818
+ration processes are strictly constrained within819
+the hierarchical ontology structure of the docu-820
+ment. Specifically, candidate evidence is restricted821
+to query-relevant document sections by leverag-822
+ing the [has_child] and [mention] relations,823
+effectively suppressing structural noise that may824
+arise from global KG traversal. Neighbor search825
+is then performed to collect local rules and en- 826
+tity relations, followed by shortest-path search 827
+between entity pairs. During this process, ontol- 828
+ogy relations that represent document structure 829
+are excluded from the reasoning paths, ensur- 830
+ing that only substantive rule-level and seman- 831
+tic relations are used as reasoning evidence. In 832
+particular, rules extracted from tables and con- 833
+ditional statements are preferentially collected 834
+in a form that preserves condition–consequence 835
+structures via the[has_condition_AND/_OR] and 836
+[has_consequence_AND/_OR] relations. 837
+In the Evidence Graph Aggregation stage, the 838
+retrieved triplets are unified into a single reason- 839
+ing graph through duplicate removal and struc- 840
+tural normalization. Rather than simply enumer- 841
+ating triplets, evidence is aggregated at the level 842
+of condition–consequence units (i.e., case-level ag- 843
+gregation) to prevent fragmentation of the logical 844
+semantics of rules. The resulting reasoning graph 845
+thus simultaneously reflects both the hierarchical 846
+document context and the underlying rule struc- 847
+tures. 848
+Finally, in the LLM-integrated Reasoning 849
+stage, the reasoning graph is injected into the LLM 850
+prompt to perform question answering. The LLM 851
+conducts reasoning along ontology-refined evi- 852
+dence paths, suppressing structure-agnostic infer- 853
+ence and generating consistent answers grounded 854
+in document structure. Through this process, 855
+Ontology-based MindMap realizes a collaborative 856
+reasoning pipeline that combines the structural 857
+strengths of KGs with the language-based reason- 858
+ing capabilities of LLMs. 859
+A.2 Ontology-based KG-Retriever 860
+The proposed methodology consists of a two-stage 861
+evidence extraction process at the Ontology KG- 862
+Level and the Global KG-Level, followed by a 863
+final stage that integrates the extracted evidence 864
+and injects it into the LLM prompt. 865
+At the Ontology KG-Level, each section title of 866
+a document is defined as a semantic unit, and each 867
+section is represented as a pair (t(i)
+title, t(i)
+text), where 868
+t(i)
+title denotes the title of the i-th section and t(i)
+text 869
+denotes the set of body sentences associated with 870
+the corresponding title. First, the sentences in t(i)
+text 871
+are encoded using a sentence embedding function, 872
+Sentence-BERT (all-MiniLM-L6-v2), and aver- 873
+aged via mean pooling to generate a section embed- 874
+ding di. The query q is likewise transformed into a 875
+11
+Table 5: A578/A578M Performance Comparison across different question types. Performance comparison of various
+QA models on table-, rule-, and multi-hop–based questions.
+Type Method table rule multi-hop
+F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge
+LLM-only
+GPT-4o-mini 0.000 0.773 0.000 0.000 0.013 0.806 0.004 0.021 0.017 0.806 0.006 0.016
+gemini-2.0-flash 0.000 0.773 0.000 0.000 0.000 0.802 0.000 0.005 0.000 0.806 0.000 0.000
+DeepSeek-v3.1 0.000 0.773 0.000 0.000 0.048 0.819 0.018 0.055 0.021 0.814 0.005 0.025
+LLM w/full doc
+GPT-4o-mini 0.000 0.776 0.000 0.031 0.297 0.866 0.154 0.339 0.388 0.881 0.167 0.454
+gemini-2.0-flash 0.000 0.773 0.000 0.000 0.276 0.861 0.163 0.307 0.344 0.872 0.157 0.388
+DeepSeek-v3.1 0.000 0.766 0.000 0.195 0.033 0.876 0.174 0.383 0.317 0.890 0.139 0.407
+Text-only RAG
+BM25+Qwen1.5-14B 0.000 0.821 0.000 0.219 0.312 0.876 0.137 0.38 0.307 0.880 0.133 0.402
+BM25+Mistral-7B 0.000 0.776 0.000 0.179 0.276 0.865 0.121 0.331 0.320 0.874 0.114 0.441
+BM25+GPT-4o-mini 0.064 0.812 0.009 0.343 0.360 0.880 0.194 0.419 0.430 0.890 0.209 0.516
+BM25+gemini-2.0-flash0.000 0.800 0.000 0.250 0.332 0.875 0.184 0.391 0.416 0.887 0.201 0.493
+Dense+Qwen1.5-14B 0.000 0.828 0.000 0.324 0.262 0.869 0.109 0.310 0.302 0.882 0.104 0.389
+Dense+Mistral-7B 0.011 0.775 0.001 0.185 0.251 0.859 0.101 0.305 0.290 0.867 0.105 0.390
+Dense+GPT-4o-mini 0.110 0.827 0.018 0.411 0.295 0.868 0.560 0.342 0.432 0.862 0.225 0.516
+Dense+gemini-2.0 0.000 0.803 0.000 0.281 0.296 0.868 0.161 0.337 0.407 0.887 0.216 0.480
+KG-RAG MindMap (Wen et al., 2024)0.538 0.907 0.292 0.594 0.372 0.878 0.238 0.417 0.345 0.883 0.146 0.455
+KG Retriever (Chen et al., 2024) 0.118 0.8220.730 0.750 0.338 0.878 0.170 0.403 0.253 0.859 0.119 0.529
+Ontology-based Ontology-based MindMap0.875 0.978 0.725 1.0000.511 0.911 0.329 0.5730.476 0.907 0.226 0.607
+KG-RAG Ontology-based KG-Retriever0.351 0.876 0.030 0.3750.639 0.934 0.440 0.6540.670 0.935 0.380 0.676
+Table 6: API_2W Performance Comparison across different question types. Performance comparison of various QA
+models on table-, rule-, and multi-hop–based questions.
+Type Method table rule multi-hop
+F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge
+LLM-only
+GPT-4o-mini 0.000 0.800 0.000 0.000 0.010 0.797 0.002 0.013 0.025 0.806 0.007 0.035
+gemini-2.0-flash 0.000 0.800 0.000 0.000 0.000 0.795 0.000 0.001 0.000 0.799 0.000 0.006
+DeepSeek-v3.1 0.005 0.803 0.001 0.005 0.005 0.809 0.003 0.058 0.069 0.818 0.017 0.079
+LLM w/full doc
+GPT-4o-mini 0.222 0.862 0.055 0.312 0.325 0.862 0.155 0.372 0.346 0.872 0.139 0.408
+gemini-2.0-flash 0.121 0.828 0.037 0.182 0.369 0.867 0.208 0.387 0.295 0.859 0.151 0.326
+DeepSeek-v3.1 0.352 0.888 0.078 0.472 0.412 0.884 0.208 0.471 0.360 0.879 0.155 0.435
+Text-only RAG
+BM25+Qwen1.5-14B 0.098 0.882 0.017 0.388 0.411 0.879 0.185 0.464 0.375 0.886 0.147 0.424
+BM25+Mistral-7B 0.053 0.836 0.015 0.125 0.352 0.870 0.174 0.402 0.273 0.866 0.119 0.330
+BM25+GPT-4o-mini 0.156 0.847 0.027 0.234 0.404 0.881 0.205 0.439 0.316 0.872 0.162 0.357
+BM25+gemini-2.0-flash0.110 0.830 0.025 0.218 0.396 0.873 0.191 0.428 0.322 0.870 0.178 0.369
+Dense+Qwen1.5-14B 0.334 0.906 0.061 0.531 0.392 0.883 0.171 0.458 0.383 0.889 0.159 0.434
+Dense+Mistral-7B 0.141 0.854 0.024 0.249 0.359 0.869 0.163 0.406 0.294 0.869 0.127 0.364
+Dense+GPT-4o-mini 0.405 0.897 0.072 0.502 0.439 0.886 0.214 0.468 0.372 0.879 0.171 0.419
+Dense+gemini-2.0-flash0.222 0.863 0.045 0.496 0.449 0.884 0.234 0.491 0.313 0.872 0.185 0.393
+KG-RAG MindMap (Wen et al., 2024)0.468 0.929 0.173 0.610 0.303 0.873 0.157 0.358 0.214 0.860 0.081 0.256
+KG Retriever (Chen et al., 2024) 0.135 0.850 0.027 0.232 0.344 0.873 0.162 0.420 0.081 0.854 0.027 0.151
+Ontology-based Ontology-based MindMap0.531 0.933 0.211 0.6210.529 0.917 0.323 0.6050.371 0.888 0.217 0.421
+KG-RAG Ontology-based KG-Retriever0.135 0.879 0.036 0.3170.646 0.933 0.419 0.6790.470 0.902 0.274 0.600
+query embedding q in the same embedding space,876
+and the cosine similarity cos(q, di) is computed to877
+measure section-level semantic relevance.878
+Based on this similarity-based ranking, the top879
+three sections are selected and formed into a coarse-880
+grained candidate set. Subsequently, a 1-hop search881
+is first performed over the KG triplets contained882
+within each section, and if sufficient evidence is not883
+obtained, the search is progressively expanded up884
+to 2-hop to collect additional evidence. Specifically,885
+for each section, 20, 10, and 5 triplets are retrieved886
+in descending order of importance, respectively,887
+resulting in a total of 35 fine-grained triplets. This888
+process enables the simultaneous incorporation of889
+query-relevant local context and the hierarchical890
+structure of the document.891
+At the Global KG-Level, section boundaries892
+are disregarded and a global search is conducted893
+over the entire KG. Using the query embedding 894
+q as the reference, both 1-hop and 2-hop neigh- 895
+bor searches are performed to collect a total of 30 896
+triplets, thereby capturing global structural cues be- 897
+yond local constraints. In addition, a Guided search 898
+module is applied, which directly computes cosine 899
+similarity between the query embedding and the 900
+embeddings of triplet textual representations (in- 901
+cluding table-based representations), and retrieves 902
+an additional top 20 triplets based on this similar- 903
+ity. The guided search operates as an independent 904
+module that complements global structure-based 905
+exploration from a semantic similarity perspective. 906
+Finally, evidence collected from the Ontology 907
+KG-Level and the Global KG-Level is integrated 908
+to form a total of 65 candidate triplets. These candi- 909
+dates are then re-ranked based on semantic similar- 910
+ity to the query, and the top 30 triplets are selected 911
+12
+Table 7: A6/A6M Performance Comparison across different question types. Performance comparison of various QA
+models on table-, rule-, and multi-hop–based questions.
+Type Method table rule multi-hop
+F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge F1 BERTScore BLEU Rouge
+LLM-only
+GPT-4o-mini 0.004 0.784 0.003 0.005 0.000 0.799 0.000 0.000 0.000 0.803 0.000 0.000
+gemini-2.0-flash 0.004 0.784 0.003 0.004 0.000 0.799 0.000 0.000 0.003 0.804 0.001 0.003
+DeepSeek-v3.1 0.007 0.786 0.003 0.008 0.091 0.824 0.044 0.099 0.047 0.817 0.011 0.053
+LLM w/full doc
+GPT-4o-mini 0.083 0.805 0.016 0.100 0.244 0.857 0.136 0.269 0.294 0.864 0.163 0.347
+gemini-2.0-flash 0.110 0.806 0.008 0.132 0.370 0.879 0.216 0.410 0.290 0.865 0.139 0.350
+DeepSeek-v3.1 0.006 0.792 0.003 0.014 0.343 0.876 0.184 0.386 0.243 0.862 0.121 0.294
+Text-only RAG
+BM25+Qwen1.5-14B 0.053 0.817 0.009 0.112 0.311 0.867 0.121 0.356 0.295 0.869 0.124 0.344
+BM25+Mistral-7B 0.036 0.819 0.007 0.085 0.266 0.862 0.107 0.321 0.274 0.871 0.138 0.37
+BM25+GPT-4o-mini 0.043 0.803 0.010 0.072 0.333 0.871 0.161 0.376 0.349 0.877 0.164 0.396
+BM25+gemini-2.0-flash0.016 0.788 0.003 0.030 0.367 0.882 0.195 0.423 0.346 0.876 0.165 0.401
+Dense+Qwen1.5-14B 0.078 0.836 0.013 0.116 0.339 0.876 0.152 0.387 0.314 0.876 0.141 0.378
+Dense+Mistral-7B 0.064 0.827 0.012 0.145 0.292 0.858 0.131 0.336 0.264 0.864 0.127 0.362
+Dense+GPT-4o-mini 0.063 0.799 0.012 0.085 0.340 0.871 0.178 0.380 0.362 0.877 0.191 0.414
+Dense+gemini-2.0-flash0.044 0.792 0.006 0.075 0.364 0.876 0.192 0.399 0.324 0.874 0.162 0.390
+KG-RAG MindMap (Wen et al., 2024) 0.117 0.8340.034 0.130 0.404 0.877 0.255 0.458 0.322 0.880 0.167 0.405
+KG Retriever (Chen et al., 2024) 0.1070.843 0.013 0.224 0.356 0.874 0.178 0.413 0.185 0.853 0.057 0.224
+Ontology-based Ontology-based MindMap0.468 0.898 0.135 0.5620.438 0.885 0.285 0.4720.344 0.878 0.192 0.398
+KG-RAG Ontology-based KG-Retriever0.124 0.842 0.029 0.1060.474 0.897 0.163 0.3030.355 0.881 0.185 0.405
+Entities Extraction
+Entity
+Embedding
+any indication ≥ 100 % DAC,
+100 % DAC,
+Distance Amplitude Corrections
+KG Entities
+Neighbor Evidence 
+Search
+Path Evidence Search
+any indication 
+≥ 100 % DAC
+MENTION
+ACCEPTANCE
+HAS_CHILD HAS_CHILD
+A578/A578M
+Case1 HAS_CHILD
+Ultrasonic 
+Examination
+100% 
+DAC
+distance 
+amplitude 
+correction curve
+SUPPLEMENTARY 
+REQUIREMENTS
+Evidence Graph Mining
+Evidence Graph Aggregation
+The distance amplitude correction curve stands 
+for 100% DAC, which is mentioned in the context 
+of Ultrasonic Examination.
+Ontology KG-Level
+A578/A578M 0.89
+0.72
+0.3
+Hierarchical Ontology
+SUPPLEMENTARY 
+REQUIREMENTS ACCEPTANCE
+Scanning Ultrasonic 
+Examination
+𝐜𝐨𝐬(𝒒, 𝒅𝒊)
+Triplet Sim
+0.74
+0.63
+0.88
+0.52
+… …
+Global KG-Level
+What does the line used 
+for 100 % DAC 
+represent in terms of 
+amplitude correction?
+Top-k Re-ranking
+“distance amplitude 
+correction curve”
+Ontology-based MindMap Ontology-based KG-RetrieverInput Query
+Figure 6: Ontology-based KG-RAG pipeline. (Left) Ontology-based MindMap selects evidence by reflecting the
+document’s hierarchical ontology structure. (Right) Ontology-based KG-Retriever combines Ontology-based search
+with global KG exploration. Finally, it extracts triples through re-ranking and inserts them into the prompt.
+and injected into the LLM (GPT-4o-mini) prompt912
+for response generation. Through this multi-stage913
+evidence extraction and re-ranking procedure, the914
+Ontology-based KG-Retriever simultaneously re-915
+flects the semantic context of the query and the916
+structural information of the KG, enabling more917
+accuracy of downstream question answering tasks.918
+A.3 Implementation Details919
+The Ontology-based KG used in the Ontology-920
+based MindMap and Ontology-based KG-Retriever921
+pipelines was stored in the Neo4j Aura environ-922
+ment. Sentence-BERT (all-MiniLM-L6-v2) was923
+employed to generate embeddings for queries,924
+section titles, KG triplet texts, and table-based925
+rule representations, and all embeddings were L2-926
+normalized for cosine similarity computation. In927
+the Ontology-based MindMap, the top three section928
+paths were selected based on semantic similarity929
+between the query and section titles. The retrieval 930
+budget was adaptively allocated to extract more ev- 931
+idence from the most relevant sections, and graph 932
+traversal following the document structure was al- 933
+lowed up to a maximum of 3 hops. In the Ontology- 934
+based KG-Retriever, the graph traversal depth was 935
+limited to a maximum of 2 hops. At the Ontology 936
+KG-level, retrieval was restricted to section-scoped 937
+exploration, while at the Global KG-level, global 938
+exploration over the entire KG was performed un- 939
+der the same hop constraint. For both pipelines, 940
+final evidence selection was conducted using Max- 941
+imal Marginal Relevance (MMR), with the λ pa- 942
+rameter set to 0.7. Up to 30 triplets were used as 943
+evidence for LLM input. Response generation was 944
+performed using theGPT-4o-mini model, and the 945
+temperature was fixed at 0.2 across all experiments 946
+to ensure response stability and reproducibility. 947
+13
+B Baselines & Implementation Details948
+• LLM-only generates answers directly from949
+the LLM using only the query as in-950
+put, without leveraging any external knowl-951
+edge or document context. In this set-952
+ting,GPT-4o-mini,gemini-2.0-flash, and953
+DeepSeek-v3.1 were used (OpenAI et al.,954
+2024; DeepMind / Google, 2025; DeepSeek-955
+AI et al., 2025). All queries were provided956
+using an identical prompt template, and this957
+configuration served as a baseline for evalu-958
+ating the intrinsic reasoning capability of the959
+models.960
+• LLM w/full doc provides the entire docu-961
+ment together with the query as input con-962
+text to the LLM. To accommodate input963
+length constraints, documents were split into964
+token-based segments, and partial responses965
+were generated for each query–document pair.966
+These partial responses were then aggregated967
+into a single context, which was re-input to968
+the LLM to generate the final answer. Depend-969
+ing on document length, between 2 and up to970
+20 segmented prompts were generated. The971
+same models as in the LLM-only setting were972
+used for response generation.973
+• BM25 retriever + LLMs is a traditional974
+information retrieval approach that evaluates975
+keyword relevance between queries and976
+documents based on term frequency (TF) and977
+inverse document frequency (IDF) (Robert-978
+son and Zaragoza, 2009). BM25 retrieval979
+was implemented using LangChain’s980
+BM25Retriever. Documents were segmented981
+at the section level based on section headers,982
+and the top k = 5 documents were retrieved983
+for each query. The retrieved documents984
+were directly inserted into the LLM prompt985
+for answer generation. For comparison,986
+Qwen1.5-14B, Mistral-7B, GPT-4o-mini,987
+andgemini-2.0-flash were used (Bai et al.,988
+2023; Mistral AI team, 2023; OpenAI et al.,989
+2024; DeepMind / Google, 2025).990
+• Ada-002 embedding retriever + LLMs uses991
+an OpenAI embedding model to vectorize text992
+and retrieves the top-k documents based on se-993
+mantic similarity, capturing contextual mean-994
+ing more effectively than BM25. In this exper-995
+iment, OpenAI’stext-embedding-ada-002996
+model was employed (OpenAI, 2022). The 997
+same section-level documents as in BM25 998
+were used as retrieval units; additionally, 999
+each document was further split into chunks 1000
+with chunk_size=500 and overlap=50. Co- 1001
+sine similarity between query and document 1002
+chunk embeddings was computed, and the 1003
+top k = 5 chunks were retrieved. The 1004
+retrieved chunks were used as LLM in- 1005
+put context, and Qwen1.5-14B, Mistral-7B, 1006
+GPT-4o-mini, and gemini-2.0-flash were 1007
+used for response generation. 1008
+• MindMap is a reasoning pipeline that inte- 1009
+grates LLMs with a KG and was implemented 1010
+using a KG stored in a Neo4j graph database. 1011
+Entities were extracted from the query us- 1012
+ing an LLM ( GPT-4o-mini) and matched 1013
+to the top 5 KG entities based on cosine 1014
+similarity with pre-built KG entity embed- 1015
+dings (all-MiniLM-L6-v2), using a similar- 1016
+ity threshold of 0.70. Graph traversal was 1017
+allowed up to 3 hops, with up to 3 short- 1018
+est paths collected between entities, and up 1019
+to 30 neighboring triplet candidates permit- 1020
+ted during neighborhood exploration. Final 1021
+evidence consisted of both path-based and 1022
+neighbor-based triplets, which were inserted 1023
+into the LLM context to generate the answer. 1024
+GPT-4o-mini was also used for response gen- 1025
+eration (Wen et al., 2024). 1026
+• KG-Retriever consists of a doc-level stage 1027
+that first selects documents relevant to the 1028
+query and a kg-level retrieval stage that di- 1029
+rectly retrieves KG triplets semantically simi- 1030
+lar to the query from the selected documents. 1031
+In this work, since documents are assumed 1032
+to exist independently, the doc-level stage 1033
+of the original KG-Retriever was omitted. 1034
+The query and each triplet were vectorized 1035
+using the same sentence embedding model, 1036
+Sentence-BERT (all-MiniLM-L6-v2), and 1037
+triplets were ranked based on cosine similarity. 1038
+Among triplets with similarity above 0.30, up 1039
+to 30 candidates were selected. Graph traver- 1040
+sal was restricted to 1-hop neighbor explo- 1041
+ration to utilize only factual information di- 1042
+rectly connected to the query. In the baseline 1043
+KG without structural constraints, multi-hop 1044
+expansion was considered to introduce unnec- 1045
+essary noise; therefore, the traversal depth 1046
+14
+was limited to 1 hop. The selected triplets1047
+were inserted into the LLM ( GPT-4o-mini)1048
+prompt to generate the final answer (Chen1049
+et al., 2025).1050
+C Conditional Structure Modeling Details1051
+Industrial standard documents commonly contain1052
+numerous conditional statements to specify manu-1053
+facturing conditions, allowable ranges, and appli-1054
+cability criteria. Such conditions may be described1055
+in sentence form; however, they are also frequently1056
+presented in tables. In the case of tables, rows and1057
+columns define conditions, while the correspond-1058
+ing cell values represent consequences that apply1059
+when those conditions are satisfied. These tabular1060
+representations can therefore be interpreted as hav-1061
+ing the same condition–consequence structure. In1062
+this section, we illustrate how tables in industrial1063
+standard documents can be interpreted as condi-1064
+tional statements through an example, and describe1065
+in detail how sentence-level conditional structures1066
+are modeled based on this interpretation.1067
+A single cell in a table can generally be de-1068
+composed into a condition part and a conse-1069
+quence part. For example, the cell highlighted1070
+in red in Figure 7(A) indicates that the specified1071
+regulation (permitted variation = 3 mm) applies1072
+when both the column condition ( thickness ≤1073
+5 mm ∨ weight ≤ 70 kg/m2) and the row con-1074
+dition (200 mm ≤ width ≤ 500 mm) are satisfied.1075
+This represents a prototypical conditional structure.1076
+However, conventional triplet extraction methods1077
+based on simplesubject–relation–objectrep-1078
+resentations typically decompose sentences into1079
+isolated fragments, such as “the width is greater1080
+than or equal to 200 mm” or “the thickness is less1081
+than or equal to 5 mm.” As a result, they struggle1082
+to capture such composite condition–consequence1083
+structures.1084
+To overcome this limitation, we newly define1085
+Sentence-level Conditional Structure Modeling,1086
+which systematically incorporates the conditional1087
+formats found in industrial standard documents1088
+into the triplet extraction process. In this modeling1089
+approach, conditional statements are decomposed1090
+into semantic units, and the logical relationships1091
+among conditions are explicitly represented in a1092
+structured manner, enabling more accurate encod-1093
+ing of condition–consequence relationships.1094
+Concretely, the conditional statement in this ex-1095
+ample can be decomposed into the following se-1096
+mantic units:1097
+case1has_condition_ANDhas_condition_ANDhas_consequence
+has_condition_ORhas_condition_OR
+Condition part Consequence part
+(C) Constructed Knowledge Graph
+Permitted Variations Over Specified Width (mm) for Thickness (mm) or Equivalent Weights (kg/m²)Specified Width,mm5 to 10, ExclTo 5, excl70 to 100, exclTo 70, excl43Over 200 to 50065500 to 80087800 and over
+(case1, has_condition_AND, 200 mm ≤ width ≤ 500 mm)(case1, has_condition_AND, logic_group1)(logic_group1, has_condtition_OR, thickness ≤ 5 mm)(logic_group1, has_condition_OR, weights ≤ 70 kg/m2)(case1, has_consequence, width_permitted_variation = 3 mm)
+(A) Specification Table Example
+200mm ≤ width ≤ 500mmlogic_group1
+thickness≤ 5mmexclweights≤ 70kg/m²excl
+width_permitted_variation = 3mm
+(B) Triplet Extraction Result
+Figure 7: An example of triplet extraction and KG con-
+struction using sentence-level conditional structure mod-
+eling. (A) Table data from the A6/A6M document, (B)
+triplets extracted by modeling sentence-level conditional
+structures, and (C) an example of a KG constructed from
+the extracted triplets.
+• C1: 200 mm < width ≤ 500 mm 1098
+• C2: thickness ≤ 5 mm 1099
+• C3: equivalent weight ≤ 70 kg/m2 1100
+• C4: permitted variation in width = 3 mm. 1101
+In this example, the thickness condition C2 and the 1102
+equivalent weight condition C3 are connected by 1103
+an OR relationship, forming a higher-level compos- 1104
+ite condition C2 ∨ C3. The width condition C1, on 1105
+the other hand, must be satisfied jointly with this 1106
+composite condition, resulting in an AND relation- 1107
+ship. Accordingly, the cell can be represented by 1108
+the following logical structure: 1109
+C1 ∧ (C2 ∨ C3) → C4. (8) 1110
+In our pipeline, such a structure is represented as 1111
+a single case node. When multiple logical oper- 1112
+ators (AND, OR) are mixed, we introduce interme- 1113
+diate logic_group nodes to explicitly structure 1114
+the composition. Eachlogic_group node groups 1115
+conditions combined by the same logical opera- 1116
+tor and is connected to the parentcase node via a 1117
+relation corresponding to that operator. By model- 1118
+ing conditional structures in this manner using a 1119
+single table-cell example, table-based conditional 1120
+statements can be interpreted in the same way as 1121
+sentence-level conditional statements, while pre- 1122
+serving the logical relationships among conditions 1123
+in the extracted triplets. In this study, we construct a 1124
+triplet extraction prompt that reflects this structure 1125
+and employ GPT-5-mini (OpenAI, 2025) as the 1126
+language model for triplet extraction. The triplets 1127
+extracted from this example are subsequently used 1128
+15
+as inputs for the Ontology-based KG construction1129
+stage.1130
+D Synonym Dictionary Construction1131
+Details1132
+In this appendix, we provide a detailed descrip-1133
+tion of the methodology and implementation for1134
+synonym dictionary construction, focusing on the1135
+entity–relation synonym dictionary procedure intro-1136
+duced in Section 3.3.1 of the main text. To mitigate1137
+redundancy arising from identical or semantically1138
+similar concepts being expressed with different sur-1139
+face forms in the constructed KG, and to ensure1140
+overall representational consistency, we construct1141
+synonym dictionaries for both entities and rela-1142
+tions. Rather than relying solely on surface-level1143
+text similarity, our approach aims to identify se-1144
+mantically equivalent concepts by additionally con-1145
+sidering contextual usage patterns and structural1146
+roles within the graph.1147
+First, for entity dictionary construction, we de-1148
+fine a final embedding for each entity a by integrat-1149
+ing textual semantics, local contextual information,1150
+and global structural information, as formalized in1151
+Eq. 9.1152
+efinal(a) =
+
+etext(a) ; ectx(a) ; epos(a)
+
+, (9)1153
+where the textual semantic embedding1154
+etext(a) is obtained using Sentence-1155
+BERT ( all-MiniLM-L6-v2) (Reimers and1156
+Gurevych, 2019) to capture semantic similarity1157
+among entities. To reflect how an entity is actually1158
+used within the KG, a local contextual embed-1159
+ding ectx(a) is computed using Personalized1160
+PageRank (PPR) (Gasteiger et al., 2022), which1161
+encodes contextual relatedness and importance1162
+with respect to neighboring nodes. In addition, a1163
+global structural embedding epos(a) is derived1164
+via spectral embedding based on the eigenvectors1165
+of the graph Laplacian (Belkin and Niyogi,1166
+2001), capturing the entity’s overall structural1167
+position and role in the graph. By combining1168
+these two components, the resulting embedding1169
+jointly accounts for both local context and global1170
+structure.1171
+The integrated entity embeddings efinal(a) are1172
+then clustered using HDBSCAN (McInnes et al.,1173
+2017) to automatically form synonym sets of enti-1174
+ties that are semantically and structurally similar.1175
+Entity and relation representations in the KG ex-1176
+hibit uneven domain-specific frequency and distri-1177
+bution, and the size of synonym sets is difficult to1178
+predefine.HDBSCAN is therefore adopted for its abil- 1179
+ity to identify semantically dense clusters without 1180
+requiring the number of clusters to be specified in 1181
+advance, while effectively separating noisy repre- 1182
+sentations from meaningful clusters. 1183
+For the relation dictionary, in addition to an 1184
+embedding composition similar to that of entities, 1185
+the functional characteristics of relations are ex- 1186
+plicitly incorporated. Specifically, for each relation 1187
+r, we augment the textual semantic, contextual, 1188
+and structural embeddings with a Selectional Pref- 1189
+erence embedding eprefer(r), which captures the 1190
+distribution of subject–object entity types that the 1191
+relation predominantly connects: 1192
+efinal(r) =
+
+etext(r) ; ectx(r) ;
+epos(r) ; eprefer(r)
+
+, (10) 1193
+where eprefer(r) is designed to capture not only 1194
+semantic similarity but also functional similarity 1195
+by modeling the type distribution of entity pairs 1196
+(u, v) in which relation r frequently occurs as a 1197
+probability distribution p(t | u, v). Finally, the rela- 1198
+tion embeddings are also clustered using HDBSCAN, 1199
+and within each cluster, the relation closest to the 1200
+cluster centroid is selected as the canonical pred- 1201
+icate to standardize relation representations. The 1202
+resulting entity–relation synonym dictionary is sub- 1203
+sequently used in KG normalization and refinement 1204
+processes, contributing to the reduction of redun- 1205
+dant expressions and the improvement of overall 1206
+structural consistency of the graph. 1207
+E Additional Results 1208
+E.1 Performance on Toxic Clause Detection 1209
+Task 1210
+The preceding QA experiments demonstrated that 1211
+the proposed approach can accurately retrieve and 1212
+reason over factual information in standards docu- 1213
+ments. However, in practical industrial document 1214
+usage scenarios, it is crucial not only to gener- 1215
+ate correct answers but also to precisely identify 1216
+subtle modifications in document content or nu- 1217
+merical manipulations. In particular, in contracts 1218
+and industrial standards documents, even minor 1219
+changes in numerical values, conditions, or word- 1220
+ing can directly lead to regulatory violations or 1221
+toxic clauses. Accordingly, to verify how robustly 1222
+the proposed method can detect such rule-based 1223
+semantic modifications, we additionally conduct 1224
+a Toxic Clause Detection Task. 1225
+16
+Table 8: Performance on API_2W toxic clause detection
+task (F1, Accuracy, Recall).
+Type Method F1 Acc Recall
+LLM-only
+GPT-4o-mini 0.558 0.667 0.438
+gemini-2.0-flash 0.000 0.520 0.000
+DeepSeek-v3.1 0.591 0.685 0.471
+LLM w/full doc
+GPT-4o-miniw/full doc 0.812 0.833 0.752
+gemini-2.0-flash 0.527 0.667 0.364
+DeepSeek-v3.1 0.850 0.857 0.890
+Text-only RAG
+BM25+Qwen1.5-14B 0.870 0.869 0.895
+BM25+Mistral-7B 0.837 0.8260.917
+BM25+GPT-4o-mini 0.878 0.879 0.886
+BM25+gemini-2.0-flash0.887 0.888 0.895
+Dense+Qwen1.5-14B 0.871 0.872 0.893
+Dense+Mistral-7B 0.834 0.825 0.809
+Dense+GPT-4o-mini 0.851 0.861 0.826
+Dense+gemini-2.0-flash0.851 0.864 0.818
+KG-RAG MindMap (Wen et al., 2024) 0.819 0.812 0.880
+KG Retriever (Chen et al., 2024)0.9000.905 0.893
+Ontology-basedOntology-based MindMap0.8280.8320.883
+KG-RAG Ontology-based KG-Retriever0.9100.9130.926
+The toxic clause detection task is generally de-1226
+fined as the problem of identifying clauses in con-1227
+tracts that may be unfavorable or cause legal issues.1228
+In the context of contracts, statements that are in-1229
+consistent with the rules or conditions specified in1230
+the document can also be regarded as toxic clauses.1231
+In this study, we define the toxic clause detection1232
+task as a classification problem in which both an1233
+original sentence from the document and a modi-1234
+fied sentence—with partial alterations in numerical1235
+values or key terms—are presented, and the model1236
+is required to determine whether the sentence com-1237
+plies with the rules and constraints of the original1238
+document.1239
+For the experiments, we construct a dataset con-1240
+sisting of 252 classification instances using the1241
+API_2W document, and representative examples1242
+of the dataset are provided in Appendix Table 10.1243
+As shown in Table 8, the Ontology-based KG-1244
+Retriever achieves the best performance across1245
+all evaluation metrics. In addition, the Ontology-1246
+based MindMap consistently outperforms the orig-1247
+inal MindMap without ontology integration. These1248
+results indicate that the proposed approach goes1249
+beyond simple retrieval and more accurately pre-1250
+serves rules that involve condition–consequence1251
+structures and numerical constraints.1252
+E.2 Performance under Different k-Hop1253
+Neighborhoods1254
+Figure 8 presents the experimental results with1255
+varying hop sizes for the two proposed methods1256
+that incorporate the ontology structure. Ontology-1257
+based MindMap achieves its best performance at1258
+/uni00000014/uni00000010/uni0000004b/uni00000052/uni00000053/uni00000015/uni00000010/uni0000004b/uni00000052/uni00000053/uni00000016/uni00000010/uni0000004b/uni00000052/uni00000053
+0.2
+0.3
+0.4
+0.5
+0.6
+0.7
+/uni00000013/uni00000011/uni00000017/uni00000016/uni0000001b/uni00000013/uni00000011/uni00000017/uni00000019/uni0000001a
+/uni00000013/uni00000011/uni00000018/uni00000015/uni0000001c
+/uni00000013/uni00000011/uni00000015/uni0000001a/uni00000018/uni00000013/uni00000011/uni00000015/uni00000019/uni00000013
+/uni00000013/uni00000011/uni00000016/uni00000015/uni00000016/uni00000013/uni00000011/uni00000015/uni0000001a/uni00000018
+/uni00000013/uni00000011/uni00000017/uni0000001b/uni0000001b
+/uni00000013/uni00000011/uni00000019/uni00000013/uni00000018
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003/uni00000030/uni0000004c/uni00000051/uni00000047/uni00000030/uni00000044/uni00000053
+/uni00000014/uni00000010/uni0000004b/uni00000052/uni00000053/uni00000015/uni00000010/uni0000004b/uni00000052/uni00000053/uni00000016/uni00000010/uni0000004b/uni00000052/uni00000053
+/uni00000013/uni00000011/uni00000019/uni00000016/uni00000014/uni00000013/uni00000011/uni00000019/uni00000017/uni00000019/uni00000013/uni00000011/uni00000019/uni00000015/uni00000018
+/uni00000013/uni00000011/uni00000016/uni0000001b/uni0000001b/uni00000013/uni00000011/uni00000017/uni00000014/uni0000001c/uni00000013/uni00000011/uni00000017/uni00000013/uni00000016
+/uni00000013/uni00000011/uni00000019/uni00000019/uni00000017/uni00000013/uni00000011/uni00000019/uni0000001a/uni0000001c/uni00000013/uni00000011/uni00000019/uni00000018/uni0000001b
+/uni00000032/uni00000051/uni00000057/uni00000052/uni0000004f/uni00000052/uni0000004a/uni0000005c/uni00000010/uni00000045/uni00000044/uni00000056/uni00000048/uni00000047/uni00000003/uni0000002e/uni0000002a/uni00000010/uni00000035/uni00000048/uni00000057/uni00000055/uni0000004c/uni00000048/uni00000059/uni00000048/uni00000055
+/uni00000029/uni00000014/uni00000025/uni0000002f/uni00000028/uni00000038/uni00000035/uni00000052/uni00000058/uni0000004a/uni00000048
+Figure 8: Performance across different k-hop settings
+using the API_2W rule data. Across all evaluation met-
+rics, the Ontology-based MindMap achieves its best
+performance at3-hop, whereas the Ontology-based KG-
+Retriever performs best at2-hop.
+3-hop, while Ontology-based KG-Retriever attains 1259
+the highest performance at 2-hop. These results 1260
+suggest that the optimal hop size differs due to 1261
+the distinct structural characteristics of the two ex- 1262
+ploration strategies. Specifically, Ontology-based 1263
+KG-Retriever explores multidimensionally related 1264
+nodes at both the ontology and KG levels, whereas 1265
+Ontology-based MindMap follows a relatively lin- 1266
+ear exploration process. As a result of these struc- 1267
+tural differences, the optimal number of hops varies 1268
+between the two methods. Accordingly, in this ex- 1269
+periment, we apply the optimal hop size separately 1270
+for each methodology. 1271
+F Dataset Details 1272
+Table 9: Representative Question Examples from
+IndusSpec-QA. This table presents representative ques-
+tions extracted from the IndusSpec-QA dataset. Each
+question type (rule, multi-hop, table) reflects the struc-
+tural characteristics and query patterns of industrial stan-
+dard documents.
+Type Question Answer
+rule What does CE stand for in the con-
+text of heat analysis?
+carbon
+equiva-
+lent
+multi-
+hop
+What processes did TMCP evolve
+from, as discussed in the biblio-
+graphical reference regarding fine-
+grained steel?
+controlled
+rolling
+pro-
+cesses
+table What is the maximum percentage
+of Nickel allowed in the chemical
+requirements for Grade 60?
+1
+17
+Table 10: Representative Toxic Clause Question Exam-
+ples. This table presents example questions from the
+toxic clause dataset. The questions reflect potentially
+risky clauses related to industrial standards, and the
+answers are derived based on the corresponding speci-
+fications. In particular, answers labeled as No indicate
+toxic clauses that conflict with the actual standards.
+Question Answer
+Does the regulation allow specimens to be taken
+without being adjacent to tensile test coupons?
+No
+If a specimen fails during the drop-weight test,
+must two additional specimens from each plate
+be retested?
+Yes
+Are blisters considered acceptable surface imper-
+fections even if they do not reduce the thickness
+below minimum?
+No
+G Synonym Dictionary Visualization1273
+Figure 9: Relation synonym dictionary Visualization.
+This figure illustrates a subset of the hierarchical rela-
+tionships between canonical predicates and their corre-
+sponding paraphrases using a sunburst diagram. Each
+canonical predicate encompasses a set of outer-level syn-
+onymous expressions, visually grouping semantically
+similar relation expressions into a single cluster.
+H Ontology-based KG Visualization 1274
+Figure 10: Visualization of an Ontology-based KG us-
+ingNeo4j. Node colors indicate the hierarchical struc-
+ture of the document: red nodes represent the document
+name, orange nodes denote sections, yellow nodes in-
+dicate subsections, and green nodes correspond to sub-
+subsections. Blue nodes represent concrete entities men-
+tioned in the document. Edges, such as [has_child]
+and[mention], explicitly encode relationships between
+the document structure and the extracted knowledge.
+18
+I Prompt Templates for Conditional-based triplet Extraction 1275
+Table-based triplet Extraction Prompt
+Instruction
+You are an expert in constructing knowledge graphs. Your task is to extract knowledge triplets (subject–relation–object)
+from the given tabular content. The input content may include:
+• Tabular content (structured tables with conditions and permitted variations)
+• Table titles
+• Table captions appearing outside the table
+Output Format
+• Use the following structure for each triplet:
+<triplet> {subject} <subj> {object} <obj> {relation_name}
+• <subj> and <obj> are explicit boundary markers indicating the end of the subject and object spans, respectively.
+They are not natural language tokens but structural delimiters.
+Guidelines (Excerpt)
+1. Extract only semantically meaningful and domain-relevant relations.
+2. For enumerations or numerical constraints:
+• Capture requirement constraints (e.g., thickness < 3 mm).
+• Normalize all numerical values into SI units (e.g., millimeters, Celsius), even if the input uses mixed units.
+3. For tabular data with conditions:
+• If the input starts with the | character, treat it strictly as table data: do not apply any plain text rules, and only use
+table-specific rules.
+• When processing tables, the ONLY allowed relations are:
+– If there is only one condition → has_condition
+– If there are multiple conditions → has_condition_AND,has_condition_OR
+– If there is only one consequence → has_consequence
+– If there are multiple consequences → has_consequence_AND,has_consequence_OR
+– Do not use any other relation names.
+• Each cell in a table must be represented as a rule node (caseX).
+– For every non-empty cell, create a new case node (case1,case2, . . . ).
+– Each case node must include:
+* all row labels as conditions,
+* all column labels as conditions,
+* and the cell value as the consequence.
+• When logical expressions contain both AND and OR, you must introduce a logic_groupX node.
+– Inside alogic_groupX, you must use ONLY one type of edge: eitherhas_condition_AND,has_condition_OR,
+has_consequence_AND, orhas_consequence_OR.
+– Thelogic_groupX itself must then connect to the case node (caseX) using the appropriate relation among the
+same four types.
+– Always preserve operator precedence by grouping first.
+Example: (A OR B) AND C → A and B are both connected to a logic_groupX with has_condition_OR; then
+thislogic_groupX and C are connected tocaseX with has_condition_AND.
+– Always include the column/row name together with the cell value when forming a condition or consequence.
+4. Always include the corresponding row or column name when forming a condition or consequence.
+5. Do not directly connect conditions to consequences; always connect them through a caseX orlogic_groupX.
+6. Keep relation names consistent and in snake_case.
+7. Do not generate vague or trivial relations.
+Examples (Excerpt)
+• Example 1 - Unit Conversion
+Title: Dimensions -> Thickness
+Input: The plates shall have a minimum thickness of 3/8 in. [10 mm].
+Output: <triplet> plates <subj> 10 mm <obj> has_minimum_thickness
+• Example 2 - Table (Simple Condition)
+Title: Table -> Permitted Variation
+Input (excerpt):| Thickness Range | Thickness Difference | Minimum Number of Tension Tests |
+| Under 10 mm | <= 2 mm | Two tests per heat |
+Output: <triplet> case1 <subj> thickness < 10 mm <obj> has_condition_AND
+<triplet> case1 <subj> thickness_difference <= 2 mm <obj> has_condition_AND<triplet> case1 <subj> two_tests_per_heat <obj> has_consequence
+1276
+19
+Now extract triplets from the following section:
+Title:{title}
+Input:{text}
+Output:
+1277
+Text-based triplet Extraction Prompt
+Instruction
+You are an expert in constructing knowledge graphs. Your task is to extract knowledge triplets (subject–relation–object)
+from the given document section. The input content may include:
+• Plain text (technical specifications, requirements, descriptions)
+• Mathematical expressions (formulas, equations, definitions)
+• Enumerated content (lists, measurement conversions)
+• Tabular content (structured tables with conditions and permitted variations)
+Output Format
+• Use the following structure for each triplet:
+<triplet> {subject} <subj> {object} <obj> {relation_name}
+• <subj> and <obj> are explicit boundary markers indicating the end of the subject and object spans, respectively.
+They are not natural language tokens but structural delimiters.
+Guidelines (Excerpt)
+1. Extract only semantically meaningful and domain-relevant relations.
+2. For plain text:
+• Coverage or scope → (covers, applies_to)
+• Process or production → (produced_by, used_for)
+• Definitions → (stands_for, defined_as)
+• Specifications → (has_condition_AND, has_condition_OR, has_condition, has_consequence, has_consequence_OR,
+has_consequence_AND)
+3. For mathematical formulas:
+• Variable definitions → (X <subj> Y <obj> stands_for)
+• Formula representation → (X <subj> formula <obj> calculated_by)
+• Component terms → (X <subj> Y <obj> includes_component)
+• Operations → (X <subj> Y <obj> divided_by / multiplied_by / added_to / subtracted_by)
+4. For enumerations or units:
+• Capture requirement constraints (e.g., thickness ≥ 3 mm)
+• Always normalize numerical values into SI units (millimeters, Celsius, etc.) in the output triplets, even if the input
+uses mixed units.
+5. When text starts with a numbering pattern (e.g., "1.", "2.1", "3.2.4"), do not extract that numeric label as a triplet. Only
+process the semantic content that follows.
+6. Keep relation naming consistent (snake_case).
+7. Use technical terms exactly as written in the input text.
+8. Do not generate vague or trivial relations.
+9. Do NOT output placeholder tokens such as "<relation>" or generic words like "relation". Always replace with an actual
+relation name (e.g., covers, produced_by, equivalent_to).
+Examples (Excerpt)
+• Example 1 - Unit Conversion
+Title: Dimensions -> Thickness
+Input: The plates shall have a minimum thickness of 3/8 in. [10 mm].
+Output: <triplet> plates <subj> 10 mm <obj> has_minimum_thickness
+• Example 2 - Formula
+Title: Supplementary Requirements -> Maximum Carbon Equivalent for Weldability
+Input: CE = C + Mn/6 + (Cr + Mo + V) /5 + (Ni + Cu) / 51
+Output: <triplet> CE <subj> carbon equivalent <obj> stands_for
+<triplet> CE <subj> C + Mn/6 + (Cr + Mo + V) /5 + (Ni + Cu) / 51 <obj> calculated_by<triplet> carbon equivalent <subj> C <obj> includes_component<triplet> carbon equivalent <subj> Mn <obj> includes_component
+• Example 3 - Conditional Requirement
+Title: Heat Treatment
+Input: If the plate thickness exceeds 2 in. [50 mm], heat treatment shall be required.
+Output: <triplet> case1 <subj> plate thickness ≥ 50 mm <obj> has_condition
+1278
+20
+<triplet> case1 <subj> heat treatment <obj> has_consequence
+Now extract triplets from the following section:
+Title:{title}
+Input:{text}
+Output:
+1279
+21

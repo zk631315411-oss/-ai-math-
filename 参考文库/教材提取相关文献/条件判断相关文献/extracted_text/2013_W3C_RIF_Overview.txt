@@ -1,0 +1,207 @@
+RIF Overview (Second Edition) 
+ 
+ RIF Overview (Second Edition) 
+ 
+ W3C Working Group Note 5 February 2013 
+ This version: http://www.w3.org/TR/2013/NOTE-rif-overview-20130205/ Latest version: http://www.w3.org/TR/rif-overview/ Previous version: http://www.w3.org/TR/2012/NOTE-rif-overview-20121211/ Editors: Michael Kifer, State University of New York at Stony Brook Harold Boley, National Research Council Canada 
+ A color-coded version of this document showing changes made since the previous version is also available. 
+ 
+ This document is also available in these non-normative formats: PDF version . 
+ 
+ Copyright © 2013 W3C ® ( MIT , ERCIM , Keio , Beihang ), All Rights Reserved. W3C liability , trademark and document use rules apply. 
+ 
+ 
+ Abstract 
+ 
+ 
+ 
+ This document is an overview of the Rule Interchange Format (RIF). It provides a high-level explanation of RIF concepts and architecture as well as a general survey of RIF documents. 
+ 
+ 
+ 
+ Status of this Document 
+ 
+ May Be Superseded 
+ 
+ This section describes the status of this document at the time of its publication. Other documents may supersede this document. A list of current W3C publications and the latest revision of this technical report can be found in the W3C technical reports index at http://www.w3.org/TR/. 
+ 
+ Set of Documents 
+ 
+ This document is being published as one of a set of 13 documents: 
+ 
+ RIF Overview (Second Edition) (this document) 
+ 
+ RIF Use Cases and Requirements (Second Edition) 
+ 
+ RIF Core Dialect (Second Edition) 
+ 
+ RIF Basic Logic Dialect (Second Edition) 
+ 
+ RIF Production Rule Dialect (Second Edition) 
+ 
+ RIF Framework for Logic Dialects (Second Edition) 
+ 
+ RIF Datatypes and Built-Ins 1.0 (Second Edition) 
+ 
+ RIF RDF and OWL Compatibility (Second Edition) 
+ 
+ OWL 2 RL in RIF (Second Edition) 
+ 
+ RIF Combination with XML data (Second Edition) 
+ 
+ RIF In RDF (Second Edition) 
+ 
+ RIF Test Cases (Second Edition) 
+ 
+ RIF Primer (Second Edition) 
+ 
+ 
+ 
+ Document Unchanged 
+ 
+ There have been no changes to the body of this document since the previous version . For details on earlier changes, see the change log . 
+ 
+ Please Send Comments 
+ 
+ Please send any comments to public-rif-comments@w3.org ( public
+ archive ). Although work on this document by the Rule Interchange Format (RIF) Working Group is complete, comments may be addressed in the errata or in future revisions. Open discussion among developers is welcome at public-rif-dev@w3.org ( public archive ). 
+ 
+ No Endorsement 
+ 
+ Publication as a Working Group Note does not imply endorsement by the W3C Membership. This is a draft document and may be updated, replaced or obsoleted by other documents at any time. It is inappropriate to cite this document as other than work in progress. 
+ 
+ Patents 
+ 
+ This document was produced by a group operating under the 5 February 2004 W3C Patent Policy . W3C maintains a public list of any patent disclosures made in connection with the deliverables of the group; that page also includes instructions for disclosing a patent. An individual who has actual knowledge of a patent which the individual believes contains Essential Claim(s) must disclose the information in accordance with section 6 of the W3C Patent Policy . 
+ 
+ 
+ Table of Contents 
+ 
+ 
+ 1 Introduction 
+ 
+ 2 RIF Dialects 
+ 
+ 3 RIF Framework for Logic Dialects 
+ 
+ 4 RDF and OWL Compatibility 
+ 
+ 5 A General Survey of the RIF Documents 
+ 
+ 6 References 
+ 
+ 7 Appendix: Change Log (Informative) 
+ 
+ 1 Introduction 
+ 
+ The Rule Interchange Format (RIF) Working Group was chartered by the World Wide Web Consortium in 2005 to create a standard for exchanging rules among rule systems, in particular among Web rule engines. RIF focused on exchange rather than trying to develop a single one-fits-all rule language because, in contrast to other Semantic Web standards, such as RDF , OWL , and SPARQL , it was immediately clear that a single language would not satisfy the needs of many popular paradigms for using rules in knowledge representation and business modeling. But even rule exchange alone was recognized as a daunting task. Known rule systems fall into three broad categories: first-order, logic-programming, and action rules. These paradigms share little in the way of syntax and semantics. Moreover, there are large differences between systems even within the same paradigm. 
+ 
+ Given this diversity, what is the most useful notion of rule exchange? The approach taken by the Working Group was to design a family of languages, called dialects , with rigorously specified syntax and semantics. The family of RIF dialects is intended to be uniform and extensible . RIF uniformity means that dialects are expected to share as much as possible of the existing syntactic and semantic apparatus. Extensibility here means that it should be possible for
+motivated experts to define a new RIF dialect as a syntactic
+extension to an existing RIF dialect, with new elements
+corresponding to desired additional functionality. These new
+RIF dialects would be non-standard when defined, but might
+eventually become standards. 
+ 
+ Because of the emphasis on rigor, the word format in the name of RIF is
+somewhat of an understatement. RIF in fact provides more than just a
+format. However, the concept of format is essential to the way RIF is
+intended to be used. Ultimately, the medium of exchange between different
+rule systems is XML, a format for data exchange. Central to the idea behind rule exchange through RIF is that different systems will provide syntactic mappings from their native languages to RIF dialects and back. These mappings are required to be semantics-preserving , and thus rule sets can be communicated from one system to another provided that the systems can talk through a suitable dialect, which they both support. 
+ 
+ 2 RIF Dialects 
+ 
+ The RIF Working Group has focused on two kinds of dialects: logic-based dialects and dialects for rules with actions . Generally, logic-based dialects include languages that employ some kind of logic, such as first-order logic (often restricted to Horn logic) or non-first-order logics underlying the various logic programming languages (e.g., logic programming under the well-founded or stable semantics). The rules-with-actions dialects include production rule systems, such as Jess , Drools and JRules , as well as reactive (or event-condition-action) rules, such as Reaction RuleML and XChange . Due to the limited resources of the RIF Working Group, it defined only two logic dialects, the Basic Logic Dialect (RIF-BLD) and a subset, the RIF Core Dialect , shared with RIF-PRD; the Production Rule Dialect (RIF-PRD) is the only rules-with-actions dialect defined by the group. Other dialects are expected to be defined by the various user communities. 
+ 
+ Present and future RIF dialects are expected to share datatypes, built-in functions, and built-in predicates as defined by RIF Datatypes and Built-Ins (RIF-DTB). In particular, the current dialects RIF-BLD, RIF-Core, and RIF-PRD all share the foundations of RIF-DTB 1.0. 
+ 
+ 3 RIF Framework for Logic Dialects 
+ 
+ The RIF Working Group spent almost four years on developing the above three dialects, and this begs a question: If dialect development is so time consuming, who will donate the necessary resources for the next round of development and who will ensure the uniformity of community-developed dialects once the RIF Working Group disbands? The Working Group partially addressed these questions by also developing an extensibility framework, called the Framework for Logic Dialects , or RIF-FLD. A comparable framework for rules with actions might be developed later. 
+ 
+ Developing RIF-FLD as a framework turned out to be feasible because despite the diversity of logical theories underlying the different logic rule systems, they share much of the same syntactic and semantic machinery. Moreover, the ways to combine the different pieces of that machinery in order to create those logic systems are well studied. However, the RIF-FLD specification is unique in that it digests much of this knowledge, presents it in a coherent form, and uses XML even on the framework level. 
+ 
+ RIF-FLD is a very general logic language that includes a great deal of commonly used syntactic and semantic apparatus; however, it purposely leaves certain parameters unspecified to enable designers of concrete dialects to fill in the necessary details. For instance, RIF-FLD provides machinery to tweak the rules of syntax through the notion of signatures . It also specifies certain semantic notions, such as models and logical entailment, but it leaves certain other options open (for instance, which exact models are to be used for entailment). A dialect designer can then define the syntax of a dialect by specializing it from the syntax of RIF-FLD, and the semantics by specializing it from the semantics of RIF-FLD. While doing so, the designer will make choices by selecting from the options provided by RIF-FLD, but he or she will not have to repeat the definitions of formulas, datatypes, models, entailment, and so on. This approach is illustrated using the RIF-BLD dialect . This dialect is specified in two ways, both normative: directly, by spelling out all the definitions, which takes about 40 dense pages, and by specialization from RIF-FLD -- just about 5 pages. Any discrepancy between the two specifications is to be treated as a bug that must be clarified and corrected. This dual specification of RIF-BLD is also intended to serve as an example of dialect design by specialization from the RIF framework -- the preferred mode of specification for various future logic dialects. 
+ 
+ The RIF framework is not a monument that is cut in stone and is likely to see several extensions in the future. One, as we already mentioned, might be to cover the paradigm of actions and reactive rules. 
+ 
+ 4 RDF and OWL Compatibility 
+ 
+ Recognizing that RIF rules should be able to interface with RDF and OWL ontologies, the RIF Working Group has also defined the necessary concepts to ensure compatibility of RIF with RDF and OWL. RIF, RDF, and OWL are exchange languages with dissimilar syntaxes and semantics. How, then, should RIF rules refer to RDF and OWL facts, and what is the logical meaning of the overall language? RIF-RDF and OWL Compatibility defines just that. The basic idea is that RIF uses its frame syntax to communicate with RDF/OWL. These frames are mapped onto RDF triples and a joint semantics is defined for the combination. 
+ 
+ 5 A General Survey of the RIF Documents 
+ 
+ Besides this Overview, the RIF Working Group has produced twelve documents, six of which have become W3C Recommendations. The following general survey can help the reader to navigate these documents. 
+ 
+ RIF Primer . The Primer is a self-contained informal introduction to RIF, developing simple rule examples over movie data. 
+ 
+ RIF-BLD: The Basic Logic Dialect . This is one of the two major dialects, and the main logic-based dialect, developed by the group. Technically, this dialect corresponds to Horn logic with various syntactic and semantic extensions. The main syntactic extensions include the frame syntax and predicates with named arguments. The main semantic extensions include datatypes and externally defined predicates. Although this dialect is not expressive enough for many applications of rules, it covers many existing rule systems, and development of such a dialect was necessary as a starting point for future, more expressive dialects. This future activity is expected to take place within the RIF extensibility framework, RIF-FLD. 
+ 
+ RIF-PRD: The Production Rule Dialect . This is the other major dialect developed by the group, capturing the main aspects of various production rule systems. Serious industrial interest in production rule technology has been demonstrated by major players. Production rules, as they are currently practiced in main-stream systems like Jess or JRules , are defined using ad hoc computational mechanisms, which are not based on a logic. For this reason, RIF-PRD is not part of the suite of logical RIF dialects and stands apart from them. However, significant effort has been extended to ensure as much sharing with the other dialects as possible. This sharing was the main reason for the development of the RIF Core dialect. 
+ 
+ RIF-Core: The Core Dialect . This dialect is a subset of both RIF-BLD and RIF-PRD based on RIF-DTB 1.0, thus enabling limited rule exchange between logic rule dialects and production rules. RIF-Core corresponds to Horn logic without function symbols (often called 'Datalog') with a number of extensions to support features such as objects and frames as in F-logic, internationalized resource identifiers for concepts, and XML Schema datatypes. 
+ 
+ RIF-FLD: The Framework for Logic Dialects . RIF-FLD is not a dialect in its own right, but rather a general logical extensibility framework. It was introduced in order to drastically lower the amount of effort needed to define and verify new logic dialects that extend the capabilities of RIF-BLD. 
+ 
+ RIF-RDF+OWL: RDF and OWL Compatibility . Rules interchanged via RIF may depend on or be used in combination with RDF data and RDF Schema or OWL ontologies. This document enables interoperability between RIF and these other Semantic Web standards. It defines the syntax and semantics of combined RIF+RDF and RIF+OWL 2 languages. 
+ 
+ RIF-DTB: Datatypes and Built-ins . Rules often refer to built-ins (e.g., arithmetics, string manipulation) and datatypes (e.g., integers, strings, Booleans). To enable semantics-preserving exchange of such rules, it is necessary that most commonly used datatypes and built-in functions and predicates are identified and their semantics are defined precisely. This purpose is served by the RIF-DTB document. 
+ 
+ RIF+XML-Data: RIF Combination with XML Data . Rules should be combinable with XML data sources. This document specifies how such combinations can be done. 
+ 
+ RIF-OWLRL: OWL 2 RL in RIF . OWL 2 RL is an OWL 2 subset defined via a partial axiomatization of the OWL 2 RDF-based semantics in the form of implications. That definition can be used as the basis for a rule-based implementation as shown in this document using RIF. 
+ 
+ RIF in RDF . Although the standard exchange syntax for RIF is XML, as defined in the dialect specifications, it is possible to map this XML to RDF graphs, so that RDF systems can more easily store and process RIF documents. Since RDF is compatible with RIF frames (see RIF RDF and OWL Compatibility ), this mapping also provides an interoperable way to write RIF rules that process RIF documents. 
+ 
+ RIF-UCR: Use Cases and Requirements . One of the first tasks of the RIF Working Group was to identify classes of applications that the RIF suite of dialects should be able to address, and use that to derive requirements to RIF. To a large extent, the design of RIF dialects was driven by the requirements found in the RIF-UCR document. 
+ 
+ RIF-Test: Test Cases . This document is primarily of concern to RIF implementers. It includes the description of test cases -- both positive and negative -- that can be used in order to give an indication of whether a particular implementation of a RIF dialect is compliant with the specifications. There is a companion repository of the source code for the various test cases. 
+ 
+ 6 References 
+ 
+ 
+ [OWL-Reference] OWL Web Ontology Language Reference , M. Dean, G. Schreiber, Editors, W3C Recommendation, 10 February 2004. Latest version available at http://www.w3.org/TR/owl-ref/ . 
+ 
+ [RDF-Concepts] Resource Description Framework (RDF): Concepts and Abstract Syntax] , G. Klyne, J. Carrol, Editors, W3C Recommendation, 10 February 2004, http://www.w3.org/TR/2004/REC-rdf-concepts-20040210/ . Latest version available at http://www.w3.org/TR/rdf-concepts/ . 
+ 
+ [RIF-BLD] RIF Basic Logic Dialect (Second Edition) Harold Boley, Michael Kifer, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-bld-20130205/ . Latest version available at http://www.w3.org/TR/rif-bld/ . 
+ 
+ [RIF-Core] RIF Core Dialect (Second Edition) Harold Boley, Gary Hallmark, Michael Kifer, Adrian Paschke, Axel Polleres, Dave Reynolds, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-core-20130205/ . Latest version available at http://www.w3.org/TR/rif-core/ . 
+ 
+ [RIF-DTB] RIF Datatypes and Built-Ins 1.0 (Second Edition) Axel Polleres, Harold Boley, Michael Kifer, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-dtb-20130205/ . Latest version available at http://www.w3.org/TR/rif-dtb/ . 
+ 
+ [RIF-Primer] RIF Primer (Second Edition) Leora Morgenstern, Chris Welty, Harold Boley, Gary Hallmark, eds. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-primer-20130205/ . Latest version available at http://www.w3.org/TR/rif-primer/ . 
+ 
+ [RIF in RDF] RIF In RDF (Second Edition) Sandro Hawke, Axel Polleres, eds. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-in-rdf-20130205/ . Latest version available at http://www.w3.org/TR/rif-in-rdf/ . 
+ 
+ [RIF+XML-Data] RIF Combination with XML data (Second Edition) Christian de Sainte Marie, editor. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-xml-data-20130205/ . Latest version available at http://www.w3.org/TR/rif-xml-data/ . 
+ 
+ [RIF-OWLRL] OWL 2 RL in RIF (Second Edition) Dave Reynolds, editor. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-owl-rl-20130205/ . Latest version available at http://www.w3.org/TR/rif-owl-rl/ . 
+ 
+ [RIF-FLD] RIF Framework for Logic Dialects (Second Edition) Harold Boley, Michael Kifer, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-fld-20130205/ . Latest version available at http://www.w3.org/TR/rif-fld/ . 
+ 
+ [RIF-PRD] RIF Production Rule Dialect (Second Edition) Christian de Sainte Marie, Gary Hallmark, Adrian Paschke, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-prd-20130205/ . Latest version available at http://www.w3.org/TR/rif-prd/ . 
+ 
+ [RIF-RDF+OWL] RIF RDF and OWL Compatibility (Second Edition) Jos de Bruijn, Chris Welty, eds. W3C Recommendation, 5 February 2013, http://www.w3.org/TR/2013/REC-rif-rdf-owl-20130205/ . Latest version available at http://www.w3.org/TR/rif-rdf-owl/ . 
+ 
+ [RIF-Test] RIF Test Cases (Second Edition) Stella Mitchell, Leora Morgenstern, Adrian Paschke, eds. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-test-20130205/ . Latest version available at http://www.w3.org/TR/rif-test/ . 
+ 
+ [RIF-UCR] RIF Use Cases and Requirements (Second Edition) Adrian Paschke, Leora Morgenstern, David Hirtle, Allen Ginsberg, Paula-Lavinia Patranjan, Frank McCabe, eds. W3C Working Group Note, 5 February 2013, http://www.w3.org/TR/2013/NOTE-rif-ucr-20130205/ . Latest version available at http://www.w3.org/TR/rif-ucr/ . 
+ 
+ [SPARQL] SPARQL Query Language for RDF , E. Prud'hommeaux, A. Seaborne (Editors), W3C Recommendation, World Wide Web Consortium, 12 January 2008, http://www.w3.org/TR/2008/REC-rdf-sparql-query-20080115/ . Latest version available at http://www.w3.org/TR/rdf-sparql-query/ . 
+ 
+ [GL88] The Stable Model Semantics for Logic Programming , M. Gelfond and V. Lifschitz. Logic Programming: Proceedings of the Fifth Conference and Symposium, pages 1070-1080, 1988. 
+ 
+ [GRS91] The Well-Founded Semantics for General Logic Programs , A. Van Gelder, K.A. Ross, J.S. Schlipf. Journal of ACM, 38:3, pages 620-650, 1991. 
+ 
+ 
+ 
+ 
+ 7 Appendix: Change Log (Informative) 
+ 
+ Various wording changes; fixed references, links; typos fixed. 
+ 
+ Added "RIF in RDF" to the General Survey and the References. 
+ 
+ Added "RIF Primer" to the General Survey and the References. 
+ 

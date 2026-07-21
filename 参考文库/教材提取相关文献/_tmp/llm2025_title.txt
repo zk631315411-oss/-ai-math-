@@ -1,0 +1,37 @@
+Pages: 10
+大大大模模模型型型与与与知知知识识识图图图谱谱谱
+陈陈陈玉玉玉博博博1,2, 郭郭郭少少少茹茹茹1, 刘刘刘康康康1,2,3, 赵赵赵军军军1,2
+1中国科学院自动化研究所复杂系统认知与决策实验室
+2中国科学院大学人工智能学院
+3北京智源人工智能研究院
+{yubo.chen, shaoru.guo, kliu, jzhao}@nlpr.ia.ac.cn
+摘摘摘要要要
+知识图谱作为一种重要的知识组织形式，常被视为下一代人工智能技术的基础设施之
+一，引起了工业界和学术界的广泛关注。传统知识图谱表示方法主要使用符号显式地
+描述概念及其之间的结构关系，具有语义清晰和可解释性好等特点，但其知识类型有
+限，难以应对开放域应用场景。随着大规模预训练语言模型（大模型）的发展，将参
+数化的大模型视为知识图谱成为研究热点。在这一背景下，本文聚焦于大模型在知识
+3
+图谱生命周期中的研究，总结分析了大模型在知识建模、知识获取、知识融合、知识
+管理、知识推理和知识应用等环节中的研究进展。最后，对大模型与知识图谱未来发
+2
+展趋势予以展望。
+关关关键键键词词词：：： 大模型 ；知识图谱 ；神经符号学习0
+Large Language Mode2ls and Knowledge Graphs
+Yubo Chen1,2, Shaoru Guo1, Kang Liu1,2,3, Jun Zhao1,2
+1The Laboratory of Cognition and Decision Intelligence for Complex Systems
+L
+2School of Artificial Intelligence, University of Chinese Academy of Sciences
+3Beijing Academy of Artificial Intelligence
+C
+C
+Abstract
+As an important form of knowledge organization, knowledge graphs are widely recog-
+nizedasoneofthefoundationalinfrastructuresforthenextgenerationofartificialintel-
+ligence technologies, receiving considerable interest from both industry and academia.
+Traditional methods for representing knowledge graphs mainly employ symbolic repre-
+sentations to explicitly describe concepts and their relationships, with clear semantics
+and good interpretability. However, these methods have limited coverage of knowledge
+types, making it challenging to apply them in open-domain scenarios. With the devel-
+opment of large pre-trained language models (large language models), most researchers
+have considere

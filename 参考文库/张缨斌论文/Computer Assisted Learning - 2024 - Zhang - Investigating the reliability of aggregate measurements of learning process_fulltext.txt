@@ -1,0 +1,1191 @@
+ARTICLE
+Investigating the reliability of aggregate measurements of
+learning process data: From theory to practice
+Yingbin Zhang 1 | Yafei Ye 2 | Luc Paquette 3 | Yibo Wang 4 | Xiaoyong Hu 1,5
+1Institute of Artificial Intelligence in Education,
+South China Normal University, Guangzhou,
+China
+2School of International Studies, Zhengzhou
+University, Zhengzhou, China
+3Department of Curriculum and Instruction,
+University of Illinois at Urbana-Champaign,
+Urbana, Illinois, USA
+4Department of Psychological and
+Quantitative Foundations, University of Iowa,
+Iowa City, Iowa, USA
+5School of Information Technology in
+Education, South China Normal University,
+Guangzhou, China
+Correspondence
+Yingbin Zhang, Institute of Artificial
+Intelligence in Education, South China Normal
+University, No.55 West of Zhongshan Avenue,
+Tianhe District, Guangzhou City, Guangdong
+510631, China.
+Email:
+zyingbin@m.scnu.edu.cn
+Funding information
+National Science Foundation, Grant/Award
+Number: 1942962
+Abstract
+Background: Learning analytics (LA) research often aggregates learning process data
+to extract measurements indicating constructs of interest. However, the warranty
+that such aggregation will produce reliable measurements has not been explicitly
+examined. The reliability evidence of aggregate measurements has rarely been
+reported, leaving an implicit assumption that such measurements are free of errors.
+Objectives: This study addresses these gaps by investigating the psychometric pros
+and cons of aggregate measurements.
+Methods: This study proposes a framework for aggregating process data, which
+includes the conditions where aggregation is appropriate, and a guideline for select-
+ing the proper reliability evidence and the computing procedure. We support and
+demonstrate the framework by analysing undergraduates' academic procrastination
+and programming proficiency in an introductory computer science course.
+Results and Conclusion: Aggregation over a period is acceptable and may improve
+measurement reliability only if the construct of interest is stable during the period.
+Otherwise, aggregation may mask meaningful changes in behaviours and should be
+avoided. While selecting the type of reliability evidence, a critical question is whether
+process data can be regarded as repeated measurements. Another question is
+whether the lengths of processes are unequal and individual events are unreliable. If
+the answer to the second question is no, segmenting each process into a fixed num-
+ber of bins assists in computing the reliability coefficient.
+Major Takeaways: The proposed framework can be a general guideline for aggregat-
+ing process data in LA research. Researchers should check and report the reliability
+evidence for aggregate measurements before the ensuing interpretation.
+KEYWORDS
+aggregation, internal consistency, learning analytics, learning process data, test –retest reliability
+1 | INTRODUCTION
+Learning analytics (LA) research has aggregated process data to extract
+measurements (or features) as indicators of constructs of interest to
+make sense and support students' engagement and self-regulated learn-
+ing behaviours (Gray & Bergner,
+2022; Munshi et al., 2023;S a q r&
+L/C19opez-Pernas, 2021). For instance, LA dashboards may visualize the
+aggregate measurements to assist self-monitoring and facilitate reflec-
+tion (Schwendimann et al., 2017). The measurements may serve as the
+input of machine learning models for detecting engagement and affect
+or predicting learning outcomes (Cui et al., 2019; Jiang et al., 2018).
+Clustering algorithms may use the measurements to group learners
+because the measurements characterize learning behaviours and strate-
+gies (Fincham et al.,
+2018;J o v a n o v i/C19c et al., 2017).
+Received: 14 May 2023 Revised: 17 January 2024 Accepted: 21 January 2024
+DOI: 10.1111/jcal.12951
+J Comput Assist Learn. 2024;40:1295–1308. wileyonlinelibrary.com/journal/jcal © 2024 John Wiley & Sons Ltd. 1295
+
+---PAGE---
+
+Aggregating process data is a common practice in LA because raw
+process data may be difficult to understand due to their complexity
+and size. Despite its wholesale application, the psychometric rationale
+of such aggregation has not been explicitly considered. Winne (
+2020)
+states that the granularity of aggregate measurements should be nei-
+ther too fine to cause unreliable individual differences nor too coarse
+to mask within-subject variances. Building on this statement, this
+paper examines the pros and cons of aggregation in terms of psycho-
+metrics and proposes caveats for aggregating process data.
+Additionally, the validity and reliability evidence of aggregate mea-
+surements is rarely reported in LA research. Researchers have started
+investigating the validity issue of measurements in LA and recom-
+mended methods to improve the validity, such as grounding the mea-
+surements in theories, data triangulation, and combining data-driven and
+theory-driven approaches (Fan, van der Graaf, et al.,
+2022;M o t z
+et al., 2019;W i n n e ,2020). In contrast, the reliability issue is more
+underexplored, but the reliability of measurements is as important as its
+validity. Measurements with poor reliability may decrease the statistical
+power and increase the false discovery rate in group difference analyses
+and correlation analyses (Parsons et al.,
+2019). Ignoring the reliability
+evidence of aggregate measurements implies that such measurements
+are free of errors. We argue that this assumption does not hold. Even
+physical measurements contain errors (Bergner,
+2017). Accordingly, this
+paper investigates ways to examine the reliability of measurements
+derived from aggregating process data.
+2 | LITERATURE REVIEW
+2.1 | The pros and cons of aggregation
+Aggregation, known as item parcelling in latent variable modelling, refers
+to using the sum or mean of two or more items as an observed mea-
+surement of the construct of interest (Little et al., 2002). Aggregation is
+widely used in social science because of its advantages in psychometric
+properties and model estimation (Little et al.,
+2002;L i t t l ee ta l . ,2013;
+Matsunaga, 2008). Compared with item-level measurements, aggregate-
+level measurements are more reliable and follow distributions closer to
+normality and continuity. Latent variable models with aggregate-level
+indicators are more parsimonious and stable and have fewer spurious
+residual correlations and factor loadings. However, improper aggrega-
+tion may lead to incorrect interpretation of construct dimensionality and
+mask model misspecification. Thus, aggregation should be based on
+careful consideration. Little et al. (
+2002) suggested two key issues for
+such consideration (dimensionality and research purpose), which we dis-
+cuss in the context of aggregating process data in section 3.2.
+2.2 | Measurements based on aggregating learning
+process data
+Process data represented as event sequences are common in LA, such
+as action logs, think-aloud data, and eye movement data. Such data
+contain rich information about the temporality of learning.
+Researchers have suggested three types of measurements of tempo-
+rality (Hadwin,
+2021; Knight et al., 2017; Molenaar, 2014): (1) individ-
+ual, (2) co-temporal, and (3) sequential characteristics. Individual
+characteristics are the time-related characteristics of individual learn-
+ing events (Knight et al.,
+2017; Molenaar, 2014), such as the fre-
+quency (how many times a particular event happens) and timing
+(when a particular event occurs). Co-temporal characteristics refer to
+multiple events co-occurring within a window, regardless of in which
+order (Hadwin,
+2021). In contrast, sequential characteristics, also
+named temporal order, are concerned with the order of multiple
+events in time (Chen et al.,
+2018; Fan, Tan, et al., 2022). Examples are
+patterns of ordered actions that frequently occur during an
+educational game.
+Regardless of the temporal characteristic of learning, aggregation
+is often an essential step to derive meaningful measurements to sum-
+marize the learning process. For individual characteristics, aggregation
+produces the frequencies of individual events. For co-occurrence and
+sequential characteristics, aggregation counts the frequencies of pat-
+terns of events and uses the frequency to derive other measurements,
+such as transition metrics, which quantify the tendency of one event
+following another (Bosch & Paquette,
+2021). The granularity of aggre-
+gate measurements varies across research. Some studies have
+aggregated the whole learning process, even though the process
+lasted months (Cicchinelli et al.,
+2018; Li et al., 2020). Other studies
+have segmented the process into sessions and aggregated each ses-
+sion (Fincham et al., 2018; Jovanovi /C19c et al., 2017). Nevertheless, few
+studies have explicitly considered the rationales of such aggregation
+(Winne,
+2020). Moreover, the psychometric property of aggregate
+measurement is hardly examined, leaving an implicit assumption that
+the measurement is free of errors.
+2.3 | Reliability in standard assessment
+In standard assessment, reliability refers to the consistency of assess-
+ment scores across multiple measures of the same construct (AERA
+et al., 2014). Generally, there are two ways to express reliability – the
+reliability coefficient and the standard error of measurement (SEM).
+The reliability coefficient quantifies the consistency of assessment
+scores by using an index of the amount of true variance operating in a
+set of raw scores. SEM is an index of score differences due to mea-
+surement errors. For test takers, it shows the average difference
+between the observed scores and their “true” scores (scores without
+any measurement error). This paper focuses on applying the reliability
+coefficient to aggregate measurements of process data because it is
+more widely used and familiar to LA researchers and more accessible
+to compute than SEM.
+One type of reliability coefficient is internal consistency, which
+quantifies the extent to which assessment items measure the same
+construct (Webb et al.,
+2006). Coefficient α, sometimes named Cron-
+bach's α, is often misinterpreted as a measure of internal consistency.
+While it is related to internal consistency, it is heavily influenced by
+1296 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+the number of items and is not a robust measure of internal consis-
+tency (Cortina, 1993; Yang & Green, 2011). A measurement with low
+internal consistency may show a high α due to many items. This is par-
+ticularly relevant in the LA context because there are often many
+events in a learning process, analogous to many items. Alternatives,
+such as coefficient ω, have been recommended as a more robust mea-
+sure of internal consistency (Flora,
+2020; Hayes & Coutts, 2020).
+Split-half reliability is another type of internal consistency mea-
+sure (Thorndike & Thorndike-Christ, 2010). It is obtained by dividing
+the assessment into equivalent halves (e.g., first and second halves as
+well as odd and even halves) and correlating the scores from both
+parts. A highly reliable assessment requires a high correlation, indicat-
+ing the participant's scores are consistent on both halves of the
+assessment.
+Another type of reliability coefficient is test –retest reliability, on
+the condition that the identical assessment is administrated on multi-
+ple occasions, typically with a short interval between occasions
+(Thorndike & Thorndike-Christ,
+2010). According to Cronbach ( 1972)
+and Thorndike ( 1947), the lasting and general aspects of test takers,
+such as their ability, will contribute to the consistency of assessment
+scores when the assessment is administered on different occasions.
+By contrast, temporal and context-specific factors (e.g., noisy environ-
+ment and possible disruptions from other test takers) cause transient
+errors in assessment scores and undermine consistency
+(Becker,
+2000). Test –retest reliability coefficients account for tran-
+sient errors, but internal consistency does not (Leppink & van
+Merriënboer, 2015; Schmidt et al., 2003).
+Common test –retest reliability coefficients are linear correlations
+and intraclass correlations (ICC) (McGraw & Wong, 1996). Linear corre-
+lations are limited to cases where an assessment is conducted on exactly
+two occasions, while ICC applies to multiple occasions. There are multi-
+ple versions of ICC, and readers may refer to McGraw and Wong (
+1996)
+as well as Koo and Li (2016) for the details of various versions.
+3 | A FRAMEWORK OF AGGREGATING
+PROCESS DATA
+3.1 | Events as item responses
+In standard psychological and educational assessments (e.g., aptitude
+tests and personality and attitude scales), the basic measurement unit
+is items/questions, and the construct of interest is inferred based on
+subjects' responses to items (Mislevy et al., 2012). For instance, stu-
+dents' responses to addition problems indicate their numeracy profi-
+ciency. When we apply process data to measure constructs of
+interest, the basic unit may be events (Reimann, 2009). We infer the
+construct of interest based on the individual, co-occurrence, and
+sequential characteristics of events. For instance, students' academic
+procrastination has been operationalized as the interval between
+when they start an assignment and when the assignment is released
+(Huang et al.,
+2021). This operationalization involves the timing char-
+acteristic of the event of starting an assignment. Similarly, behavioural
+engagement in digital learning environments has been inferred based
+on the frequency of clicks and posts (Saqr & L /C19opez-Pernas, 2021). In
+this sense, a learning event may be analogous to an item response
+in standard assessment.
+The response to a single item is unreliable because of item unique-
+ness and measurement errors (Little et al., 2002;R u s h t o ne ta l . ,1983).
+So is the characteristic of a single event (Winne, 2020). Moreover, the
+measurement errors of events may be much larger because events in LA
+usually naturally occur and are not intentionally triggered to measure a
+construct. Taking procrastination as an example, we may not infer a stu-
+dent's procrastination tendency based on the time that they started a
+single assignment. Additional factors, such as a student's estimate of
+time for the assignment, may influence the decision of when to start this
+assignment and the interval between the starting time and the assign-
+ment release time. However, within a week, the procrastination ten-
+dency may be relatively stable across assignments, while the additional
+factors may fluctuate. Aggregating the intervals across assignments may
+mitigate the influence of the additional factors, and the aggregate inter-
+val may be more indicative of procrastination. Thus, researchers usually
+aggregate events over a period to reduce measurement errors and
+improve reliability (e.g., Saqr & L /C19opez-Pernas,
+2021). Nevertheless, the
+warranty of such aggregation has not been explicitly examined, which
+we discuss in the next section.
+3.2 | Aggregation on process data
+Little et al. (2002) suggested two key issues for the aggregation decision:
+dimensionality and research purposes. Aggregation is warranted when
+items involve the same construct or the same facet of a construct, but it
+is risky when items involve different constructs or different facets of a
+construct. Aggregation is beneficial when the research purpose is to
+understand the latent construct and its relations with other constructs,
+but it should be avoided if the purpose is to understand the relations
+among items. Both issues may be mild in the context of aggregating pro-
+cess data. First, the aggregation is usually conducted on events of the
+same category. That is, an aggregate measurement is based on events
+involving the same construct or the same facet of a construct. It is worth
+noting that this property relies on the prerequisite that events are a valid
+indicator of the construct. For example, when studying self-regulation, if
+events indicative of evaluation are incorrectly classified as reflection, the
+aggregate measurement of reflection would be a mixture of reflection
+and evaluation events. Consequently, this measurement would be inva-
+lid and its reliability would be meaningless.
+For the second issue, LA researchers are interested in knowing
+the relations between constructs and utilizing such understanding to
+improve the learning process (Wise et al.,
+2021) rather than the rela-
+tions among individual events indicating these constructs. For
+instance, it may be helpful to know whether students who usually
+start assignments early will obtain higher average assignment scores
+than those starting assignments near the deadline, but the relation
+between the time of starting the first assignment and the score on this
+assignment is trivial.
+ZHANG ET AL . 1297
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+One issue not covered by Little et al.'s (2002) suggestion but critical
+in process data is the temporal nature of the learning process. Process
+data are generated over a period. The r eliability of aggregate measure-
+ments may increase as the period becomes longer (in a more general
+term, the analytic unit or granularity becomes coarser), given that longer
+periods contain more events indicative of the same construct of interest,
+and the construct is stable within the period. However, when the period
+is relatively long, changes may occur in learning behaviours, which repre-
+sents temporal within-subject variation (Saqr,
+2023). Such variation can
+be useful for understanding behavioural adaptation (Williams et al.,2021).
+In terms of self-regulated learning, students can exercise human agency
+in their learning and adapt behaviours based on learning goals and current
+progress (Martin, 2004). The temporal variation in learning events may
+capture behavioural adaptation (Greene et al.,2021). However, aggrega-
+tion over a relatively long period will mask this temporal variation
+(Winne,
+2020), failing to reveal behavioural adaptation.
+Distinguishing temporal variation and transient errors mentioned
+in the discussion about test –retest reliability avoids confusion. Tran-
+sient errors, in nature, are a special case of temporal variations. How-
+ever, it is reasonable to assume that learning behaviours are stable
+over a relatively short period. Within this period, the temporal varia-
+tion in behaviours is transient errors (Schmidt et al.,
+2003). In contrast,
+assuming stable behaviours over a relatively long period may be
+unreasonable. In such cases, temporal variation should be studied as it
+may be significant and meaningful (Schmidt et al.,
+2003). For example,
+students starting the first assignment early may start the second
+assignment early but be less likely to start the final assignment, taking
+place months later, early as well.
+Deciding the period for aggregation belongs to a more general
+issue, that is, the granularity of the analytic unit. The proper granular-
+ity and period for aggregation depend on research contexts and ques-
+tions. In a course spreading over months, students' learning
+behaviours may not significantly change within a few weeks
+(Jovanovi/C19c et al.,
+2017). By contrast, in an intense learning activity,
+meaningful changes may occur in learning behaviours within hours.
+For example, in a programming task of one hour, Berland et al. (
+2013)
+found that novices' programming activities generally went through
+three phases: exploration, tinkering, and refinement.
+Even when researchers are only interested in the overall relation-
+ship between two constructs rather than their temporal trajectories,
+longitudinal data analysis may produce more reliable results. The liter-
+ature on longitudinal data analysis has well discussed this issue
+(e.g., see chapter five in Weiss,
+2005). As an illustration, Leppink and
+van Merriënboer ( 2015) showed that aggregating the repeated
+measurements of cognitive load might result in a failure to reveal the
+positive effect of a supportive tool in lowering the cognitive load.
+3.3 | Reporting evidence of reliability for
+aggregate measurements
+Regardless of the period length (more generally, the granularity), pro-
+viding evidence of reliability for aggregate measurements would be
+beneficial. Researchers have considered reliability for some aspects of
+process data analysis. For example, when raw events are manually
+coded into categories based on a theoretical framework, the inter-
+rater agreement is provided as evidence of coding reliability
+(e.g., Chen et al.,
+2017). Similar attention to reliability should be
+extended to aggregate measurements of process data. Here we out-
+line approaches to estimating and reporting the reliability evidence of
+aggregate measurements. Figure 1 displays the core recommendation
+in a flow chart.
+3.3.1 | Are the process data repeated
+measurements?
+The first point to consider is whether the process data are repeated
+measurements, that is, whether events indicative of the same con-
+struct can be viewed as the responses to the same item at different
+time points or the responses to different items. In standard assess-
+ments, repeated measurements mean that identical external stimuli
+are presented to individuals. In LA, the learning condition is analogous
+to the stimulus. What consists of the learning condition depends on
+the construct of interest and the research context. For instance, in a
+MOOC course, if the construct is behaviour engagement operationa-
+lized as the action frequency, the learning condition may be conceptu-
+alized as the course policy and learning topic. A policy awarding for
+regular and frequent course activities incentivizes learners' actions,
+and topics appealing to a learner motivates their actions. The policy is
+generally stable throughout the course, but the topic may change each
+week. Consequently, the action frequencies in different weeks are
+more of responses to different items rather than the same item in dif-
+ferent weeks. If the construct of interest is academic procrastination
+operationalized as the interval between the assignment release and
+submission, the learning condition may be the course policy, the time
+of a day for releasing an assignment, and the allowed time window for
+its completion. A policy awarding for early assignment completion
+incentivizes early submission. Given the time window allowed for
+completing an assignment, releasing it in the middle of the night
+results in an interval between its release and deadline different from
+releasing it at noon. If these conditions are consistent throughout a
+course, it may be reasonable to treat the intervals between the release
+and submission of different assignments as repeated responses to the
+same item. Note that the treatment assumes that the difficulty and
+complexity of assignments do not influence procrastination.
+3.3.2 | Do different processes contain an equal
+number of reliable events?
+Regardless of whether process data are repeated measurements,
+there are a few challenges for applying reliability coefficients to pro-
+cess data. The most apparent one is that the lengths of processes
+often vary across learners. For instance, the number of events in a
+MOOC course varies across students in a fixed period. This means
+1298 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+that the number of responses varies across students. Another chal-
+lenge is that the measurement errors of individual events can be large
+because the events in LA occur in a natural environment
+(Winne, 2020), where many random factors may excite or inhibit their
+occurrence. Computing reliability coefficients directly based on raw
+events may underestimate the true reliability. If process data are not
+repeated measurements, one more challenge is that events at the
+same position in different processes may be responses to different
+items. For instance, the second events of two students' learning pro-
+cesses in a MOOC course may occur in weeks one and two, respec-
+tively. Unless the learning condition is consistent in the two weeks,
+the students' second events are not comparable.
+To overcome the above challenges, we need to convert different
+learners' process data to a fixed number of responses. One option is
+segmenting the process that will be aggregated into bins and regard-
+ing the measurement aggregated within a bin as a response. Bin-level
+measurements are more reliable than individual events because the
+influence of random factors may vary across events and be offset
+mutually in the bin-level measurements. The segmenting should be
+carefully carried out. Otherwise, variances unrelated to the construct
+of interest may cause the measurements to be inconsistent across
+bins and result in a poor reliability coefficient estimate. We propose
+four segmenting approaches below, which are illustrated in Figure
+2.
+By order
+The most straightforward method may be segmenting a process into
+bins with equal lengths, that is, the same number of events
+(e.g., Kinnebrew et al.,
+2014). Alternatively, if different processes
+cover the same clock-based units (e.g., hours and days), segmenting
+can be done to create bins with equal intervals (e.g., one hour or one
+day as a bin).
+Random allocation
+This method refers to randomly allocating an event into a bin until all
+events are allocated. Different bins have equal lengths. To mitigate
+the impact of randomness in allocating events, we need to repeat the
+segmenting multiple times, compute the reliability estimate each time,
+and report the average estimate.
+Condition-representative sampling
+This approach is a special form of random allocation. It is analogous to
+stratified sampling and randomly allocates events occurring in the
+same condition to a bin so that each bin is representative of all condi-
+tions. This approach aims to ensure that the differences between bin-
+level measurements are mainly because of random factors and not
+heavily influenced by condition-specific effects (analogous to item-
+specific effects in test theory; McDonald,
+1999). If different bins
+involve different conditions, the proportion of bin-level measurement
+variances shared across bins would decrease (Little et al., 2002). This
+issue may cause lower correlations between bin-level measurements
+and poorer reliability estimates. Random allocation also implicitly con-
+trols the condition-specific effect because the events in the same con-
+dition may be randomly assigned to different bins.
+For process data that are not repeat measurements, random allo-
+cation and condition-representative sampling are recommended as
+they control the potential condition-specific effect. For those that are
+repeat measurements, by order with equal lengths or intervals is
+recommended because the segmenting preserves the transient errors
+FIGURE 1 Decision flow for
+reporting reliability evidence of
+aggregate measurements.
+ZHANG ET AL . 1299
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+for each bin. Transient errors are “caused by momentary and nonre-
+peating factors ” (Becker, 2000, p. 370). Preserving transient errors
+allows researchers to evaluate how stable the measurements are
+over time.
+3.3.3 | Choosing the reliability coefficient
+For process data that are not repeat measurements, the internal con-
+sistency coefficient should be provided as evidence of its reliability.
+We recommend coefficient ω because it has been widely recognized
+as a more robust measure of internal consistency than coefficient α
+(Flora,
+2020; Hayes & Coutts, 2020), and tools for computing ω are
+available in common data analysis platforms, such as OMEGA macro
+for SPSS and SAS (Hayes & Coutts, 2020), the psych library in R, as
+well as the reliabiliPy library in Python. Flora ( 2020) provides a tutorial
+on selecting the proper version of ω. Alternatively, if the process data
+are too short and can only be segmented into two bins, the split-half
+correlation coefficient may be reported. However, obtaining an accu-
+rate estimate of this coefficient may necessitate an enormous amount
+of random segmenting (Parsons et al.,
+2019).
+For process data that are repeat measurements, test –retest reli-
+ability coefficients should be reported since they account for transient
+errors (Schmidt et al., 2003). If ICC is chosen, it is worth noting that
+there are two distinct types of ICC: absolute agreement versus consis-
+tency. ICC for consistency focuses on whether the rankings of individ-
+uals' scores are consistent across occasions and does not regard the
+systematic score differences between occasions (i.e., mean differ-
+ences) as transient errors. ICC for absolute agreement assumes per-
+fect consistency and regards the systematic differences as transient
+errors. Consequently, within a dataset with high ICC for consistency,
+ICC for absolute agreement may be low. Koo and Li (
+2016) claim that
+ICC for an absolute agreement should always be chosen for test –
+retest reliability. We concur with Parsons et al.'s ( 2019) argument that
+it is up to researchers to select the version of ICC based on the impor-
+tance of the systematic differences within the specific research con-
+text. This is relevant to process data because the change in learners'
+internal states may cause a systematic change in learning behaviours.
+For instance, it is well known that MOOC learners' engagement
+decreases as the course progresses (Bote-Lorenzo & G /C19omez-
+Sánchez,
+2017). However, we may be interested in whether their
+engagement rankings are consistent between adjacent weeks or
+months. Beyond the above disagreement on ICC for absolute agree-
+ment versus consistency, there is a consensus that ICC based on the
+two-way mixed-effect model should be used for test –retest reliability
+(Koo & Li,
+2016; Parsons et al., 2019). Following McGraw and Wong's
+(1996) notions, we used ICC(A, k) and ICC(C, k) to denote ICC based
+on the two-way mixed-effect model for absolute agreement and con-
+sistency, respectively.
+3.4 | Summary
+This section presents a framework for aggregating process data, which
+argues that events in learning processes are analogous to item
+responses but more unreliable. Aggregating events within a proper
+period are recommended to obtain more reliable measurements of
+constructs of interest. We recommend reporting reliability evidence
+for aggregate measurements, regardless of the period length. A gen-
+eral guideline is proposed for selecting the appropriate reliability
+FIGURE 2 An illustration of segmenting methods.
+1300 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+coefficient and computing the estimate for aggregate measurements.
+Note that the guideline is not ultimate. Researchers should choose
+the reliability coefficient based on the research purpose and context.
+The next section illustrates the framework by applying it to compute
+the reliability estimates of aggregate measurements in the context of
+an introductory computer science course.
+4 | CASE STUDY: AGGREGATE
+MEASUREMENTS OF ACADEMIC
+PROCRASTINATION AND PROGRAMMING
+PROFICIENCY
+This section extracts aggregate measurements of academic procrastina-
+tion and programming proficiency from submission sequences of com-
+puter programming assignments. We applied the proposed framework
+to compute reliability estimates to illustrate: (1) aggregate measure-
+ments are more reliable than individual events; (2) two events or mea-
+surements with a long period between them are weakly related and not
+suitable for aggregation; (3) how to segment event sequences; (4) how
+different segmenting approaches cause distinct estimates of reliability.
+4.1 | Data and participants
+Data were collected from an undergraduate introductory computer
+science course at a public university in the U.S. during the Fall 2019
+semester. Six hundred and seventeen students completed the course
+and approved using their assignment data for research purposes.
+Among them, 30% were female, 69% were male, and 1% preferred
+not to report their gender. 81% were first-year students, and 45%
+were in a CS-related major.
+The course taught Java programming and lasted 15 weeks. A web-
+based, problem-driven learning system hosted all homework assign-
+ments, lab exercises, and exams. The learning system released a minor
+programming assignment each weekday. Students had 24 h to submit
+solutions to an assignment after its release. The system automatically
+graded the submission and provided feedback if the submission had
+errors (e.g., syntactic and semantic errors). Students could submit unlim-
+ited times to reach a correct solution and obtain full credits within 24 h.
+After this period, students could still submit solutions but would not
+receive credit. There were 68 assignments in total. The learning system
+automatically recorded the code, date, correctness, and error feedback
+of all student submissions. We used the submission sequences to
+extract measurements of academic procrastination and programming
+proficiency and examined the measurement reliability.
+4.2 | The reliability of aggregate measurements of
+academic procrastination
+Academic procrastination is delaying an academic task toward the
+deadline or a failure to complete it before the deadline (Schraw
+et al., 2007). Two operationalizations have been used in technology-
+enhanced learning environments: (1) whether an assignment is com-
+pleted before the deadline (Huang et al.,
+2021); (2) the interval
+between the time of releasing an assignment and the time students
+starting the assignment (Zhang et al., 2022). This study only adopted
+the second operationalization, given that the purpose is to illustrate
+the reliability of aggregate measurements. If a student did not start an
+assignment before the deadline, this student's procrastination in this
+assignment was set to be 24 h.
+The course policy did not change over time, and all assignments
+were released at midnight. Thus, we regarded the learning condition
+as consistent throughout the course and viewed the time students
+started different assignments as repeated responses to the same pro-
+crastination item. Each student showed 68 responses. We firstly com-
+puted ICC(A, k) and ICC(C, k) of procrastination measurements
+aggregated over 2 –34 responses to illustrate how the reliability chan-
+ged as the period being aggregated lengthened and the difference
+between ICC(A, k) and ICC(C, k). We then compared the test –retest
+reliability of individual procrastination responses and week-level pro-
+crastination measurements.
+4.2.1 | Results
+Figure 3 shows that ICC(A, k) was slightly lower than ICC(C, k). This is
+expected as ICC(C, k) did not treat systematic differences between
+responses as transient errors. Both types of ICC increased as the num-
+ber of procrastination responses being aggregated increased. Notably,
+from two to four responses, the average ICC(A, k) rose from 0.59 to
+0.74, and the average ICC(C, k) rose from 0.62 to 0.76. After that, the
+growth rate of both ICC slowed down, indicating a diminishing benefit
+of aggregation. When the number of responses reached five, which
+was the number of assignments in most weeks, the average ICC(A, k)
+and ICC(C, k) were 0.76 and 0.78, indicating moderate to good reliabil-
+ity. Figure
+4 clearly shows that the ICC of week-level indicators was
+higher than individual responses. Overall, these results suggest that
+aggregation over a short period improved the reliability of procrastina-
+tion measurements.
+Figure 5 depicts the correlations among individual responses
+(upper right) and week-level aggregate measurements of procrastina-
+tion (lower left). 1 The farther away from the main diagonal a cell is,
+the lighter its shade is, indicating the diminishing associations among
+individual responses or aggregate measurements over time. For exam-
+ple, the average correlation between the individual responses within
+week 1 (A1 –A5) was 0.31. By contrast, the average correlation was
+0.22 between the individual responses of weeks 1 and 7 (A33 –A37)
+and 0.14 between that of weeks 1 and 14 (A64 –A68). The average
+correlation between adjacent week-level measurements was 0.73,
+while the average correlation between measurements with an interval
+of 7 weeks (e.g., week 1 and week 8, week 2 and week 9) was 0.51.
+1Procrastination on A41 and A42 had a high correlation because these assignments were
+released at the same day.
+ZHANG ET AL . 1301
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+Overall, the results suggest the instability of procrastination behaviour
+over long periods and the importance of selecting the appropriate
+period for aggregation.
+4.3 | The reliability of aggregate measurements of
+programming proficiency
+Programming proficiency is not a unidimensional construct, as com-
+pleting a program entails various skills (Xie et al., 2019). The current
+study used four dimensions of programming proficiency to illustrate
+segmenting event sequences to compute the reliability of aggregate
+measurements: programming syntactic, programming semantic, syn-
+tactic error debugging, and semantic error debugging proficiency.
+Research has used the proportion of submissions to programming
+assignments containing syntax errors as a measurement of syntax pro-
+ficiency (Zhang et al.,
+2023). We adopted this operationalization but
+acknowledged that this measurement might be just a facet of syntac-
+tic proficiency. Similarly, we operationalized (1) semantic proficiency
+as the proportion of submissions containing semantic errors, (2) syn-
+tactic debugging proficiency as the proportion of submission pairs
+where the second submission fixed at least one syntax error in the
+first submission, (3) semantic error debugging proficiency as the pro-
+portion of submission pairs where the second submission fixed at
+least one semantic error in the first submission.
+Because students' programming proficiency was likely to develop
+throughout the course, we only used submission sequences in the last
+three weeks. We assumed that the growth rate of programming profi-
+ciency was relatively slow at the end of the course and that program-
+ming proficiency might be stable within a week. Thus, we computed the
+four programming proficiency indicators within each of the three weeks.
+As a validation, we correlated the week-level measurement with the
+final exam scores. The correlations were weak to moderate ( r ranges
+from /C00.52 to 0.30, with the average absolute value of 0.21, and all
+p < 0.01 after Bonferroni correction except for two correlations).
+Even in the same week, assignments might differ in syntax and
+semantic complexity and involve different programming constructs.
+Thus, submissions were more of responses on different items rather
+than repeated responses on the same item. The number of submissions
+per student per week ranged from 10 to 420. Based on Figure
+1,w e
+segmented each submission sequence using both random allocation and
+condition-representative approaches. In the current context, the condi-
+tion was programming assignments. We also segmented submission
+sequences by order with equal intervals and lengths to illustrate the
+condition-specific effect on the reliability estimate. All segmenting
+approaches split a sequence into three bins, and coefficient ω was com-
+puted. Since there was no assignment on either of Monday and Tuesday
+as well as Thursday and Friday in the last three weeks, the equal interval
+method allocated Monday and Tuesday to the 1st bin, Wednesday to
+the 2nd bin, as well as Thursday and Friday to the 3rd bin.
+4.3.1 | Results
+Figure 6 presents the ω estimates of aggregate measurements based
+on different segmenting methods. Because random allocation and
+condition-representative methods involve a random process (ran-
+domly assigning submissions to bins), we repeated each method
+FIGURE 3 The average reliability estimates at each number of responses.
+FIGURE 4 ICC of individual responses and week-level
+procrastination indicators.
+1302 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+100 times and reported the average estimates. The estimates based
+on the two methods were close to each other. As expected, these
+estimates were higher than those based on the equal interval and
+equal length methods. The ω estimates based on the equal interval
+were quite low, suggesting substantial condition-specific effects. The
+estimates of this method were lower than those of equal length.
+The reason was that a student usually made a different number of
+submissions on different assignments. Two bins derived from equal
+length might contain submissions on the same assignment (see
+Figure
+2), but two bins derived from equal interval did not. Thus, the
+condition-specific effect was less severe in the equal length method
+than in the equal interval method.
+The correlations among bin-level indicators of the same week
+(Figure 7) further illustrated the condition-specific effects. Generally,
+these correlations based on the equal interval method were lower
+than those of equal length, which in turn were lower than random
+allocation and condition-representative methods.
+5 | DISCUSSION
+Aggregating process data is a common practice in LA. This paper
+explores the pros and cons of this practice in terms of psychometrics.
+We argue that aggregate measurements over a relatively short period
+FIGURE 5 The Linear correlations among individual responses (upper right) and week-level aggregate measurements (lower left)
+ZHANG ET AL . 1303
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+are more reliable than individual events, but aggregation over a rela-
+tively long period may mask meaningful changes in learning behav-
+iours and should be avoided. The main contributions of this study are
+twofold: (1) we presented a general guideline for computing reliability
+metrics; (2) we conducted a case study to demonstrate the guideline.
+More broadly, this paper may foster the development of standards for
+rigour in LA research (Knight et al.,
+2019), mainly statistical and psy-
+chometric rigour.
+5.1 | Interpreting reliability coefficients
+Reliability coefficients quantify the proportion of random errors in the
+observed measurement. There is no universal threshold that we can
+use to assign a qualitative label to measurements, such as “poor” or
+“adequate”. Taking ICC as an example, a widely adopted guideline is
+that ICC values smaller than 0.5, between 0.5 and 0.75, between 0.75
+and 0.9, and greater than 0.9 indicate poor, moderate, good, and
+FIGURE 6 Omega of programming proficiency indicators computed by different segmenting methods. Error bars represent the ±1 standard
+deviations of ω estimates in the 100 repetitions for random allocation and condition-representative. The estimates were missing for equal interval
+and length methods in a few cases because the confirmatory factor model could not converge.
+FIGURE 7 Linear correlations among bin-level programming proficiency indicators of the same week. Random: random allocation. Condition:
+condition-representative.
+1304 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+excellent reliability (Koo & Li, 2016). However, as the authors of this
+guideline warn, “there are no standard values for acceptable reliability
+using ICC” (Koo & Li, 2016, p. 158). For instance, a recent study found
+that the median ICC of 37 behavioural tasks for measuring self-
+regulation was only 0.311 (Enkavi et al., 2019). Based on the guide-
+line, over half of these behavioural tasks would be regarded as poor in
+test–retest reliability. However, the reason for low ICC may be that
+behavioural tasks are often selected for generating scores with low
+between-subject variance (Hedge et al.,
+2018) rather than that these
+behavioural tasks are truly unreliable. Therefore, compared with inter-
+preting a reliability estimate based on a general threshold or guideline,
+the interpretation would be more meaningful when it is situated in
+the domain-specific spectrum of the estimates (Parsons et al.,
+2019),
+which should cover various samples and learning environments. Nev-
+ertheless, establishing the spectrum relies on a LA research culture
+where reporting reliability estimates for aggregate measurements of
+process data is a standard practice.
+5.2 | Handling aggregate measurements with low
+reliability
+Assuming that the guideline is applicable, when an aggregate mea-
+surement has a low reliability estimate, say 0.5, researchers may
+lengthen the period aggregated to increase the reliability, as sug-
+gested by Figure
+3. However, we want to highlight the “embracing
+imperfection” notion in LA (Kitto et al., 2018). LA is an interdisciplin-
+ary community. The implicit assumption of psychometrics that
+improving measurement reliability is a worthy effort may not always
+hold in LA. In cases where increasing the period aggregated would
+mask behavioural adaptation in learning, it may be acceptable to
+embrace an imperfect measurement.
+To maintain the psychometric rigour, instead of lengthening the
+period aggregated, we recommend reinspecting the assumption that
+the construct of interest is stable within the period. Researchers may
+examine this assumption by conducting a paired-sample t-test or
+repeated analysis of variance (ANOVA) to compare the measurements
+of different bins. If the assumption does not hold, decomposing the
+period may be considered. If the assumption holds, it means that even
+though the construct of interest is stable, there are still non-negligible
+measurement errors. Then, latent variable modelling can be used to
+account for the measurement errors in the analyses of the aggregate
+measurements and their relationships with other variables (Skrondal &
+Rabe-Hesketh,
+2004).
+5.3 | Practical implications
+Beyond the potential of improving LA research practice, this study has
+implications for designing learning dashboards, specifically for design-
+ing action-related indicators (Schwendimann et al., 2017). These indi-
+cators usually show users aggregate information about learners'
+actions for self-monitoring, monitoring peers, or administrative
+monitoring. No matter for which purpose, the period being aggregated
+should not be too short; otherwise, the indicator would be unreliable
+and contain so much noise that regulation effort and feedback based
+on them would be inappropriate. Meanwhile, the period should not be
+too long to hide temporal patterns in learners' activities. In addition,
+indicators aggregated over a long period may not accurately reflect
+learners' current cognitive, motivational, and affective states. Instruc-
+tional interventions based on such indicators may be ineffective due
+to low adaptivity (Aleven et al.,
+2017).
+5.4 | Limitations and future directions
+The current study focuses on the reliability of measurements derived
+from learning process data. We do not advocate simply pursuing high
+reliability because other measurement issues, such as validity and gen-
+eralization, hold the same importance. A measurement with high reli-
+ability in a particular context does not imply that it is a valid indicator
+of the construct of interest and that it generalizes to another context.
+Indeed, Du et al. (
+2023) found that generalization and validity are two
+key challenges in using process data to measure self-regulated learn-
+ing. Further research is suggested to provide reliability evidence as
+well as validity and generalization evidence for aggregate measure-
+ments of process data.
+Some aggregate measurements that characterize the co-
+occurrence and sequential characteristics of events are association
+strength metrics, such as transition metrics, which quantify the ten-
+dency of one event following another (Bosch & Paquette,
+2021).
+Regression models can estimate and account for their measurement
+errors (Matayoshi & Karumbaiah, 2021). Thus, it may be unnecessary
+to apply the proposed method for computing the reliability coeffi-
+cients of these measurements.
+Deciding the period length or granularity for aggregation relies on
+the research questions and contexts. Identifying the best length will
+maximize the reliability of measurements and minimize the risk of
+masking changes in learning behaviours. However, it may be challeng-
+ing to identify the best length. There are methods for determining the
+minimum observations for deriving an aggregate measurement that is
+stable and representative of the population (Hehman et al.,
+2018).
+Such methods cannot directly apply to process data in LA because the
+aggregation is over subjects rather than responses from the same sub-
+jects. Alternatively, researchers may plot the reliability metrics against
+the length of the aggregated period, like in Figure
+3, and identify the
+length point after which the increasing rate of reliability metrics slows
+down. However, it may be challenging to identify such a point, and
+the period length at this point may be large (e.g., 20 responses in
+Figure
+3). Further research is needed to investigate the utility of this
+method and develop other techniques for determining the best length
+for aggregation.
+Random allocation and condition-representative segmenting
+demand repetitions to reduce biases caused by randomness. The
+100 repetitions for computing the reliability estimates of program-
+ming proficiency took one hour. A guideline for the minimum
+ZHANG ET AL . 1305
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+repetitions avoids unnecessary repetitions and saves time. Yet, vari-
+ous features of the data, such as the process length, the reliability of
+individual events, and the variation in the learning conditions, may
+influence the minimum repetitions. It entails extensive simulation
+experiments and empirical data analyses to yield the guideline.
+AUTHOR CONTRIBUTIONS
+Yingbin Zhang: Conceptualization; methodology; formal analysis;
+writing – review and editing; writing – original draft; visualization;
+investigation; project administration; resources; supervision. Yafei Ye:
+Conceptualization; methodology; writing – review and editing;
+writing – original draft; investigation. Luc Paquette: Conceptualiza-
+tion; methodology; writing – review and editing; supervision; funding
+acquisition; project administration; resources. Yibo Wang: Methodol-
+ogy; writing – review and editing; formal analysis. Xiaoyong Hu: Con-
+ceptualization; writing – review and editing; resources.
+FUNDING INFORMATION
+This work was supported by National Science Foundation (grant num-
+bers 1942962).
+CONFLICT OF INTEREST STATEMENT
+The authors declare no conflict of interest.
+DATA AVAILABILITY STATEMENT
+The data that support the findings of this study are available from the
+corresponding author upon reasonable request.
+ETHICS STATEMENT
+The use of the data in this study for research purposes was approved
+by the Institutional Review Boards (IRB) of the University of Illinois at
+Urbana-Champaign.
+ORCID
+Yingbin Zhang
+https://orcid.org/0000-0002-2664-3093
+Yafei Ye https://orcid.org/0000-0002-3446-7085
+Luc Paquette https://orcid.org/0000-0002-2738-3190
+REFERENCES
+AERA, APA, & NCME. (2014). Standards for educational and psychological
+testing (7th ed.). American Educational Research Association.
+Aleven, V., McLaughlin, E. A., Glenn, R. A., & Koedinger, K. R. (2017).
+Instruction based on adaptive learning technologies. In R. E. Mayer &
+P. Alexander (Eds.), Handbook of research on learning and instruction
+(pp. 522–560). Routledge.
+Becker, G. (2000). How important is transient error in estimating reliabil-
+ity? Going beyond simulation studies. Psychological Methods , 5(3),
+370–379. https://doi.org/10.1037/1082-989X.5.3.370
+Bergner, Y. (2017). Measurement and its uses in learning analytics. In C.
+Lang, G. Siemens, A. Wise, & D. Gasevic (Eds.), Handbook of learning
+analytics. Society for Learning Analytics Research. https://doi.org/10.
+18608/hla17.003
+Berland, M., Martin, T., Benton, T., Petrick Smith, C., & Davis, D. (2013).
+Using learning analytics to understand the learning pathways of novice
+programmers. Journal of the Learning Sciences , 22(4), 564–599. https://
+doi.org/10.1080/10508406.2014.954750
+Bosch, N., & Paquette, L. (2021). What ’ s next? Sequence length and
+impossible loops in state transition measurement. Journal of Educa-
+tional Data Mining , 13(1), 1 –23. https://doi.org/10.5281/zenodo.
+5048423
+Bote-Lorenzo, M. L., & G /C19omez-Sánchez, E. (2017). Predicting the decrease
+of engagement indicators in a MOOC. In Proceedings of the seventh
+international learning analytics & knowledge conference (pp. 143 –147).
+ACM. https://doi.org/10.1145/3027385.3027387
+Chen, B., Knight, S., & Wise, A. F. (2018). Critical issues in designing and
+implementing temporal analytics. Journal of Learning Analytics , 5(1), 1 –
+9. https://doi.org/10.18608/jla.2018.53.1
+Chen, B., Resendes, M., Chai, C. S., & Hong, H. (2017). Two tales of time:
+Uncovering the significance of sequential patterns among contribution
+types in knowledge-building discourse. Interactive Learning Environ-
+ments, 25(2), 162 –175. https://doi.org/10.1080/10494820.2016.
+1276081
+Cicchinelli, A., Veas, E., Pardo, A., Pammer-Schindler, V., Fessl, A.,
+Barreiros, C., & Lindstädt, S. (2018). Finding traces of self-regulated
+learning in activity streams. In Proceedings of the 8th international con-
+ference on learning analytics and knowledge (pp. 191 –200). ACM.
+https://doi.org/10.1145/3170358.3170381
+Cortina, J. M. (1993). What is coefficient alpha? An examination of theory
+and applications. Journal of Applied Psychology , 78(1), 98–104. https://
+doi.org/10.1037/0021-9010.78.1.98
+Cronbach, L. J. (1972). The dependability of behavioral measurements: The-
+ory of generalizability scores and profiles . John Wiley.
+Cui, Y., Chen, F., Shiri, A., & Fan, Y. (2019). Predictive analytic models of
+student success in higher education. Information and Learning Science ,
+120(3/4), 208–227. https://doi.org/10.1108/ILS-10-2018-0104
+Du, J., Hew, K. F., & Liu, L. (2023). What can online traces tell us about stu-
+dents' self-regulated learning? A systematic review of online trace data
+analysis. Computers & Education , 201, 104828.
+https://doi.org/10.
+1016/j.compedu.2023.104828
+Enkavi, A. Z., Eisenberg, I. W., Bissett, P. G., Mazza, G. L.,
+MacKinnon, D. P., Marsch, L. A., & Poldrack, R. A. (2019). Large-scale
+analysis of test –retest reliabilities of self-regulation measures. Proceed-
+ings of the National Academy of Sciences , 116(12), 5472–5477.
+https://
+doi.org/10.1073/pnas.1818430116
+Fan, Y., Tan, Y., Rakovi /C19c, M., Wang, Y., Cai, Z., Shaffer, D. W., & Ga ˇsevi/C19c, D.
+(2022). Dissecting learning tactics in MOOC using ordered network
+analysis. Journal of Computer Assisted Learning , 39(1), 154 –166.
+https://doi.org/10.1111/jcal.12735
+Fan, Y., van der Graaf, J., Lim, L., Rakovi /C19c, M., Singh, S., Kilgour, J.,
+Moore, J., Molenaar, I., Bannert, M., & Ga ˇsevi/C19c, D. (2022). Towards
+investigating the validity of measurement of self-regulated learning
+based on trace data. Metacognition and Learning , 17, 949–987.
+https://
+doi.org/10.1007/s11409-022-09291-1
+Fincham, O. E., Gasevic, D. V., Jovanovic, J. M., & Pardo, A. (2018). From
+study tactics to learning strategies: An analytical method for extracting
+interpretable representations. IEEE Transactions on Learning Technolo-
+gies, 12(1), 59–72.
+https://doi.org/10.1109/TLT.2018.2823317
+Flora, D. B. (2020). Your coefficient alpha is probably wrong, but which
+coefficient omega is right? A tutorial on using r to obtain better reli-
+ability estimates. Advances in Methods and Practices in Psychological
+Science, 3(4), 484–501.
+https://doi.org/10.1177/2515245920951747
+Gray, G., & Bergner, Y. (2022). A practitioner's guide to measurement in
+learning analytics: Decisions, opportunities, and challenges. In C. Lang,
+G. Siemens, A. F. Wise, D. Ga ˇsevi/C19c, & A. Merceron (Eds.), Handbook of
+learning analytics (2ed ed., pp. 20 –28). SoLAR. https://doi.org/10.
+18608/hla22.002
+Greene, J. A., Plumley, R. D., Urban, C. J., Bernacki, M. L., Gates, K. M.,
+Hogan, K. A., Demetriou, C., & Panter, A. T. (2021). Modeling temporal
+self-regulatory processing in a higher education biology course. Learn-
+ing and Instruction , 72, 101201. https://doi.org/10.1016/j.learninstruc.
+2019.04.002
+1306 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+Hadwin, A. F. (2021). Commentary and future directions: What can multi-
+modal data reveal about temporal and adaptive processes in self-
+regulated learning? Learning and Instruction , 72, 101287.
+https://doi.
+org/10.1016/j.learninstruc.2019.101287
+Hayes, A. F., & Coutts, J. J. (2020). Use omega rather than Cronbach's
+alpha for estimating reliability. But …. Communication Methods and
+Measures, 14(1), 1 –24. https://doi.org/10.1080/19312458.2020.
+1718629
+Hedge, C., Powell, G., & Sumner, P. (2018). The reliability paradox: Why
+robust cognitive tasks do not produce reliable individual differences.
+Behavior Research Methods , 50(3), 1166 –1186.
+https://doi.org/10.
+3758/s13428-017-0935-1
+Hehman, E., Xie, S. Y., Ofosu, E. K., & Nespoli, G. (2018). Assessing the
+point at which averages are stable: A tool illustrated in the context of
+person perception. PsyArXiv. https://doi.org/10.31234/osf.io/2n6jq
+Huang, N., Zhang, J., Burtch, G., Li, X., & Chen, P. (2021). Combating pro-
+crastination on massive online open courses via optimal calls to action.
+Information Systems Research , 32(2), 301 –317.
+https://doi.org/10.
+1287/isre.2020.0974
+J i a n g ,Y . ,B o s c h ,N . ,B a k e r ,R .S . ,P a q u e t t e ,L . ,O c u m p a u g h ,J . ,
+Andres, J. M. A. L., Moore, A. L., & Biswas, G. (2018). Expert feature-
+engineering vs. deep neural networks: Which is better for sensor-
+free affect detection. In C. P. Rosé, R. Martínez-Maldonado, H. U.
+Hoppe, R. Luckin, M. Mavrikis, K. Porayska-Pomsta, B. McLaren, &
+B. du Boulay (Eds.), Proceedings of the 19th international conference
+on artificial intelligence in educat ion. Lecture notes in computer science
+(Vol. 10947, pp. 198 –211). Springer.
+https://doi.org/10.1007/978-
+3-319-93843-1_15
+Jovanovi/C19c, J., Ga ˇsevi/C19c, D., Dawson, S., Pardo, A., & Mirriahi, N. (2017).
+Learning analytics to unveil learning strategies in a flipped classroom.
+The Internet and Higher Education , 33,7 4 –85.
+https://doi.org/10.
+1016/j.iheduc.2017.02.001
+Kinnebrew, J. S., Segedy, J. R., & Biswas, G. (2014). Analyzing the temporal
+evolution of students' behaviors in open-ended learning environments.
+Metacognition and Learning , 9(2), 187 –215.
+https://doi.org/10.1007/
+s11409-014-9112-4
+Kitto, K., Shum, S. B., & Gibson, A. (2018). Embracing imperfection in learn-
+ing analytics. In Proceedings of the 8th international conference on
+learning analytics and knowledge (pp. 451 –460). ACM. https://doi.org/
+10.1145/3170358.3170413
+Knight, S., Wise, A., & Ochoa, X. (2019). Fostering an impactful field of
+learning analytics. Journal of Learning Analytics , 6(3), 1 –4. https://doi.
+org/10.18608/jla.2019.63.1
+Knight, S., Wise, A. F., & Chen, B. (2017). Time for change: Why learning
+analytics needs temporal analysis. Journal of Learning Analytics , 4(3), 7–
+17. https://doi.org/10.18608/jla.2017.43.2
+Koo, T. K., & Li, M. Y. (2016). A guideline of selecting and reporting intra-
+class correlation coefficients for reliability research. Journal of Chiro-
+practic Medicine , 15(2), 155 –163. https://doi.org/10.1016/j.jcm.2016.
+02.012
+Leppink, J., & van Merriënboer, J. J. G. (2015). The beast of aggregating
+cognitive load measures in technology-based learning. Journal of Edu-
+cational Technology & Society , 18(4), 230–245.
+Li, S., Du, H., Xing, W., Zheng, J., Chen, G., & Xie, C. (2020). Examining
+temporal dynamics of self-regulated learning behaviors in STEM learn-
+ing: A network approach. Computers & Education , 158, 103987.
+https://doi.org/10.1016/j.compedu.2020.103987
+Little, T. D., Cunningham, W. A., Shahar, G., & Widaman, K. F. (2002). To
+parcel or not to parcel: Exploring the question, weighing the merits.
+Structural Equation Modeling: A Multidisciplinary Journal , 9(2), 151–173.
+https://doi.org/10.1207/S15328007SEM0902_1
+Little, T. D., Rhemtulla, M., Gibson, K., & Schoemann, A. M. (2013). Why
+the items versus parcels controversy needn't be one? Psychological
+Methods, 18(3), 285–300. https://doi.org/10.1037/a0033266
+Martin, J. (2004). Self-regulated learning, social cognitive theory, and
+agency. Educational Psychologist , 39(2), 135 –145. https://doi.org/10.
+1207/s15326985ep3902_4
+Matayoshi, J., & Karumbaiah, S. (2021). Using marginal models to adjust
+for statistical bias in the analysis of state transitions. In Proceedings of
+the 11th international conference on learning analytics and knowledge
+(pp. 449–455). ACM.
+https://doi.org/10.1145/3448139.3448182
+Matsunaga, M. (2008). Item parceling in structural equation modeling: A
+primer. Communication Methods and Measures , 2(4), 260 –293. https://
+doi.org/10.1080/19312450802458935
+McDonald, R. P. (1999). Test theory: A unified treatment . Psychology Press.
+https://doi.org/10.4324/9781410601087
+McGraw, K. O., & Wong, S. P. (1996). Forming inferences about some
+intraclass correlation coefficients. Psychological Methods , 1(1), 30 –46.
+https://doi.org/10.1037/1082-989X.1.1.30
+Mislevy, R. J., Behrens, J. T., Dicerbo, K. E., & Levy, R. (2012). Design and
+discovery in educational assessment: Evidence-centered design, psy-
+chometrics, and educational data mining. Journal of Educational Data
+Mining, 4(1), 11–48.
+https://doi.org/10.5281/zenodo.3554641
+Molenaar, I. (2014). Advances in temporal analysis in learning and instruc-
+tion. Frontline Learning Research , 2(4), 15 –24. https://doi.org/10.
+14786/flr.v2i4.118
+Motz, B., Quick, J., Schroeder, N., Zook, J., & Gunkel, M. (2019). The valid-
+ity and utility of activity logs as a measure of student engagement. In
+Proceedings of the ninth international conference on learning analytics &
+knowledge (pp. 300 –309). ACM.
+https://doi.org/10.1145/3303772.
+3303789
+Munshi, A., Biswas, G., Baker, R., Ocumpaugh, J., Hutt, S., & Paquette, L.
+(2023). Analysing adaptive scaffolds that help students develop self-
+regulated learning behaviours. Journal of Computer Assisted Learning ,
+39(2), 351–368.
+https://doi.org/10.1111/jcal.12761
+Parsons, S., Kruijt, A., & Fox, E. (2019). Psychological science needs a stan-
+dard practice of reporting the reliability of cognitive-behavioral mea-
+surements. Advances in Methods and Practices in Psychological Science ,
+2(4), 378–395. https://doi.org/10.1177/2515245919879695
+Reimann, P. (2009). Time is precious: Variable- and event-centred
+approaches to process analysis in CSCL research. International Journal
+of Computer-Supported Collaborative Learning , 4(3), 239 –257. https://
+doi.org/10.1007/s11412-009-9070-z
+Rushton, J. P., Brainerd, C. J., & Pressley, M. (1983). Behavioral develop-
+ment and construct validity: The principle of aggregation. Psychological
+Bulletin, 94(1), 18–38. https://doi.org/10.1037/0033-2909.94.1.18
+Saqr, M. (2023). Modelling within-person idiographic variance could help
+explain and individualize learning. British Journal of Educational Tech-
+nology, 54, 1077–1094. https://doi.org/10.1111/bjet.13309
+Saqr, M., & L /C19opez-Pernas, S. (2021). The longitudinal trajectories of online
+engagement over a full program. Computers & Education , 175, 104325.
+https://doi.org/10.1016/j.compedu.2021.104325
+Schmidt, F. L., Le, H., & Ilies, R. (2003). Beyond alpha: An empirical exami-
+nation of the effects of different sources of measurement error on reli-
+ability estimates for measures of individual differences constructs.
+Psychological Methods , 8(2), 206 –224.
+https://doi.org/10.1037/1082-
+989x.8.2.206
+Schraw, G., Wadkins, T., & Olafson, L. (2007). Doing the things we do: A
+grounded theory of academic procrastination. Journal of Educational
+Psychology, 99(1), 12–25. https://doi.org/10.1037/0022-0663.99.1.12
+Schwendimann, B. A., Rodríguez-Triana, M. J., Vozniuk, A., Prieto, L. P.,
+Boroujeni, M. S., Holzer, A., Gillet, D., & Dillenbourg, P. (2017). Per-
+ceiving learning at a glance: A systematic literature review of learning
+dashboard research. IEEE Transactions on Learning Technologies , 10(1),
+30–41.
+https://doi.org/10.1109/TLT.2016.2599522
+Skrondal, A., & Rabe-Hesketh, S. (2004). Generalized latent variable model-
+ing: Multilevel, longitudinal, and structural equation models . Chapman
+and Hall/CRC. https://doi.org/10.1201/9780203489437
+ZHANG ET AL . 1307
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+---PAGE---
+
+Thorndike, R. L. (1947). Research problems and techniques (report No. 3).
+Army air forces aviation psychology program research reports #3 .U S
+Government Printing Office.
+Thorndike, R. M., & Thorndike-Christ, T. (2010). Measurement and evalua-
+tion in psychology and education (8th ed.). Pearson.
+Webb, N. M., Shavelson, R. J., & Haertel, E. H. (2006). 4 reliability coeffi-
+cients and generalizability theory. In C. R. Rao & S. Sinharay (Eds.),
+Handbook of statistics (Vol. 26, pp. 81 –124). Elsevier.
+https://doi.org/
+10.1016/S0169-7161(06)26004-8
+Weiss, R. E. (2005). Modeling longitudinal data (Vol. 1). Springer.
+Williams, D. R., Mulder, J., Rouder, J. N., & Rast, P. (2021). Beneath the
+surface: Unearthing within-person variability and mean relations with
+Bayesian mixed models. Psychological Methods , 26(1), 74 –89.
+https://
+doi.org/10.1037/met0000270
+Winne, P. H. (2020). Construct and consequential validity for learning ana-
+lytics based on trace data. Computers in Human Behavior , 112, 106457.
+https://doi.org/10.1016/j.chb.2020.106457
+Wise, A. F., Knight, S., & Ochoa, X. (2021). What makes learning analytics
+research matter. Journal of Learning Analytics , 8(3), 1 –9. https://doi.
+org/10.18608/jla.2021.7647
+Xie, B., Loksa, D., Nelson, G. L., Davidson, M. J., Dong, D., Kwik, H.,
+Tan, A. H., Hwa, L., Li, M., & Ko, A. J. (2019). A theory of instruction for
+introductory programming skills. Computer Science Education , 29(2–3),
+205–253.
+https://doi.org/10.1080/08993408.2019.1565235
+Yang, Y., & Green, S. B. (2011). Coeffici ent alpha: A reliability coeffi-
+c i e n tf o rt h e2 1 s tc e n t u r y ?Journal of Psychoeducational Assess-
+ment, 29(4), 377 –392. https://doi.org/10.1177/073428291140
+6668
+Zhang, J., Cunningham, T., Iyer, R., Baker, R., & Fouh, E. (2022). Exploring
+the impact of voluntary practice and procrastination in an introductory
+programming course. In Proceedings of the 53rd ACM technical sympo-
+sium on computer science education (pp. 356 –361). ACM.
+https://doi.
+org/10.1145/3478431.3499350
+Zhang, Y., Paquette, L., Pinto, J. D., & Fan, A. X. (2023). Utilizing
+programming traces to explore and model the dimensions of
+novices' code-writing skill. Computer Applications in Engineering
+Education , 31(4), 1041 –1058.
+https://doi.org/10.1002/cae.22622
+How to cite this article: Zhang, Y., Ye, Y., Paquette, L., Wang,
+Y., & Hu, X. (2024). Investigating the reliability of aggregate
+measurements of learning process data: From theory to
+practice. Journal of Computer Assisted Learning , 40(3),
+1295–1308.
+https://doi.org/10.1111/jcal.12951
+1308 ZHANG ET AL .
+ 13652729, 2024, 3, Downloaded from https://onlinelibrary.wiley.com/doi/10.1111/jcal.12951 by South China Normal University, Wiley Online Library on [16/06/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License

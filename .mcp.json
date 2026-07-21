@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "understand-anything": {
+      "command": "npx",
+      "args": ["-y", "understand-anything-mcp@latest"]
+    }
+  }
+}

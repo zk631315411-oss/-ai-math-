@@ -1,0 +1,19 @@
+Linguistically-Driven Strategy for Concept Prerequisites Learning on
+Italian
+AlessioMiaschi(cid:63),(cid:5),ChiaraAlzetta•,(cid:5),FrancoAlbertoCardillo(cid:5),FeliceDell’Orletta(cid:5)
+(cid:63)DipartimentodiInformatica,Universita` diPisa
+•DIBRIS,Universita` degliStudidiGenova
+(cid:5)IstitutodiLinguisticaComputazionale“AntonioZampolli”(ILC-CNR),Pisa
+ItaliaNLPLab–www.italianlp.it
+alessio.miaschi@phd.unipi.it,
+chiara.alzetta@edu.unige.it,
+{francoalberto.cardillo,felice.dellorletta}@ilc.cnr.it
+Abstract them to build educational materials such as text-
+books, coursesor, moreingeneral, learningpaths
+We present a new concept prerequisite learn-
+bycombiningvariousLOsofthesamesubject.
+ing method for Learning Object (LO) or-
+Being able to give a pedagogical meaning to
+dering that exploits only ling
+
+Total pages: 11

@@ -1,0 +1,31 @@
+Pages: 6
+Advances in Education 教育进展, 2025, 15(3), 653-658
+Published Online March 2025 in Hans. https://www.hanspub.org/journal/ae
+https://doi.org/10.12677/ae.2025.153452
+高等数学环状知识图谱可视化设计与实践
+郭从洲*，李瑞瑞，李 可
+信息工程大学基础部，河南 郑州
+收稿日期：2025年2月14日；录用日期：2025年3月13日；发布日期：2025年3月21日
+摘 要
+高等数学课程面临着知识体系庞大且复杂、教学资源分散、难以系统化等问题。知识图谱是解决这些问
+题的有效途径，为了更好地展示高等数学知识点以及关联关系，进一步发现数学概念的基础支撑作用，
+设计了一种环状结构的知识图谱，从教学实践分析，该形式便于理解的同时能够提高学生的自主学习能
+力和研究分析能力。
+关键词
+高等数学，环状知识图谱，可视化，自主学习
+Visualization Design and Practice of Circular
+Knowledge Graph in Advanced Mathematics
+Congzhou Guo*, Ruirui Li, Ke Li
+Foundation Department, Information Engineering University, Zhengzhou Henan
+Received: Feb. 14th, 2025; accepted: Mar. 13th, 2025; published: Mar. 21st, 2025
+Abstract
+Advanced mathematics courses are faced with problems such as huge and complex knowledge sys-
+tem, scattered teaching resources, and difficulty to systematize. Knowledge Graph is an effective
+way to solve these problems. In order to better display the knowledge points and relationships of
+higher mathematics, and further discover the basic supporting role of mathematical concepts, a
+knowledge Graph with a ring structure is designed. From the analysis of teaching practice, this form
+is easy to understand and can improve students’ self-directed learning ability and research and
+analysis ability.
+*通讯作者。
+文章引用: 郭从洲, 李瑞瑞, 李可. 高等数学环状知识图谱可视化设计与实践[J]. 教育进展, 2025, 15(3): 653-658.
+DOI: 10.12677/ae.2025.153452

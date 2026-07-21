@@ -1,0 +1,542 @@
+OntoMathPRO 2.0 Ontology:
+Updates of the Formal Model
+Alexander Kirillovich1,2, Olga Nevzorova1, and Evgeny Lipachev1
+1Kazan Federal University, Kazan, Russia
+2Joint Supercomputer Center of the Russian Academy of Sciences, Kazan, Russia
+{alik.kirillovich,onevzoro,elipachev}@gmail.com
+Abstract. This paper is devoted to the problems of ontology-based
+mathematical knowledge management and representation. The main at-
+tention is paid to the development of a formal model for the repre-
+sentation of mathematical statements in the Open Linked Data cloud.
+The proposed model is intended for applications that extract mathe-
+matical facts from natural language mathematical texts and represent
+these facts as Linked Open Data. The model is used in development of
+a new version of the OntoMathPRO ontology of professional mathemat-
+ics is described. OntoMathPRO underlies a semantic publishing platform,
+that takes as an input a collection of mathematical papers in LATEX for-
+mat and builds their ontology-based Linked Open Data representation.
+The semantic publishing platform, in turn, is a central component of
+OntoMath digital ecosystem, an ecosystem of ontologies, text analytics
+tools, and applications for mathematical knowledge management, includ-
+ing semantic search for mathematical formulas and a recommender sys-
+tem for mathematical papers. According to the new model, the ontology
+is organized into three layers: a foundational ontology layer, a domain
+ontology layer and a linguistic layer. The domain ontology layer contains
+language-independent math concepts. The linguistic layer provides lin-
+guistic grounding for these concepts, and the foundation ontology layer
+provides them with meta-ontological annotations. The concepts are orga-
+nized in two main hierarchies: the hierarchy of objects and the hierarchy
+of reiﬁed relationships.1
+Keywords: Formal Model, Ontology, Linked Open Data, Natural Language
+Processing, Mathematical Knowledge Management, OntoMathPRO
+1 Introduction
+This paper is devoted to a problem in the ﬁeld of ontology-based mathematical
+knowledge management and representation, i.e. representation of mathematical
+statements in the Linked Open Data (LOD) cloud.
+1 Please, cite as: Alexander Kirillovich, Olga Nevzorova, and Evgeny Lipachev.
+OntoMathPRO 2.0 Ontology: Updates of Formal Model // Lobachevskii Journal
+of Mathematics, 2022, Vol. 43, No. 12, pp. 3504–3514.https://doi.org/10.1134/
+S1995080222150136
+arXiv:2303.13542v1  [cs.AI]  17 Mar 2023
+2 Kirillovich, Nevzorova, Lipachev
+There are several formalisms for mathematical knowledge representation [1].
+OpenMath [2], [3] and Content MathML [4] are used to represent mathematical
+statements, while OMDoc [5] is used to represent complex semiformal mathe-
+matical documents. However, these formalisms are not LOD-native and require
+adaptation to be used in LOD. In fact, there are projects for encoding OpenMath
+documents as LOD-integrated RDF datasets [6], [7]. These encodings however
+represent math statements only indirectly: they assert statements about Open-
+Math documents, not the math statements themselves.
+We propose a formal model for representing mathematical statements in the
+Linked Open Data cloud in direct way. This model has been tested in devel-
+opment of OntoMathEdu, an experimental educational mathematical ontology
+[8]–[10]. Now model is used in developing of the new version of OntoMathPRO,
+an ontology of professional mathematics.
+The new version of OntoMathPRO ontology is intended to be used for extract-
+ing mathematical statements from natural language mathematical texts and rep-
+resenting extracted statements as Linked Open Data (LOD). LOD have value in
+themselves [11], and can be used for navigation, querying, aggregation, etc [12]
+– [14].
+Additionally, via the OpenDreamKit project and Math-in-the-Middle ontol-
+ogy [15], a LOD representation can then be converted to formats of computer
+algebra systems. So, for example, OntoMathPRO can be used to parse a math-
+ematical task in a natural language, and automatically solve this task by a
+computer algebra system.
+Although the ﬁrst version of OntoMathPRO ontology [16], [17] has proven
+to be eﬀective in several specialized services, its architecture has a number of
+limitations that impede its using for the intended purpose. In this regard, we
+started a project for developing the new major version of the ontology based on
+the new architecture, designed to tackle these problems.
+The rest of the paper is organized as following. In Section 2 we describe the
+ﬁrst version of the ontology and outline its restrictions. In Section 2 we describe
+the architecture of the new version of ontology under development. In Section 3
+we discuss the task of population the ontology by new concepts. In Conclusions,
+we summarize the current status of the project and the directions of future work.
+2 Ontological representation of math knowledge in
+OntoMathPRO 1.0 ontology
+In this section we brieﬂy describe the ﬁrst version of the OntoMathPRO 1.0
+ontology and outline its restrictions.
+OntoMathPRO 1.0 ontology is organized in two hierarchies: the hierarchy of
+ﬁelds of mathematics and the hierarchy of objects of mathematical knowledge.
+The ontology deﬁnes ﬁve types of relationships between concepts. The concept
+description contains a name in Russian and English, a deﬁnition, links to other
+concepts and external resources from the Linked Open Data cloud.
+OntoMathPRO 2.0 Ontology 3
+The ontology can be used to represent individual mathematical objects as
+instances of the classes from the hierarchy of objects.
+The ontology is expressed by OWL DL (Web Ontology Language) formalism
+which is based on a description logic [18].
+OntoMathPRO underlies a semantic publishing platform [19], that takes as
+an input a collection of mathematical papers in LATEX format and builds their
+ontology-based Linked Open Data representation. The semantic publishing plat-
+form, in turn, is a central component of OntoMath digital ecosystem [20], [21],
+an ecosystem of ontologies, text analytic tools, and applications for mathemati-
+cal knowledge management, including semantic search for mathematical formu-
+las [22] and a recommender system for mathematical papers [23].
+Although the OntoMathPRO 1.0 has proven to be eﬀective in several special-
+ized services, its architecture has a number of limitations. Examples of the most
+signiﬁcant restrictions are
+1. The existing version of the ontology contains a large number of general con-
+cepts, but a rather poor set of relationships between them.
+2. The existing version of the ontology does not distinguish type concepts and
+role concepts; accordingly, there are no relations between roles and types.
+3. Linguistic information about concepts is expressed using simple rdf labels
+that do not contain information about their internal structure and linguistic
+properties.
+4. The existing version of the ontology does not contain individuals, but is
+based solely on the representation of classes.
+Such an ontology is suitable for extracting and representing individual math-
+ematical objects, but not relationships between mathematical objects and math-
+ematical facts.
+3 Ontology-based representation of mathematical
+statements in Linked Open Data
+The key problem that the new version of the ontology is intended to address is
+representation of mathematical statements as Linked Open Data. Thus the on-
+tology determines a functions that translate a mathematical sentence expressed
+in First-order logic (FOL) to a LOD-compatible RDF graph. For the obtained
+RDF translation preserves the meaning of the source FOL sentence, the source
+sentence and the obtained RDF graph must be semantically equivalent. From
+the model-theoretic point of view, it means that the source statement and its
+translation share the same set of models (in this section we use the term ‘model’
+in the technical sense of the model theory, where it means an interpretation
+satisfying a sentence or RDF graph).
+The full coincidence of the models is not possible however. First, FOL and
+RDF have diﬀerent semantics [24]: FOL interpretations contain arbitraryn-ary
+predicates while a RDF/OWL interpretations contains only unary and binary,
+FOL interpretations support functional terms while RDF/OWL interpretations
+4 Kirillovich, Nevzorova, Lipachev
+Foundation	ontology	layer
+Domain	ontology	layerMath.	logicCalculus
+Linguistic	layer
+LOD	resources:1.DBpedia2.ScienceWise3....
+LLOD	resources:1.WordNet2.BabelNet3.…
+NonLLOD	resources:1.SMGloM2.MitM3.…General	concepts
+UFO-A
+OntoMathPRO2.0	architecture:
+Graph	theoryNum.analysis…
+Fig.1: OntoMathPRO ontology structure (see [28])
+do not, and so on. Thus, we can only speak on a some kind of isomorphism
+between models of a FOL sentence and its RDF translation. Second, FOL is of
+more expressive power then RDF/OWL and so the models of a FOL statement
+may be only a subset of the models of its RDF translation.
+State the condition that the translation function must satisfy in more formal
+way.
+Let o is the graph of the ontology.
+Let SF OL is the set of all FOL sentences.
+Let SRDF is the set of all RDF graphs.
+Let∗ : SF OL→ SRDF is a partial function, that translate FOL sentences to
+RDF graphs.
+Let IN TF OL is a set of all FOL interpretations.
+Let IN TRDF is a set of all RDF/OWL interpretations.
+Let t : IN TF OL → IN TRDF is a mapping from FOL interpretations to
+RDF/OWL interpretations. Deﬁne t on a set IN T SF OL ⊂ IN TF OL of FOL
+interpretation as: t(IN T SF OL) ={t(i)| i∈ IN T SF OL}.
+Let MF OL(s) is a set of the models of a FOL sentences. Let MRDF (g) is a
+set of the models of a RDF graphg.
+GivenaFOLsentence sexpressedintermsofaFOLtheory T,thetranslation
+function∗ must satisfy the following condition
+t(MF OL(T∪{ s}))⊂ MRDF (∗(s)∪ o).
+OntoMathPRO 2.0 Ontology 5
+Fig.2: Description of the role conceptDegree of a polynomialin WebProtégé
+4 Formal model of OntoMath PRO 2.0 ontology
+In this section we describe the model for the new version of OntoMathPRO 2.0
+ontology.
+As the ﬁrst version, OntoMathPRO 2.0 is expressed by the OWL 2 DL for-
+malism. The examples below are expressed by Turtle serialization of RDF and
+OWL.
+According to the model, OntoMathPRO 2.0 is organized in three layers:
+1. Domain ontology layer, which contains language-independent math con-
+cepts.
+2. Linguistic layer, containing multilingual lexicons, that provide linguistic
+grounding of the concepts from the domain ontology layer.
+3. Foundational ontology layer, that provides the concepts with meta-
+ontological annotations.
+This three-layered structure is represented at Figure 1.
+The domain ontology layer is organized in two main hierarchies: the hierarchy
+of objects and the hierarchy of reiﬁed relationships.
+6 Kirillovich, Nevzorova, Lipachev
+Divisibility	relationship
+Relator	type
+DividendRole
+DivisorRole
+owl:subClassOf
+Naturalnumber
+Sub-kind
+Naturalnumber
+Sub-kindowl:subClassOf
+n m
+rdf:type
+rdf:type
+Divisibility	relationship	between	the	dividend	nand	the	divisor	m
+rdf:type
+omp:dividendABox
+TBox
+omp:divisor
+Fig.3: An example of a materialized relationship, and its instance corresponding
+to the “The numberm divides the numbern” statement (see [28]).
+Figure 2 depicts a description of the role conceptDegree of a polynomialin
+the WebProtégé editor. The description of contains the names of the concept in
+Russian and English, the metaontological annotation, the parent concept and a
+relation with the type conceptPolynomial.
+There are two meta-ontological types of the concepts: kinds and roles. A kind
+is a concept that is rigid and ontologically independent [25], [26]. So, for example,
+the Integer concept is a kind, because any integer is always a triangle, regardless
+of its relationship with other objects. A role is a concept that is anti-rigid and
+ontologically dependent [25], [26]. An object can be an instance of a role class
+only by virtue of its relationship with another object. So, for example, theDegree
+of a polynomialconcept is a role, since any integer is a degree of a polynomial
+not by itself, but only in relation to a certain polynomial. Any role concept is
+a subclass of some kind concept. For example, theDegree of a polynomialrole
+concept is a subclass ofNatural numberkind concept.
+Relations between concepts are represented in ontology in a reiﬁed form,
+i.e., as concepts, not as object properties (such representation ﬁts the standard
+onto-logical pattern for representingN-ary relation with no distinguished partic-
+ipant [27], but is applied to binary relations too). Thus, the relationships between
+concepts are ﬁrst-order entities, and can be a subject of a statement.
+Reiﬁed relationships are linked to their participants byhas argumentobject
+properties and their subproperties.
+OntoMathPRO 2.0 Ontology 7
+Figure 3 shows one of the relations, represented by theDivisibility relation-
+ship concept. This relation is linked to its participants, represented byDividend
+and Divisor role concepts. These roles, in turn, are deﬁned as subclasses of the
+Natural number kind concept. The bottom of the ﬁgure depicts an instance of
+this relation, namely theDivisibility relationship between the dividendn and the
+divisor m, that binds the natural number n and the natural number m (see
+also [28]). This instance is a representation of natural language statement “The
+number m divides the numbern”.
+The mappings between ontology concepts and corresponding natural lan-
+guage statements are deﬁned at the linguistic level of the ontology.
+Construction with a reiﬁed relationship is a RDF translation of the mathe-
+matical sentence that is expressed in FOL as an atomic formula. Translation of
+a formula from FOL to RDF is deﬁned as follows.
+Let T is a mathematical theory,RN amesmath is a set of predicate letters of
+T and Const math is a set of constants ofT.
+Let RN amesowl is a set of URIs of classes from the hierarchy of reiﬁed rela-
+tionships of the OntoMathPRO ontology andConst owl is a set of URIs denoting
+mathematical objects.
+Let pmap : RN amesmath→ RN amesowl and cmap : Const math→ Const owl.
+AFOLsentence R(c1, ..., cn),where R∈ RN amesmath, c1, ..., cn∈ Const math
+is translated to the following RDF graph
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix omp: <http://ontomathpro.org/omp2#> .
+_:rel rdf:type rmap(R).
+_:rel omp:hasArgument cmap (c1).
+...
+_:rel omp:hasArgument cmap (cn).
+The mappings between ontology concepts and corresponding natural lan-
+guage statements are deﬁned at the linguistic level of the ontology.
+The linguistic layer contains multilingual lexicons, that provide linguistic
+grounding of the concepts from the domain ontology layer. Currently we are
+developing the lexicons for Russian and English. A lexicon consists in
+– Lexical entries, denoting mathematical concepts. Examples of lexical entries
+are “number”, “prime number”, “degree of a polynomial”, “to intersect", etc.
+– Forms of lexical entries (in diﬀerent numbers, cases, tenses, etc).
+– Syntactic trees of multi-word lexical entries.
+– Syntactic frames of lexical entries. A syntactic frame represents the syntactic
+behavior of a predicate, deﬁning the set of syntactic arguments this predicate
+requires and their mappings to ontological entities. For example, a syntac-
+tic frame of the “to divide” verb determines that in “X divides Y” phrase,
+the subject X represents the divisor and the direct objectY represents the
+dividend (Figures 4, 5).
+8 Kirillovich, Nevzorova, Lipachev
+Lexical	entry“to	divide” Syntactic	frame“X	divides	Y”	
+Divisibility	relationshipRelator	type
+DividendRole DivisorRole
+lexinfo:synBehavior
+Subjectlexinfo:Subject Direct	objectlexinfo:DirectObject
+lexinfo:TransitiveFramelemon:LexicalEntry
+Fig.4: Syntactic frame for the “divide” verb and its mapping toDivisibility re-
+lationship. The subject and the object syntactic arguments of the frame are
+mapped toDividend and Divisor arguments of the the relationship.
+The lexicons are expressed as Linguistic Linked Open Data (LLOD) datasets
+in terms of Lemon ontology [29], [30], LexInfo [31], OLiA [32] and PreMOn [33]
+ontologies (see also [34]).
+Lemon ontology is used to represent complex lexical resources. This ontology
+is based on the international standard ISO 24613:2008 “Language resource man-
+agement – Lexical markup framework (LMF)” [35]. The basic elements of this
+ontology are lexicons, lexical entries, forms of a lexical entry, senses of a lexical
+entry, and concepts from ontologies of subject domains.
+To describe language categories (gender, number, case, tense, direct object,
+in-direct object, synonym, antonym, etc.) in Lemon ontology, the external on-
+tology LexInfo is used. To describe language categories in LLOD, diﬀerent on-
+tologies are used that are linked to the ISOcat data category registry, which is
+the implementation of the international standard ISO 12620: 2009 “Terminology
+and other languages and content resources – Speciﬁcation of data categories and
+management of the Data Category” [36].
+5 Replenishing the ontology by new concepts
+When, developing the ontology, various sources of mathematical knowledge are
+used, including articles from mathematical journals [38], [39].
+Despite the rather signiﬁcant amount of mathematical terms, the replen-
+ishment of ontologies is an urgent task. Mathematical encyclopedias and refer-
+ence books are the good sources of replenishment of ontologies. We compared
+OntoMathPRO 2.0 Ontology 9
+@prefix : <http://ontomathpro.org/lexicons/>.
+@prefix omp: <http://ontomathpro.org/omp2#> .
+@prefix ontolex: <http://www.w3.org/ns/lemon/ontolex#>.
+@prefix synsem: <http://www.w3.org/ns/lemon/synsem#>.
+@prefix lexinfo: <http://www.lexinfo.net/ontology/2.0/lexinfo#>.
+#The "to divide" verb
+:EN-v-divide
+a ontolex:LexicalEntry;
+lexinfo:partOfSpeech lexinfo:verb;
+ontolex:canonicalForm :EN-v-divide-form0;
+synsem:synBehavior :EN-v-divide-frame1;
+ontolex:sense :EN-v-divide-sense1.
+#The canonical form of this verb
+:EN-v-divide-form0
+a ontolex:Form;
+ontolex:writtenRep "divide"@en.
+#A syntactic frame "X dividees Y"
+:EN-v-divide-frame1
+a lexinfo:TransitivePPFrame;
+lexinfo:subject :EN-v-divide-frame1-subj;
+lexinfo:directObject :EN-v-divide-frame1-obj.
+#The subject of the verb
+:EN-v-divide-frame1-subj
+a lexinfo:Subject.
+#The direct object of the verb
+:EN-v-divide-frame1-obj
+a lexinfo:DirectObject.
+Fig.5: Syntactic frame for the “divide” verb and its mapping toDivisibility re-
+lationship in the LLOD format
+the volume of terminology from the ontology with the terminological index of
+the “Mathematical Handbook for Scientists and Engineers” by G. Korn and
+T. Korn [40] based on a specially developed program and got quite interesting
+results.
+The comparison was carried out only in the ﬁelds of mathematics, which are
+represented in the ontology. In total, there are 2227 terms in Korn’s reference
+book, of which 791 terms have an intersection with terms from the ontology.
+When comparing terms, a cosine measure was used with text preprocessing.
+Pre-processing consisted in removing punctuation marks, stop words, and
+lemmatizing all words used pymorphy2 library [41], [42]. The threshold value for
+an acceptable measure of similarity was chosen to be0.7.
+10 Kirillovich, Nevzorova, Lipachev
+#A lexical sense of the verb, expressing the mapping to ontology
+:EN-v-divide-sense1
+a ontolex:LexicalSense, synsem:OntoMap;
+synsem:ontoMapping :EN-v-divide-sense1;
+ontolex:reference omp:Divisibility_relationship;
+synsem:submap
+[
+a synsem:OntoMap;
+ontolex:reference omp:Divisibility_relationship;
+synsem:isA _:Relationship1
+], [
+a synsem:OntoMap;
+ontolex:reference omp:dividend;
+synsem:subjOfProp _:Relationship1;
+synsem:objOfProp :EN-v-divide-frame1-subj
+], [
+a synsem:OntoMap;
+ontolex:reference omp:divisor;
+synsem:subjOfProp _:Relationship1;
+synsem:objOfProp :EN-v-divide-frame1-obj
+], [
+a synsem:OntoMap;
+ontolex:reference omp:Dividend;
+synsem:isA :EN-v-divide-frame1-subj
+], [
+a synsem:OntoMap;
+ontolex:reference omp:Divisor;
+synsem:isA :EN-v-divide-frame1-pp_at
+].
+Fig.5: Syntactic frame for the “divide” verb and its mapping toDivisibility re-
+lationship in the LLOD format (continuation)
+The following situations were identiﬁed when comparing terminology
+– useofincompletelabelsintheontology( Riemann–Stieltjes integral/Riemann–
+Stieltjes probability integral[40]; Cesaro summable series/ summable series
+by Cesaro method[40], etc.);
+– the comparison scores are high (above the threshold value of0.7), but actu-
+ally speciﬁc value and general value of term were compared (e.g.,Stormer
+interpolation formula/interpolation formula[40];Gaussian interpolation for-
+mula/interpolation formula [40]; Adams interpolation formula/Adams for-
+mula [40]).
+In the last example, professional review is required to match the terms. Thus,
+replenishment of the ontology is a very non-trivial task.
+OntoMathPRO 2.0 Ontology 11
+6 Conclusions
+In this article, we discussed the previous version of the OntoMathPRO ontol-
+ogy and the reasons why it became necessary to improve the formal model for
+representing mathematical knowledge.
+We have described the new formal model that underlies the new version of
+OntoMathPRO ontology of professional mathematics. According to this formal
+model, the ontology is organized into three layers: a foundational ontology layer,
+a domain ontology layer and a linguistic layer. The developed formal model
+allows representing mathematical statements in Open Linked Data cloud.
+Our work on the new version of the ontology is determined by the proposed
+model and undergoing by the following steps
+1. Internal veriﬁcation and correction the taxonomy of the ontology.
+2. Providing the concepts with meta-ontological annotations.
+3. Development of materialized relationships.
+4. Development of linguistic layer.
+5. Replenishing the ontology by new concepts.
+6. External veriﬁcation of the new version of ontology in such tasks as infor-
+mation extraction and semantic search.
+On the current stage, we have performed the internal veriﬁcation of the tax-
+onomy and provided the concepts with meta-ontological annotations. Currently,
+we are working on development of reiﬁed relationships and have developed sev-
+eral experimental ones.
+Funding. The work was funded by Russian Science Foundation according
+to the research project no. 21–11–00105.
+References
+1. C. Kaliszyk and F. Rabe, “A Survey of Languages for Formalizing Mathemat-
+ics,” In: C. Benzmüller and B. Miller B. (Eds.) CICM 2020. Lecture Notes
+in Artiﬁcial Intelligence 12236, 138–156 (2020). https://doi.org/10.1007/
+978-3-030-53518-6_9.
+2. S. Buswell, O. Caprotti, D.P. Carlisle, M.C. Dewar, M. Gaetano, M. Kohlhase,
+J.H. Davenport, P.D.F. Ion, and T. Wiesing(Eds.). The OpenMath Standard.
+Version: 2.0r2 (The OpenMath Society, July 2019). https://openmath.org/
+standard/om20-2019-07-01/omstd20.html.
+3. M. Kohlhase, and F. Rabe, “Semantics of OpenMath and MathML3,” Mathemat-
+ics in Computer Science 6 (3), 235–260 (2012). https://doi.org/doi:10.1007/
+s11786-012-0113-x.
+4. D. Carlisle, P. Ion, and R. Miner (Eds.), Mathematical Markup Language
+(MathML). Version 3.0. 2nd Edition (W3C Recommendation, 10 April 2014).
+https://www.w3.org/TR/MathML3/.
+5. M. Kohlhase, OMDoc – An Open Markup Format for Mathematical Documents
+[version 1.2].Lecture Notes in Artiﬁcial Intelligence4180 (Springer, 2006).
+12 Kirillovich, Nevzorova, Lipachev
+6. K. Wenzel, “OpenMath-RDF: RDF encodings for OpenMath objects and Content
+Dictionaries,” 31thOpenMathWorkshopatCICM2021. https://easychair.org/
+publications/preprint_open/XQwn
+7. K. Wenzel and H. Reinhardt, “Mathematical Computations for Linked Data Ap-
+plications with OpenMath,” CEUR Workshop Proceedings921, 38–48 (2012).
+8. A. Kirillovich, O. Nevzorova, M. Falileeva, E. Lipachev, and L. Shakirova, “On-
+toMathEdu: Towards an Educational Mathematical Ontology,” In: E. Brady et al.
+(Eds.), Workshop Papers at 12th Conference on Intelligent Computer Mathemat-
+ics (CICM-WS 2019), Prague, Czech Republic, 8–12 July 2019, CEUR Workshop
+Proceedings 2634, 1–10 (2020). http://ceur-ws.org/Vol-2634/WiP1.pdf.
+9. A. Kirillovich, O. Nevzorova, M. Falileeva, E. Lipachev, and L. Shakirova, “On-
+toMathEdu: A Linguistically Grounded Educational Mathematical Ontology,”
+Lecture Notes in Computer Science 12236, 157–172 (Springer, 2020). https:
+//doi.org/10.1007/978-3-030-53518-6_10.
+10. A. Kirillovich, M. Falileeva, O. Nevzorova, E. Lipachev, A. Dyupina, and
+L. Shakirova, “Prerequisite Relationships of the OntoMathEdu Educational Math-
+ematical Ontology,” In: J. C. Figueroa-García, Y. Díaz-Gutierrez, E. E. Gaona-
+García, A. D. Orjuela-Cañón (Eds.) Applied Computer Sciences in Engineering.
+WEA 2021. Communications in Computer and Information Science1431, 517–524
+(Springer, Cham, 2021).https://doi.org/10.1007/978-3-030-86702-7_44
+11. C. Lange, “Ontologies and languages for representing mathematical knowledge on
+the Semantic Web,” Semantic Web.4 (2), 119–158 (2013). https://doi.org/10.
+3233/SW-2012-0059.
+12. Developing a 21st Century Global Library for Mathematics(Research, DC: The
+National Academies Press, 2014).https://doi.org/10.17226/18619.
+13. J. Carette, W. M. Farmer, M. Kohlhase, and F. Rabe, “Big Math and the One–
+Brain Barrier A Position Paper and Architecture Proposal,” arXiv:1904.10405
+[cs.MS] (2019). https://doi.org/10.48550/arXiv.1904.10405.
+14. J.Carette,W.M.Farmer,M.Kohlhase,andF.Rabe,“BigMathandtheOne-Brain
+Barrier: The Tetrapod Model of Mathematical Knowledge,” Math Intelligencer43,
+78–87 (2021). https://doi.org/10.1007/s00283-020-10006-0.
+15. P.-O. Dehaye et al., “Interoperability in the Open-DreamKit Project: The Math-
+in-the-Middle Approach,” In: M. Kohlhase, M. Johansson, B. Miller, L. de Moura,
+F.Tompa,(Eds.)Proc.ofthe9thInternationalConferenceonIntelligentComputer
+Mathematics (CICM 2016). Lecture Notes in Computer Science 9791, 117–131
+(Springer, Cham, 2016).https://doi.org/10.1007/978-3-319-42547-4_9.
+16. A. M. Elizarov, A. V. Kirillovich, E. K. Lipachev, O. A. Nevzorova, V. D. Solovyev,
+and N. G. Zhiltsov, “Mathematical Knowledge Representation: Semantic Models
+and Formalisms,” Lobachevskii J. Math.35 (4), 347–353 (2014). https://doi.
+org/10.1134/S1995080214040143.
+17. O. Nevzorova, N. Zhiltsov, A. Kirillovich, and E. Lipachev, “OntoMathPRO On-
+tology: A Linked Data Hub for Mathematics,” Communications in Computer and
+Information Science 468, 105–119 (Springer, Cham, 2014).https://doi.org/10.
+1007/978-3-319-11716-4_9.
+18. OWL Web Ontology Language Guide. W3C Recommendation 10 February 2004.
+URL: https://www.w3.org/TR/owl-guide/.
+19. O. Nevzorova at al., “Bringing Math to LOD: A Semantic Publishing Platform
+Prototype for Scientiﬁc Collections in Mathematics,” Lecture Notes in Computer
+Science 8218, 379–394 (Springer, Berlin, Heidelberg, 2013).https://doi.org/10.
+1007/978-3-642-41335-3_24.
+OntoMathPRO 2.0 Ontology 13
+20. A. Elizarov, A. Kirillovich, E. Lipachev, and O. Nevzorova, “Digital Ecosystem
+OntoMath: Mathematical Knowledge Analytics and Management,” Communica-
+tions in Computer and Information Science706, 33–46 (Springer, Cham, 2017).
+https://doi.org/10.1007/978-3-319-57135-5_3.
+21. A. M. Elizarov, N. G. Zhiltsov, A. V. Kirillovich, E. K. Lipachev, O. A. Nev-
+zorova, and V. D. Solovyev, “The OntoMath Ecosystem: Ontologies and Applica-
+tions for Math Knowledge Management,” In: Semantic Representation of Math-
+ematical Knowledge Workshop 5 February 2016.http://www.fields.utoronto.
+ca/video-archive/2016/02/2053-14698.
+22. A. Elizarov, A. Kirillovich, E. Lipachev, and O. Nevzorova, “Semantic Formula
+Search in Digital Mathematical Libraries,” Proceedings of the 2nd Russia and
+Paciﬁc Conference on Computer Technology and Applications (RPC 2017), pp. 39–
+43. IEEE (2017).https://doi.org/10.1109/RPC.2017.8168063.
+23. A. M. Elizarov, A. V. Kirillovich, E. K. Lipachev, A. B. Zhizhchenko, and N.
+G. Zhil’tsov, “Mathematical Knowledge Ontologies and Recommender Systems for
+Collections of Documents in Physics and Mathematics,” Doklady Mathematics93
+(2), 231–233 (2016). https://doi.org/10.1134/S1064562416020174.
+24. RDF 1.1 Semantics. W3C Recommendation 25 February 2014, URL:https://
+www.w3.org/TR/rdf11-mt/.
+25. G. Guizzardi et al., “UFO: Uniﬁed Foundational Ontology,” Appl. Ontol.17 (1),
+167–210 (2022). https://doi.org/10.3233/AO-210256.
+26. G. Guizzardi, Ontological Foundations for Structural Conceptual Models(CTIT,
+Enschede, 2005).
+27. N. Noy and A. Rector, Deﬁning N-ary Relations on the Semantic Web.
+W3C Working Group Note, 12 April 2006 (W3C) https://www.w3.org/TR/
+swbp-n-aryRelations/.
+28. A. M. Elizarov, A. V. Kirillovich, E. K. Lipachev, and O. A. Nevzorova,
+“OntoMathPRO: Ontology of Mathematical Knowledge,” Doklady Mathematics
+(2022). https://doi.org/10.1134/S1064562422700016.
+29. P. Cimiano, J. P. McCrae, and P. Buitelaar,Lexicon model for ontologies. Final
+community group report, 10 May 2016.https://www.w3.org/2016/05/ontolex/.
+30. J. P. McCrae, J. Bosque-Gil, J. Gracia, P. Buitelaar, and P. Cimiano, “The
+OntoLex-Lemon Model: Development and Applications,” In: I. Kosem et al. (Eds.)
+Proc. of the 5th biennial conference on Electronic Lexicography (eLex 2017), 587–
+597. Lexical Computing CZ (2017).
+31. P. Cimano, P. Buitelaar, J. P. McCrae, and M. Sintek, “LexInfo: A declarative
+model for the lexicon-ontology interface,” J. of Web Semantics9 (1), 29–51 (2011).
+https://doi.org/10.1016/j.websem.2010.11.001.
+32. C. Chiarcos, “OLiA – Ontologies of Linguistic Annotation,” Semantic Web6 (4),
+379–386 (2015). https://doi.org/10.3233/SW-140167.
+33. M. Rospocher, F. Corcoglioniti, and A. Palmero Aprosio, “PreMOn: LODiﬁng lin-
+guistic predicate models,” Language Resources and Evaluation53, 499–524 (2019).
+https://doi.org/10.1007/s10579-018-9437-8.
+34. P. Cimiano, C. Unger, and J. McCrae, Ontology–Based Interpretation
+of Natural Language . (Springer, Cham, 2014). https://doi.org/10.1007/
+978-3-031-02154-1.
+35. Language resource management – Lexical markup framework (LMF). ISO/CD
+24613:2006(Iso.org,2006). https://lirics.loria.fr/doc_pub/N330_LMF_rev13_
+For_CD_Ballot.pdf.
+14 Kirillovich, Nevzorova, Lipachev
+36. Terminology and other languages and content resources – Speciﬁcation of data
+categories and management of the Data Category. ISO 12620:2009 (Iso.org, 2009).
+http://atoll.inria.fr/RNIL/TC37SC4-docs/CD12620-1.pdf.
+37. N. Guarino and C. A. Welty, “An Overview of OntoClean,” In: S. Staab, and
+R. Studer (Eds.) Handbook on Ontologies. Springer, Berlin, Heidelberg (2009),
+201–220. https://doi.org/10.1007/978-3-540-92673-3_9.
+38. E. V. Biryaltsev, A. M. Elizarov, N.G. Zhiltsov, E. K. Lipachev, O. A. Nevzorova,
+and V. D. Solovyev, “Methods for analyzing semantic data of electronic collections
+in mathematics,” Autom. Doc. Math. Linguist.48, 81–85 (2014). https://doi.
+org/10.3103/S000510551402006X
+39. A. M. Elizarov, E. K. Lipachev, O. A. Nevzorova, and V. D. Solovyev, “Meth-
+ods and Means for Semantic Structuring of Electronic Mathematical Docu-
+ments,” Doklady Mathematics90 (1), 521–524 (2014).https://doi.org/0.1134/
+S1064562414050275.
+40. G. A. Korn and T. M. Korn,Mathematical Handbook for Scientists and Engineers:
+Deﬁnitions, Theorems, and Formulas for Reference and Review(Dover Publica-
+tions; Revised edition, 2000).
+41. Morphological Analyzer pymorphy2. https://pymorphy2.readthedocs.io/en/
+stable/.
+42. M. Korobov, “Morphological Analyzer and Generator for Russian and Ukrainian
+Languages,” Analysis of Images, Social Networks and Texts, 320–332 (2015).

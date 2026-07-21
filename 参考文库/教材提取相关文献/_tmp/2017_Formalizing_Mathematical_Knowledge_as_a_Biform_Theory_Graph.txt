@@ -1,0 +1,1775 @@
+arXiv:1704.02253v3  [cs.LO]  26 Jul 2017
+Formalizing Mathematical Knowledge as a
+Biform Theory Graph: A Case Study ⋆
+Jacques Carette and William M. Farmer
+Computing and Software, McMaster University, Canada
+http://www.cas.mcmaster.ca/~carette
+http://imps.mcmaster.ca/wmfarmer
+July 27, 2017
+Abstract. A biform theory is a combination of an axiomatic theory and
+an algorithmic theory that supports the integration of reas oning and
+computation. These are ideal for formalizing algorithms th at manipu-
+late mathematical expressions. A theory graph is a network of theories
+connected by meaning-preserving theory morphisms that map the formu-
+las of one theory to the formulas of another theory. Theory gr aphs are
+in turn well suited for formalizing mathematical knowledge at the most
+convenient level of abstraction using the most convenient v ocabulary. We
+are interested in the problem of whether a body of mathematic al knowl-
+edge can be eﬀectively formalized as a theory graph of biform theories.
+As a test case, we look at the graph of theories encoding natur al number
+arithmetic. We used two diﬀerent formalisms to do this, whic h we de-
+scribe and compare. The ﬁrst is realized in cttuqe, a version of Church’s
+type theory with quotation and evaluation, and the second is realized in
+Agda, a dependently typed programming language.
+1 Introduction
+There are many methods for encoding mathematical knowledge . The two most
+prevalent are the axiomatic and the algorithmic. The axiomatic method, fa-
+mously employed by Euclid in his Elements circa 300 BCE, encodes a body of
+knowledge as an axiomatic theory composed of a language and a set of axioms
+expressed in that language. The axioms are assumptions abou t the concepts of
+the language and the logical consequences of the axioms are t he facts about
+the concepts. The algorithmic method in contrast uses an algorithmic theory ,
+composed of a language and a set of algorithms that perform symbolic com-
+putations over the expressions of the language. Each algori thm procedurally
+encodes its input/output relation. For example, an algorit hm that symbolically
+⋆ Published without appendices in: H. Geuvers et al., eds, Intelligent Computer
+Mathematics (CICM 2017) , Lecture Notes in Computer Science , Vol. 10383,
+pp. 9–24, Springer, 2017. The ﬁnal publication is available at Springer via
+http://dx.doi.org/10.1007/978-3-319-62075-6_2. This research was supported
+by NSERC.
+2
+adds expressions that represent rational numbers encodes t he addition function
++ : Q × Q → Q over the rational numbers.
+A complex body of mathematical knowledge comprises many diﬀ erent theo-
+ries; these can be captured by the little theories method [9] as a theory graph [13]
+consisting of theories as nodes and theory morphisms as dire cted edges. A the-
+ory morphism is a meaning-preserving mapping from the formu las of one theory
+to the formulas of another. The theories serve as abstract ma thematical models
+and the morphisms serve as information conduits that enable deﬁnitions and
+theorems to be transported from one theory to another [2]. A t heory graph en-
+ables mathematical knowledge to be formalized at the most co nvenient level of
+abstraction using the most convenient vocabulary. Moreove r, the structure of
+a theory graph provides the means to access relevant concept s and facts (c&f),
+reduce the duplication of c&f, and enable c&f to be interpret ed in multiple ways.
+The axiomatic method is the basis for formalizing mathemati cal knowledge
+in proof assistants and logical frameworks. Although many p roof assistants sup-
+port the little theories method to some extent, very few prov ide the means to
+explicitly build theory graphs. Notable exceptions are the imps theorem proving
+system [10] and the Mmt module system for mathematical theories [16].
+Computer algebra systems on the other hand are based on algor ithmic the-
+ories, which are not usually organized as a graph. An excepti on is the Axiom
+system [12] in which a network of abstract and concrete algor ithmic theories are
+represented by Axiom categories and domains, respectively . Algorithmic theories
+are challenging to fully formalize because a speciﬁcation o f a symbolic algorithm
+that encodes a mathematical function requires the ability t o talk about the re-
+lationship between syntax and semantics.
+Axiomatic and algorithmic knowledge complement each other , and both are
+needed. A biform theory [3,11,4] combines both, and furthermore supports the
+integration of reasoning and computation. We argue in [3] th at biform theories
+are needed to build high-level theories analogous to high-level programming lan-
+guages. Biform theories are challenging to formalize for th e same reasons that
+algorithmic theories are challenging to formalize.
+We are interested in the problem of whether the little theori es method can
+be applied to biform theories. That is, can a body of mathemat ical knowledge be
+eﬀectively formalized as a theory graph of biform theories? We use a graph (of
+biform theories) encoding natural number arithmetic as a te st case. We describe
+two diﬀerent formalizations, and compare the results. The ﬁ rst formalization is
+realized using the global approach in cttuqe [8], a variant of cttqe [6,7], a ver-
+sion of Church’s type theory with quotation and evaluation, while the second is
+realized using the local approach in Agda [14,15] , a depende ntly typed program-
+ming language. This dual formalization, contrasting the tw o approaches, forms
+the core of our contribution; each formalization has some sm aller contributions,
+some of which may be of independent interest.
+The rest of the paper is organized as follows. The notion of a b iform theory
+is deﬁned and discussed in section 2. The theories that encod e natural number
+arithmetic are presented in section 3. The cttuqe formalization is discussed in
+3
+section 4, and the Agda version in section 5. These two are pre sented in full in
+appendices A and B. Section 6 compares the two formalization s. The paper ends
+with conclusions and future work in section 7.
+The authors are grateful to the reviewers for their comments and suggestions.
+2 Biform Theories
+Let E be a set of expressions and f : E n → E be an n-ary function where n ≥ 1. A
+transformer for f is an algorithm that implements f . Transformers manipulate
+expressions e in various ways: simple ones build bigger expressions from p ieces,
+select components of e, or check whether e satisﬁes some syntactic property.
+More sophisticated transformers manipulate expressions i n a mathematically
+meaningful way. We call these kinds of transformers syntax-based mathematical
+algorithms (SBMAs) [5]. Examples include algorithms that apply arithmetic op-
+erations to numerals, factor polynomials, transpose matri ces, and symbolically
+diﬀerentiate expressions with variables. The computational behavior of a trans-
+former is the relationship between its input and output expr essions. When the
+transformer is an SBMA, its mathematical meaning is the relationship between
+the mathematical meanings of its input and output expressio ns.
+A biform theory T is a triple (L, Π, Γ ) where L is a language of some under-
+lying logic, Π is a set of transformers for functions over expressions of L, and Γ
+is a set of formulas of L. L is generated from a set of symbols that include, e.g.,
+types and constants. Each symbol is the name for a concept of T . The trans-
+formers in Π are for functions represented by symbols of L. The members of Γ
+are the axioms of T . They specify the concepts of T including the computational
+behaviors of transformers and the mathematical meanings of SBMAs. The un-
+derlying logic provides the semantic foundation for T . We say T is an axiomatic
+theory if Π is empty and an algorithmic theory if Γ is empty.
+Expressing a biform theory in the underlying logic requires infrastructure for
+reasoning about expressions manipulated by the transforme rs as syntactic en-
+tities. The infrastructure provides a basis for metareasoning with reﬂection [6].
+There are two main approaches for obtaining this infrastruc ture [5]. The local
+approach is to produce a deep embedding of a sublanguage L′ of L that include
+all the expressions manipulated by the transformers of Π . The deep embedding
+consists of (1) an inductive type of syntactic values that represent the syntactic
+structures of the expressions in L′, (2) an informal quotation operator that maps
+the expressions in L′ to syntactic values, and (3) a formal evaluation operator
+that maps syntactic values to the values of the expressions i n L′ that they rep-
+resent. The global approach is to replace the underlying logic of L with a logic
+such as that of [6] that has (1) an inductive type of syntactic values for all the
+expressions in L, (2) a global formal quotation operator , and (3) a global formal
+evaluation operator.
+There are several ways, in a proof assistant, to construct a t ransformer π
+for f : E n → E . The simplest is to deﬁne f as a lambda abstraction Af , and
+then π computes the value f (e1, . . . , e n) by reducing Af (e1, . . . , e n) using β -
+4
+reduction (and possibly other transformations such as δ-reduction, etc). Another
+method is to specify the computational behavior of f by axioms, and then π can
+be implemented as a tactic that applies the axioms to f (e1, . . . , e n) as, e.g.,
+rewrite rules or conditional rewrite rules. Finally, the co mputational behavior
+or mathematical meaning of f can be speciﬁed by axioms, and then π can be a
+program which satisﬁes these axioms; this program can opera te on either internal
+or external data structures representing the expressions e1, . . . , e n.
+3 Natural Number Arithmetic: A Test Case
+Figure 1 shows a theory graph composed of biform theories enc oding natural
+number arithmetic. We start with eight axiomatic theories ( seven in ﬁrst-order
+logic (FOL) and one in simple type theory (STT)) and then add a variety of use-
+ful transformers in the appropriate theories. These eight a re chosen because they
+ﬁt together closely and have simple axiomatizations. Of the ﬁrst-order theories,
+BT1 and BT5 are theories of 0 and S (which denotes the successor function);
+BT2 and BT6 are theories of 0, S, and +; and BT3, BT4, and BT7 are theories
+of 0, S, +, and ∗. Several other biform theories could be added to this graph,
+most notably Skolem arithmetic, the complete theory of 0, S, and ∗, which has a
+very complicated axiomatization [17]. The details of each t heory is given below.
+BT1 BT2 BT3 BT4
+BT5 BT6 BT7 BT8
+Fig. 1. Biform Theory Graph Test Case
+Figure 1 shows the morphisms that connect these theories. Th e֒→arrows
+denote strict theory inclusions. The morphism from BT4 to BT 7 is the identity
+mapping. It is meaning-preserving since each axiom of BT4 is a theorem of BT7.
+In particular, A7 follows from the induction schema A10. The theory morphism
+from BT7 to BT8 is interlogical since their logics are diﬀere nt. It is deﬁned by
+the mapping of 0, S, +, ∗ to 0ι, Sι→ ι, +ι→ ι→ ι, ∗ι→ ι→ ι, respectively, where +ι→ ι→ ι
+and ∗ι→ ι→ ι are deﬁned constants in BT8. It is meaning-preserving since A1–A6
+and the instances of the induction schema A10 map to theorems of BT8.
+We have formalized this biform theory graph in two ways: the ﬁ rst in cttuqe
+using the global approach and the second in Agda using the loc al approach.
+5
+These are discussed in the next two sections, while the full d etails are given in
+appendices A and B. A “conventional” mathematical presenta tion of the theories
+would be as follows.
+Biform Theory 1 (BT1: Simple Theory of 0 and S)
+Logic: FOL. Constants: 0 (0-ary), S (unary).
+Axioms:
+A1. S(x) ̸= 0.
+A2. S(x) = S(y) ⊃ x = y.
+Properties: incomplete, undecidable.
+Transformers: Recognizer for the formulas of the theory.
+Biform Theory 2 (BT2: Simple Theory of 0, S, and +)
+Extends BT1.
+Logic: FOL. Constants: + (binary, inﬁx).
+Axioms:
+A3. x + 0 = x.
+A4. x + S(y) = S(x + y).
+Properties: incomplete, undecidable.
+Transformers: Recognizer for the formulas of the theory and algorithm for adding
+natural numbers as binary numerals.
+Biform Theory 3 (BT3: Simple Theory of 0, S, +, and ∗)
+Extends BT2.
+Logic: FOL. Constants: ∗ (binary, inﬁx).
+Axioms:
+A5. x ∗ 0 = 0 .
+A6. x ∗ S(y) = ( x ∗ y) + x.
+Properties: incomplete, undecidable.
+Transformers: Recognizer for the formulas of the theory and algorithm for mul-
+tiplying natural numbers as binary numerals.
+Biform Theory 4 (BT4: Robinson Arithmetic (Q))
+Extends BT3.
+Logic: FOL.
+Axioms:
+A7. x = 0 ∨ ∃ y . S (y) = x.
+Properties: essentially incomplete, essentially undecidable.
+Biform Theory 5 (BT5: Complete Theory of 0 and S)
+Extends BT1.
+Logic: FOL.
+Axioms:
+A8. (A(0) ∧ ∀ x . (A(x) ⊃ A(S(x)))) ⊃ ∀ x . A (x)
+where A is any formula of BT5 in which x is not bound and A(t) is the result
+of replacing each free occurrence of x in A with the term t.
+Properties: complete, decidable.
+6
+Transformers: Generator for instances of the theory’s induction schema a nd
+decision procedure for the theory.
+Biform Theory 6 (BT6: Presburger Arithmetic)
+Extends BT2 and BT5.
+Logic: FOL.
+Axioms:
+A9. (A(0) ∧ ∀ x . (A(x) ⊃ A(S(x)))) ⊃ ∀ x . A (x)
+where A is any formula of BT6 in which x is not bound and A(t) is the result
+of replacing each free occurrence of x in A with the term t.
+Properties: complete, decidable.
+Transformers: Generator for instances of the theory’s induction schema a nd
+decision procedure for the theory.
+Biform Theory 7 (BT7: First-Order Peano Arithmetic)
+Extends BT3 and BT6.
+Logic: FOL.
+Axioms:
+A10. (A(0) ∧ ∀ x . (A(x) ⊃ A(S(x)))) ⊃ ∀ x . A (x)
+where A is any formula of BT7 in which x is not bound and A(t) is the result
+of replacing each free occurrence of x in A with the term t.
+Properties: essentially incomplete, essentially decidable.
+Transformers: Generator for instances of the theory’s induction schema.
+Biform Theory 8 (BT8: Higher-Order Peano Arithmetic)
+Logic: STT. Types: ι. Constants: 0ι, Sι→ ι.
+Axioms:
+A11. Sι→ ι(xι) ̸= 0 ι.
+A12. Sι→ ι(xι) = Sι→ ι(yι) ⊃ xι = yι.
+A13. (pι→ o(0) ∧ ∀ xι . (pι→ o(xι) ⊃ pι→ o(S(xι)))) ⊃ ∀ xι . p ι→ o(xι).
+Properties: essentially incomplete, essentially decidable, categor ical for standard
+models.
+It is important to note that axioms A8, A9 and A10 are all diﬀer ent since
+they are over diﬀerent languages; in particular, BT6 adds + to the language of
+BT5, and BT7 adds ∗ to the language of BT6.
+4 Study 1: Test Case Formalized in CTTuqe
+cttuqe supports the global approach for metareasoning with reﬂect ion. cttuqe
+contains (1) a logical base type ǫ that is an inductive type of syntactic val-
+ues called constructions which are expressions of type ǫ, (2) a global quotation
+operator ⌜·⌝ that maps each expression Aα of cttuqe to a construction that rep-
+resents the syntactic structure of Aα , and (3) a typed global evaluation operator
+/llbracket·/rrbracketα that maps each construction Bǫ of cttuqe representing an expression Aα
+of type α to an expression whose value is the same as Aα . See [8] for details.
+7
+A biform theory of cttuqe is a triple (L, Π, Γ ) where L is a language gener-
+ated by a set of base types and constants of cttuqe, Π is a set of transformers
+over expressions of L, and Γ is a set of formulas of L. Each transformer is for a
+constant in L whose type has the form ǫ → · · · → ǫ. We present biform theories
+in cttuqe as a set of base types, constants, axioms, transformers, and theorems.
+The base types are divided into primitive and deﬁned base typ es. A deﬁned base
+type is declared by a formula that equates the base type to a no nempty subset
+of some type of L. Similarly, the constants are divided into primitive and de ﬁned
+constants. A deﬁned constant cα is declared by an equation cα = Aα where Aα
+is a deﬁned expression.
+The biform theory graph test case given in section 3 is formal ized in cttuqe
+as a theory graph of eight cttuqe theories as shown in appendix A. Since cttuqe
+is not currently implemented, it is not possible to give the t ransformers as im-
+plemented algorithms. Instead we described their intended behavior.
+We will concentrate our discussion on BT6 (given below). We h ave not in-
+cluded the following components of BT6 (that should be in BT6 according to
+its deﬁnition in section 3) that are redundant or are subsume d by other compo-
+nents: Constants BT5-DEC-PROCǫ→ ǫ, IS-FO-BT1ǫ→ ǫ, and IS-FO-BT1-ABSǫ→ ǫ;
+axioms 27 and 28; and transformers π1, π2, π11, π12, and π13. See [8] for details.
+Expressions of type ǫ, i.e., expressions that denote constructions, are colored red
+to identify where reasoning about syntax occurs.
+BT6 has the usual constants ( 0ι, Sι→ ι, and +ι→ ι→ ι) and axioms (axioms 1–4
+and 29) of Presburger arithmetic. Axiom 29 is the direct form alization of A9, the
+induction schema for Presburger arithmetic, stated in sect ion 3. It is expressed as
+a single universal formula in cttuqe that ranges over constructions representing
+function abstractions of the form λ xι . Ao. These constructions are identiﬁed by
+the transformers π15 and π16 for the deﬁned constant IS-FO-BT2-ABSǫ→ ǫ. π15
+works by accessing data about variables, constants, and oth er subexpressions
+stored in the data structure for an expression, while π16 works by expanding the
+deﬁnition of IS-FO-BT2-ABSǫ→ ǫ. π15 is sound if the deﬁnition expansion mecha-
+nism is sound. Showing the soundness of π14 would require a formal veriﬁcation
+of the implementation of the data structure for expressions . Of course, the results
+of π14 could be checked using π16.
+This biform theory has a deﬁned constant bnatι→ ι→ ι with the usual base 2
+notation for expressing natural numbers in a binary form. Th ere is a constant
+BPLUSǫ→ ǫ→ ǫ speciﬁed by axioms 5–15 for adding quotations of these natur al
+numbers in binary form. BPLUSǫ→ ǫ→ ǫ is implemented by transformers π3 and
+π4. π3 is some eﬃcient algorithm implemented outside of cttuqe, and π4 is
+an algorithm that uses axioms 5–15 as conditional rewrite ru les. π4 is sound if
+the rewriting mechanism is sound. Showing the soundness of π3 would require
+a formal veriﬁcation of its program. The meaning formula for BPLUSǫ→ ǫ→ ǫ,
+theorem 3, follows from axioms 5–15.
+This biform theory also has a transformer π14 for BT6-DEC-PROCǫ→ ǫ that
+implements an eﬃcient decision procedure for the ﬁrst-orde r formulas of the
+theory that is speciﬁed by axiom 30. The ﬁrst-order formulas of the theory are
+8
+identiﬁed by the transformers π5 and π6 for the deﬁned constant IS-FO-BT2ǫ→ ǫ
+that are analogous to the transformers π15 and π16 for IS-FO-BT2-ABSǫ→ ǫ.
+Biform Theory 6 (BT6: Presburger Arithmetic)
+Primitive Base Types
+1. ι (type of natural numbers).
+Primitive Constants
+1. 0ι.
+2. Sι→ ι.
+3. +ι→ ι→ ι (inﬁx).
+4. BPLUSǫ→ ǫ→ ǫ (inﬁx).
+6. BT6-DEC-PROCǫ→ ǫ.
+Deﬁned Constants (selected)
+1. 1ι = S 0ι.
+3. bnatι→ ι→ ι = λ xι . λ y ι . ((xι + xι) + yι).
+Notational deﬁnition:
+(0)2 = bnat 0ι 0ι.
+(1)2 = bnat 0ι 1ι.
+(a1 · · ·an0)2 = bnat (a1 · · ·an)2 0ι where each ai is 0 or 1.
+(a1 · · ·an1)2 = bnat (a1 · · ·an)2 1ι where each ai is 0 or 1.
+4. is-bnumǫ→ o = I fǫ→ o . ∀
+uǫ . (fǫ→ ǫ uǫ ≡
+∃ vǫ . ∃ wǫ . (uǫ = ⌜bnat ⌊vǫ⌋ ⌊wǫ⌋⌝ ∧
+(vǫ = ⌜0ι⌝ ∨ fǫ→ ǫ vǫ) ∧ (wǫ = ⌜0ι⌝ ∨ wǫ = ⌜1ι⌝))).1
+5. IS-FO-BT2ǫ→ ǫ = λ xǫ . Bǫ where Bǫ is a complex expression such that
+(λ xǫ . Bǫ) ⌜Aα ⌝ equals ⌜To⌝ [⌜Fo⌝] if Aα is [not] a term or formula of
+ﬁrst-order logic with equality whose variables are of type ι and whose
+nonlogical constants are members of {0ι, Sι→ ι, +ι→ ι→ ι}.
+7. IS-FO-BT2-ABSǫ→ ǫ =
+λ xǫ . (if (is-absǫ→ o xǫ) (IS-FO-BT2ǫ→ ǫ (abs-bodyǫ→ ǫ xǫ)) ⌜Fo⌝).
+Axioms
+1. S xι ̸= 0 ι.
+2. S xι = S yι ⊃ xι = yι.
+3. xι + 0ι = xι.
+4. xι + S yι = S (xι + yι).
+5. is-bnum uǫ ⊃ uǫ BPLUS ⌜(0)2⌝ = uǫ.
+.
+.
+.
+15. (is-bnum
+uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 1ι⌝ BPLUS ⌜bnat ⌊vǫ⌋ 1ι⌝ =
+⌜bnat ⌊(uǫ BPLUS vǫ) BPLUS ⌜(1)2⌝⌋ 0ι⌝.
+29. Induction Schema for S and +
+∀ fǫ . ((is-exprι→ o
+ǫ→ o fǫ ∧ /llbracketIS-FO-BT2-ABSǫ→ ǫ fǫ/rrbracketo) ⊃
+((/llbracketfǫ/rrbracketι→ o 0ι ∧ (∀ xι . /llbracketfǫ/rrbracketι→ o xι ⊃ /llbracketfǫ/rrbracketι→ o (S xι))) ⊃ ∀ xι . /llbracketfǫ/rrbracketι→ o xι)).
+1 Notation of the form ⌜· · · ⌊·⌋ · · ·⌝ represents a quasiquotation; see [6] for details.
+9
+30. Meaning formula for BT6-DEC-PROCǫ→ ǫ.
+∀ uǫ . ((is-expro
+ǫ→ o
+uǫ ∧ is-closedǫ→ o uǫ ∧ /llbracketIS-FO-BT2ǫ→ ǫ uǫ/rrbracketo) ⊃
+((BT6-DEC-PROCǫ→ ǫ uǫ = ⌜To⌝ ∨ BT6-DEC-PROCǫ→ ǫ uǫ = ⌜Fo⌝) ∧
+/llbracketBT6-DEC-PROCǫ→ ǫ uǫ/rrbracketo = /llbracketuǫ/rrbracketo)).
+T ransformers
+3. π3 for BPLUSǫ→ ǫ→ ǫ is an eﬃcient program that satisﬁes Axioms 5–15.
+4. π4 for BPLUSǫ→ ǫ→ ǫ uses Axioms 5–15 as conditional rewrite rules.
+5. π5 for IS-FO-BT2ǫ→ ǫ is an eﬃcient program that accesses the data stored
+in the data structures that represent expressions.
+6. π6 for IS-FO-BT2ǫ→ ǫ uses the deﬁnition of IS-FO-BT2ǫ→ ǫ.
+14. π14 for BT6-DEC-PROCǫ→ ǫ→ ǫ is an eﬃcient decision procedure that sat-
+isﬁes Axiom 30.
+15. π15 for IS-FO-BT2-ABSǫ→ ǫ is an eﬃcient program that accesses the data
+stored in the data structures that represent expressions.
+16. π16 for IS-FO-BT2-ABSǫ→ ǫ uses the deﬁnition of IS-FO-BT2-ABSǫ→ ǫ.
+Theorems (selected)
+3. Meaning formula for BPLUSǫ→ ǫ→ ǫ
+∀ uǫ . ∀ vǫ . ((is-bnum uǫ ∧ is-bnum vǫ) ⊃
+(is-bnum (uǫ BPLUS vǫ) ∧ (/llbracketuǫ BPLUS vǫ/rrbracketι = /llbracketuǫ/rrbracketι + /llbracketvǫ/rrbracketι))).
+5 Study 2: Test Case Formalized in Agda
+As our goal is to, in part, compare the global approach and the local approach,
+the formalization in Agda [15,18] eschews the use of its reﬂe ction capabilities 2.
+Thus this formalization replaces the global type ǫ (of cttuqe) by a set of in-
+ductive types, one for each of the biform theories. This is st ill reﬂection, just
+hand-rolled. We also need to express formulas in FOL (as synt ax), so we need a
+type for that as well. To be more modular, this is done as a type for ﬁrst-order
+logic (with equality) over any ground language. We display s ome illustrative
+samples here; the full code is available in appendix B.
+An abstract theory is modeled as a record. For example, we have
+BT1:
+record BT1 : Set1 where
+ﬁeld
+nat : Set0
+Z : nat
+S : nat → nat
+S̸=Z : ∀ x → ¬ (S x ≡ Z)
+inj : ∀ x y → S x ≡ S y → x ≡ y
+One : nat
+One = S Z
+2 As of early 2017, there is no oﬃcial publication describing these features o utside of
+the Agda documentation, but see [20,21]
+10
+where we see a ﬁeld
+nat for the new type (pronounced Set in Agda), the two
+constants, and the two axioms. The host logic is dependently typed, and so
+the axioms refer to the constants just deﬁned. One is not a ﬁeld, but a deﬁned
+constant.
+For simplicity, we will take the built-in type N, deﬁned as an inductive type,
+as the syntax for natural numbers, which is also the syntax associated to t he
+theory BT1. Whereas in cttuqe there is a global evaluation, here we also need
+to deﬁne evaluation explicitly (a subscript is used to indic ate which theory it
+belongs to).
+/llbracket_/rrbracket1 : N → nat
+/llbracket0 /rrbracket1 = Z
+/llbracketsuc x /rrbracket1 = S /llbracketx /rrbracket1
+The accompanying code furthermore proves some basic cohere nce theorems which
+are elided here. We make two further deﬁnitions ( GroundLanguage describing
+some language features, and FOL as our deﬁnition of ﬁrst order logic) which will
+be explained in more detail on the next page.
+nat-lang : GroundLanguage nat
+nat-lang = record { Lang = ń X → NX (Carrier X)
+; value = ń {V} → val {V} }
+where
+val : { V : DT} → NX (Carrier V) → (Carrier V → nat) → nat
+val z env = Z
+val {V} ( s e) env = S (val {V} e env )
+val (v x) env = env x
+module fo1 = FOL nat-lang
+We can also demonstrate that the natural numbers are a model:
+N-is-T1 : BT1
+N-is-T1 = record { nat = N ; Z = 0 ; S = suc
+; S̸=Z = ń x → ń () ; inj = ń { x .x reﬂ → reﬂ } }
+One of the languages needed is an extension of the naturals wh ich allows
+variables:
+data NX (Var : Set0) : Set0 where
+z : NX Var
+s : NX Var → NX Var
+v : Var → NX Var
+But where the informal description in section 3 can get away w ith saying
+“Logic: FOL” and “Transformers: Recognizers for the formul as of the theory”,
+here we need to be very explicit. To do so, we need to deﬁne some language
+infrastructure.
+One of the important concepts is that of a language with variables , in other
+words a language with a reasonable deﬁnition of substitutio n. This requires vari-
+11
+ables to come from a type which has the structure of a decidable seto id (from
+the Agda library DecSetoid, and denoted DT below).
+A language, expressed as an inductive type, is closed, i.e., cannot be extended.
+If a language does not have variables, we cannot add them. One solution is to
+deal with contexts as ﬁrst-class citizens. While that is likely the best long-t erm
+solution, here we have gone with something simpler: create a nother language
+which does, and show that its variable-free fragment is equi valent to the original.
+As that aspect of our development is straightforward, albei t tedious, we elide it.
+As we are concerned with statements in ﬁrst-order logic over a variety of
+languages, it makes sense to modularize this aspect somewha t. Note that, as we
+are building syntax via inductive types, we can either build these as functors and
+then use a ﬁxpoint combinator to tie the knot, or we can just bi te the bullet and
+make one large deﬁnition. For now, we chose the latter. We do p arametrize over
+a ground language with variables . In turn, this is deﬁned as a type parametrized
+by a decidable setoid along with an evaluation function into some type T.
+record GroundLanguage (T : Set0) : Set1 where
+open DecSetoid using (Carrier)
+ﬁeld
+Lang : DT → Set0
+value : { V : DT} → Lang V → (Carrier V → T) → T
+A logic over a language (with variables), is then also a param etrized type
+as well as a parametrized interpretation into types. The deﬁ nition is almost the
+same, except that a ground language interprets into T and a logic into Set0.
+record LogicOverL (T : Set0) ( L : GroundLanguage T) : Set1 where
+open DecSetoid using (Carrier)
+ﬁeld
+Logic : DT → Set0
+/llbracket_/rrbracket_ : ∀ {V} → Logic V → (Carrier V → T) → Set0
+The deﬁnition of ﬁrst-order logic is then straightforward.
+module FOL {T : Set0} ( L : GroundLanguage T) where
+open DecSetoid using (Carrier)
+open GroundLanguage L
+data FOL (V : DT) : Set where
+tt : FOL V
+ﬀ : FOL V
+_and_ : FOL V → FOL V → FOL V
+_or_ : FOL V → FOL V → FOL V
+not : FOL V → FOL V
+_⊃ _ : FOL V → FOL V → FOL V
+_==_ : Lang V → Lang V → FOL V
+all : Carrier V → FOL V → FOL V
+exist : Carrier V → FOL V → FOL V
+override : { V : DT} → (Carrier V → T) → Carrier V → T → (Carrier V → T)
+12
+override {V} f x t y with DecSetoid._
+?
+=_ V y x
+... | yes _ = t
+... | no _ = f y
+We can also prove that FOL is a logic over L by providing an interpretation. Of
+course, as we are modeling classical logic into a constructi ve logic, we have to use
+a double-negation embedding. We also choose to interpret th e logic’s equality
+_==_ as propositional equality, but we could make that choice a parameter as
+well.
+LoL-FOL : LogicOverL T L
+LoL-FOL = record { Logic = FOL ; /llbracket_/rrbracket_ = interp }
+where
+interp : { Var : DT} → FOL Var → (Carrier Var → T) → Set0
+interp tt env = ⊤
+interp ﬀ env = ⊥
+interp (e and f) env = interp e env × interp f env
+interp (e or f) env = ¬ ¬ (interp e env ⊎ interp f env )
+interp (not e) env = ¬ (interp e env )
+interp (e ⊃ f) env = ( interp e env ) → (interp f env )
+interp (x == y) env = value x env ≡ value y env
+interp {V} ( all x p ) env = ∀ z → interp p (override {V} env x z )
+interp {V} ( exist x p ) env = ¬ ¬ (Σ T (ń t → interp p (override {V} env x t )))
+With the appropriate infrastructure in place, it is now poss ible to deﬁne BT6
+from the theories it extends.
+record BT6 {t1 : BT1} ( t2 : BT2 t1) ( t5 : BT5 t1) : Set1 where
+open VarLangs using (XV; x)
+open DecSetoid using (Carrier)
+open BT2 t2 public
+open fo2 using (FOL; tt; ﬀ; LoL-FOL; _and_; all)
+open LogicOverL LoL-FOL
+ﬁeld
+induct : ( e : FOL XV ) →
+/llbrackete /rrbracket(ń { x → /llbracket0 /rrbracket1 }) →
+(∀ y → /llbrackete /rrbracket(ń {x → y}) → /llbrackete /rrbracket(ń {x → S y})) →
+∀ y → /llbrackete /rrbracket(ń {x → y})
+postulate
+decide : ∀ {W} → (Carrier W → nat) → FOL W → FOL NoVars
+meaning-decide : { W : DT} ( env : Carrier W → nat) → (env′ : ⊥ → nat) →
+(e : FOL W) →
+let res = decide env e in
+(res ≡ tt ⊎ res ≡ ﬀ) × (/llbrackete /rrbracketenv) ≃ (/llbracketres /rrbracketenv′)
+While section 4 presents the ﬂattened theory, here we need only deﬁne what is
+new over the extended theory, namely an induction schema, a d ecision procedure
+and its meaning formula.
+13
+Here is a guide to understanding the above deﬁnition: (1) XV is a (decid-
+able) type with a single inhabitant, x. (2) All ﬁelds of BT2 are made publicly
+visible for BT6. (3) The language of ﬁrst-order logic FOL over t2 (and some of
+its constructors) is also made visible. (4) (ń {x → y}) denotes a substitution for
+the single variable x. (5) ≃ denotes type equivalence.
+We represent numerals as vectors (of length at least 1) of binary digits.
+data BinDigit : Set where zero one : BinDigit
+data BNum : Set where
+bn : { n : N} → Vec BinDigit (suc n) → BNum
+This then allows a straightforward implementation of bplus to add numerals. It
+is then possible to prove that the meaning function for bplus is a theorem.
+bplus-is-+ : ∀ x y → /llbracketbplus x y /rrbracket2 ≡ /llbracketx /rrbracket2 + /llbrackety /rrbracket2
+6 Comparison of the Two Formalizations
+As expected, we were able to formalize this network of theori es using both meth-
+ods. Neither are fully complete; both are missing the actual decision procedures
+(which would be large undertakings). In particular,
+– The cttuqe formalization is missing the deﬁnition of the language reco gniz-
+ers, as well as the full assurance of being mechanically chec ked. It has no
+“implementation” of any transformers.
+– The Agda version implements evaluation but not substitutio n — which
+means that the induction statement in BT5–BT7 are not quite t he same
+as in cttuqe; the models will be the same however. It also does not im-
+plement any theory morphisms, as record deﬁnitions are not ﬁ rst-class in
+Agda.
+More importantly, because of our (explicit) choice to contr ast the global
+and local approaches, each version uses diﬀerent infrastru cture to reason about
+syntax.
+– cttuqe has a built-in inductive type of “all syntax”, along with quo tation
+and evaluation operators for the entire language of express ions.
+– In the local approach, a new inductive type for each new “lang uage” (the
+numerals, the numerals with plus, the numerals with plus and times, all three
+of these augmented with variables, ﬁrst-order logic, binar y digits, binary
+numerals) has to be created. For many of these, a variety of tr aversals (folds)
+have to be implemented “by hand” even though the recursion pa tterns are
+obvious, at least to humans. Some of these are evaluation ope rators (one per
+language). There is no formal quotation operator.
+The Agda version has a number of extra features: some transfo rmers (such
+as for
+bplus and btimes) are implemented. Furthermore, the meaning formula for
+bplus is shown to be a theorem. A variety of coherence theorems are a lso shown,
+to gain conﬁdence that the theories really are the ones we wan t.
+14
+It is worth remarking that deﬁning the language of ﬁrst-orde r formulas is
+complicated in both versions. This has been noticed before by people doing pro-
+gramming language meta-theory with proof assistants: enco ding languages, es-
+pecially languages with binders (such as FOL) along with tra versals and basic
+reasoning can be very tedious [1].
+The most notable diﬀerences in the two formalizations are:
+1. Because FOL is classical, but Agda’s host logic is constru ctive, a double-
+negation embedding was needed.
+2. The use of type equivalence instead of boolean equality for verifying that the
+interpretation of a formula of FOL and the results of the deci sion procedure
+are “the same”,
+3. Borrowing the notion of contractibility from HoTT [19], to encode deﬁnite
+description.
+4. Extending the decision procedure to closeable terms (by providing an ex-
+plicit, total valuation) instead of restricting to closed t erms.
+The ﬁrst is basically forced upon us by Agda: it has no Prop typ e (unlike Coq),
+and so we do not know a priori that all interpretations of ﬁrst -order formulas
+are actually 0-types. The second is an active design decision: the infrast ructure
+required to deﬁne the meaning of closed which is useful in a constructive setting
+is quite complex 3. We believe the third is novel. The fourth point requires dee per
+investigating.
+7 Conclusion
+We have proposed a biform theory graph test case composed of e ight theories
+that encode natural number arithmetic and include a variety of useful transform-
+ers. We have formalized this test case (as a set of biform theo ries and theory
+morphisms) in cttuqe using the global approach (for metareasoning with reﬂec-
+tion) and in Agda using the local approach. In both cases, we h ave produced
+substantial partial formalizations that indicate that ful l formalizations could be
+obtained with additional work.
+Our results show that, by providing a built-in global infras tructure, the global
+approach has a signiﬁcant advantage over the local approach . The local approach
+is burdened by the necessity to deﬁne an infrastructure — con sisting of an induc-
+tive type and an evaluation operator for the type — for every s et of expressions
+manipulated by a transformer. In general, new local infrast ructures must be cre-
+ated each time a new theory is added to the theory graph. On the other hand,
+the global approach employs an infrastructure — consisting of an inductive type,
+a quotation operator, and an evaluation operator — for the en tire set of expres-
+sions in the logic. This single infrastructure is used for ev ery theory in the theory
+graph.
+3 It would require us to deﬁne paths in terms, bound and free variables along paths,
+quantiﬁcation over paths, etc.
+15
+We recommend that future research is directed toward making the global ap-
+proach for metareasoning with reﬂection into a practical me thod for formalizing
+biform theories. This can be done by developing and implemen ting logics such as
+cttqe [6,7] and cttuqe [8] and by adding global infrastructures to proof systems
+such as Agda and Coq (see [20,21] for work in this direction).
+References
+1. B. E. Aydemir, A. Bohannon, M. Fairbairn, J. N. Foster, B. C . Pierce, P. Sewell,
+D. Vytiniotis, G. Washburn, S. Weirich, and S. Zdancewic. Me chanized metatheory
+for the masses: The PoplMark challenge. In Theorem Proving in Higher Order
+Logics, volume 3603 of Lecture Notes in Computer Science , pages 50–65. Springer
+Berlin Heidelberg, 2005.
+2. J. Barwise and J. Seligman. Information Flow: The Logic of Distributed Systems ,
+volume 44 of Tracts in Computer Science . Cambridge University Press, 1997.
+3. J. Carette and W. M. Farmer. High-level theories. In A. Aut exier, J. Campbell,
+J. Rubio, M. Suzuki, and F. Wiedijk, editors, Intelligent Computer Mathematics ,
+volume 5144 of Lecture Notes in Computer Science , pages 232–245. Springer, 2008.
+4. W. M. Farmer. Biform theories in Chiron. In M. Kauers, M. Ke rber, R. R.
+Miner, and W. Windsteiger, editors, Towards Mechanized Mathematical Assistants,
+volume 4573 of Lecture Notes in Computer Science , pages 66–79. Springer, 2007.
+5. W. M. Farmer. The formalization of syntax-based mathemat ical algorithms us-
+ing quotation and evaluation. In J. Carette, D. Aspinall, C. Lange, P. Sojka,
+and W. Windsteiger, editors, Intelligent Computer Mathematics , volume 7961 of
+Lecture Notes in Computer Science , pages 35–50. Springer, 2013.
+6. W. M. Farmer. Incorporating quotation and evaluation int o church’s type theory.
+Computing Research Repository (CoRR) , abs/1612.02785 (72 pp.), 2016.
+7. W. M. Farmer. Incorporating quotation and evaluation int o Church’s type theory:
+Syntax and semantics. In M. Kohlhase, M. Johansson, B. Mille r, L. de Moura,
+and F. Tompa, editors, Intelligent Computer Mathematics , volume 9791 of Lecture
+Notes in Computer Science , pages 83–98. Springer, 2016.
+8. W. M. Farmer. Theory morphisms in Church’s Type theory wit h quotation and
+evaluation. Computing Research Repository (CoRR) , abs/1703.02117 (15 pp.),
+2017.
+9. W. M. Farmer, J. D. Guttman, and F. J. Thayer. Little theori es. In D. Kapur, ed-
+itor, Automated Deduction—CADE-11, volume 607 of Lecture Notes in Computer
+Science, pages 567–581. Springer, 1992.
+10. W. M. Farmer, J. D. Guttman, and F. J. Thayer. IMPS: An Inte ractive Mathe-
+matical Proof System. Journal of Automated Reasoning , 11:213–248, 1993.
+11. W. M. Farmer and M. von Mohrenschildt. An overview of a For mal Framework
+for Managing Mathematics. Annals of Mathematics and Artiﬁcial Intelligence ,
+38:165–191, 2003.
+12. R. D. Jenks and R. S. Sutor. Axiom : The Scientiﬁc Computation System . Springer,
+1992.
+13. M. Kohlhase. Mathematical knowledge management: Trans cending the one-brain-
+barrier with theory graphs. European Mathematical Society (EMS) Newsletter ,
+pages 22—-27, June 2014.
+14. U. Norell. Towards a Practical Programming Language based on Dependen t Type
+Theory. PhD thesis, Chalmers University of Technology, 2007.
+16
+15. U. Norell. Dependently typed programming in Agda. In A. K ennedy and
+A. Ahmed, editors, Proceedings of TLDI’09, pages 1–2. ACM, 2009.
+16. F. Rabe and M. Kohlhase. A scalable model system. Information and Computation ,
+230:1–54, 2013.
+17. C. Smoryński. Logical Number Theory I: An Introduction . Springer, 1991.
+18. Agda Team. Agda wiki. http://wiki.portal.chalmers.se/agda/pmwiki.php.
+Accessed: 2017-05-15.
+19. The Univalent Foundations Program. Homotopy Type Theory: Univalent Foun-
+dations of Mathematics . https://homotopytypetheory.org/book, Institute for
+Advanced Study, 2013.
+20. P. van der Walt. Reﬂection in Agda. Master’s thesis, Univ ersiteit Utrecht, 2012.
+https://dspace.library.uu.nl/handle/1874/256628.
+21. P. van der Walt and W. Swierstra. Engineering proof by reﬂ ection in Agda. In
+R. Hinze, editor, Implementation and Application of Functional Languages , volume
+8241 of Lecture Notes in Computer Science , pages 157–173. Springer, 2012.
+A CTTuqe Formalization
+cttqe [6] is a version of simple type theory with quotation and eval uation.
+cttuqe [8] is a variant of cttqe that admits undeﬁned expressions, partial func-
+tions, and multiple base types of individuals. cttuqe also includes a deﬁnite de-
+scription operator and conditional expression operator. T his appendix presents
+a formalization of the biform theory graph test case in cttuqe (instead of cttqe)
+since cttuqe contains a notion of theory morphism. The reader is expected to
+be familiar with the notation of cttuqe. The following are additional notes to
+the reader:
+1. {o, ǫ, ι} is the set of base types for all eight biform theories given be low. The
+single nonlogical base type ι is used to represent the natural numbers.
+2. All constants that are not introduced as components of one of the biform
+theories listed below are logical constants of cttuqe, either primitive or de-
+ﬁned. is-absǫ→ o, abs-bodyǫ→ ǫ, and is-closedǫ→ o are deﬁned logical constants
+not in [6]. is-absǫ→ o Aǫ holds iﬀ Aǫ represents an abstraction. If Aǫ represents
+an abstraction, then abs-bodyǫ→ ǫ Aǫ represents the body of the abstraction.
+is-closedǫ→ o Aǫ holds iﬀ Aǫ represents an expression that is closed (and eval-
+free).
+3. The type attached to a constant may be dropped when there is no loss of
+meaning.
+4. A constant of a type of the form ǫ → · · · → ǫ that is intended to be imple-
+mented by a transformer has a name in upper case letters.
+5. Expressions of type ǫ, i.e., expressions that denote constructions, are colored
+red to identify where reasoning about syntax occurs.
+The following are the eight biform theories and the two nonin clusive theory
+morphisms in the test case:
+Biform Theory 1 (BT1: Simple Theory of 0 and S)
+17
+Primitive Base Types
+1. ι (type of natural numbers).
+Primitive Constants
+1. 0ι.
+2. Sι→ ι.
+Deﬁned Constants (selected)
+1. 1ι = S 0ι.
+2. IS-FO-BT1ǫ→ ǫ = λ xǫ . Bǫ where Bǫ is a complex expression such that
+(λ xǫ . Bǫ) ⌜Aα ⌝ equals ⌜To⌝ [⌜Fo⌝] if Aα is [not] a term or formula of
+ﬁrst-order logic with equality whose variables are of type ι and whose
+nonlogical constants are members of {0ι, Sι→ ι}.
+Axioms
+1. S xι ̸= 0 ι.
+2. S xι = S yι ⊃ xι = yι.
+T ransformers
+1. π1 for IS-FO-BT1ǫ→ ǫ is an eﬃcient program that accesses the data stored
+in the data structures that represent expressions.
+2. π2 for IS-FO-BT1ǫ→ ǫ uses the deﬁnition of IS-FO-BT1ǫ→ ǫ.
+Biform Theory 2 (BT2: Simple Theory of 0, S, and +)
+Extended Theories
+1. BT1.
+Primitive Constants
+3. +ι→ ι→ ι (inﬁx).
+4. BPLUSǫ→ ǫ→ ǫ (inﬁx).
+Deﬁned Constants (selected)
+3. bnatι→ ι→ ι = λ xι . λ y ι . ((xι + xι) + yι).
+Notational deﬁnition:
+(0)2 = bnat 0ι 0ι.
+(1)2 = bnat 0ι 1ι.
+(a1 · · ·an0)2 = bnat (a1 · · ·an)2 0ι where each ai is 0 or 1.
+(a1 · · ·an1)2 = bnat (a1 · · ·an)2 1ι where each ai is 0 or 1.
+4. is-bnumǫ→ o = I fǫ→ o . ∀ uǫ . (fǫ→ ǫ uǫ ≡
+∃ vǫ . ∃ wǫ . (uǫ = ⌜bnat ⌊vǫ⌋ ⌊wǫ⌋⌝ ∧
+(vǫ = ⌜0ι⌝ ∨ fǫ→ ǫ vǫ) ∧ (wǫ = ⌜0ι⌝ ∨ wǫ = ⌜1ι⌝))).
+5. IS-FO-BT2ǫ→ ǫ = λ xǫ . Bǫ where Bǫ is a complex expression such that
+(λ xǫ . Bǫ) ⌜Aα ⌝ equals ⌜To⌝ [⌜Fo⌝] if Aα is [not] a term or formula of
+ﬁrst-order logic with equality whose variables are of type ι and whose
+nonlogical constants are members of {0ι, Sι→ ι, +ι→ ι→ ι}.
+Axioms
+3. xι + 0ι = xι.
+4. xι + S yι = S (xι + yι).
+5. is-bnum uǫ ⊃ uǫ BPLUS ⌜(0)2⌝ = uǫ.
+6. is-bnum uǫ ⊃ ⌜(0)2⌝ BPLUS uǫ = uǫ.
+18
+7. ⌜(1)2⌝ BPLUS ⌜(1)2⌝ = ⌜(10)2⌝.
+8. is-bnum uǫ ⊃
+⌜bnat ⌊uǫ⌋ 0ι⌝ BPLUS ⌜(1)2⌝ = ⌜bnat ⌊uǫ⌋ 1ι⌝.
+9. is-bnum uǫ ⊃
+⌜bnat ⌊uǫ⌋ 1ι⌝ BPLUS ⌜(1)2⌝ = ⌜bnat ⌊uǫ BPLUS ⌜(1)2⌝⌋ 0ι⌝.
+10. is-bnum uǫ ⊃
+⌜(1)2⌝ BPLUS ⌜bnat ⌊uǫ⌋ 0ι⌝ = ⌜bnat ⌊uǫ⌋ 1ι⌝.
+11. is-bnum uǫ ⊃
+⌜(1)2⌝ BPLUS ⌜bnat ⌊uǫ⌋ 0ι⌝ = ⌜bnat ⌊uǫ BPLUS ⌜(1)2⌝⌋ 0ι⌝.
+12. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 0ι⌝ BPLUS ⌜bnat ⌊vǫ⌋0ι⌝ = ⌜bnat ⌊uǫ BPLUS vǫ⌋ 0ι⌝.
+13. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 0ι⌝ BPLUS ⌜bnat ⌊vǫ⌋ 1ι⌝ = ⌜bnat ⌊uǫ BPLUS vǫ⌋ 1ι⌝.
+14. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 1ι⌝ BPLUS ⌜bnat ⌊vǫ⌋ 0ι⌝ = ⌜bnat ⌊uǫ BPLUS vǫ⌋ 1ι⌝.
+15. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 1ι⌝ BPLUS ⌜bnat ⌊vǫ⌋ 1ι⌝ =
+⌜bnat ⌊(uǫ BPLUS vǫ) BPLUS ⌜(1)2⌝⌋ 0ι⌝.
+T ransformers
+3. π3 for BPLUSǫ→ ǫ→ ǫ is an eﬃcient program that satisﬁes Axioms 5–15.
+4. π4 for BPLUSǫ→ ǫ→ ǫ uses Axioms 5–15 as conditional rewrite rules.
+5. π5 for IS-FO-BT2ǫ→ ǫ is an eﬃcient program that accesses the data stored
+in the data structures that represent expressions.
+6. π6 for IS-FO-BT2ǫ→ ǫ uses the deﬁnition of IS-FO-BT2ǫ→ ǫ.
+Theorems (selected)
+1. Meaning formula schema for BPLUSǫ→ ǫ→ ǫ
+((is-bnum Aǫ ∧ is-bnum Bǫ) ⊃
+(is-bnum (Aǫ BPLUS Bǫ) ∧
+(/llbracketAǫ BPLUS Bǫ/rrbracketι = /llbracketAǫ/rrbracketι + /llbracketBǫ/rrbracketι))).
+Biform Theory 3 (BT3: Simple Theory of 0, S, +, and ∗)
+Extended Theories
+2. BT2.
+Primitive Constants
+5. ∗ι→ ι→ ι (inﬁx).
+6. BTIMESǫ→ ǫ→ ǫ (inﬁx).
+Deﬁned Constants (selected)
+4. IS-FO-BT3ǫ→ ǫ = λ xǫ . Bǫ where Bǫ is a complex expression such that
+(λ xǫ . Bǫ) ⌜Aα ⌝ equals ⌜To⌝ [⌜Fo⌝] if Aα is [not] a term or formula of
+ﬁrst-order logic with equality whose variables are of type ι and whose
+nonlogical constants are members of {0ι, Sι→ ι, +ι→ ι→ ι, ∗ι→ ι→ ι}.
+Axioms
+16. xι ∗ 0ι = 0 ι.
+17. xι ∗ S yι = (xι ∗ yι) + xι.
+18. is-bnum uǫ ⊃ uǫ BTIMES ⌜(0)2⌝ = ⌜(0)2⌝.
+19
+19. is-bnum uǫ ⊃ ⌜(0)2⌝ BTIMES uǫ = ⌜(0)2⌝.
+20. is-bnum uǫ ⊃ uǫ BTIMES ⌜(1)2⌝ = uǫ.
+21. is-bnum uǫ ⊃ ⌜(1)2⌝ BTIMES uǫ = uǫ.
+22. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 0⌝ BTIMES vǫ = ⌜bnat ⌊uǫ BTIMES vǫ⌋ 0ι⌝.
+23. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+⌜bnat ⌊uǫ⌋ 1ι⌝ BTIMES vǫ = ⌜bnat ⌊uǫ BTIMES vǫ⌋ 0ι⌝ badd vǫ.
+24. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+vǫ BTIMES ⌜bnat ⌊uǫ⌋ 0ι⌝ = ⌜bnat ⌊uǫ BTIMES vǫ⌋ 0ι⌝.
+25. (is-bnum uǫ ∧ is-bnum vǫ) ⊃
+vǫ BTIMES ⌜bnat ⌊uǫ⌋ 1ι⌝ = ⌜bnat ⌊uǫ BTIMES vǫ⌋ 0ι⌝ badd vǫ.
+T ransformers
+7. π7 for BTIMESǫ→ ǫ→ ǫ is an eﬃcient program that satisﬁes Axioms 18–25.
+8. π8 for BTIMESǫ→ ǫ→ ǫ uses Axioms 18–25 as conditional rewrite rules.
+9. π9 for IS-FO-BT3ǫ→ ǫ is an eﬃcient program that accesses the data stored
+in the data structures that represent expressions.
+10. π10 for IS-FO-BT3ǫ→ ǫ uses the deﬁnition of IS-FO-BT3ǫ→ ǫ.
+Theorems (selected)
+2. Meaning formula schema for BTIMESǫ→ ǫ→ ǫ
+((is-bnum Aǫ ∧ is-bnum Bǫ) ⊃
+(is-bnum (Aǫ BTIMES Bǫ) ∧
+(/llbracketAǫ BTIMES Bǫ/rrbracketι = /llbracketAǫ/rrbracketι ∗ /llbracketBǫ/rrbracketι))).
+Biform Theory 4 (BT4: Robinson Arithmetic (Q))
+Extended Theories
+3. BT3.
+Axioms
+26. xι = 0 ι ∨ ∃ yι . S y ι = xι.
+Biform Theory 5 (BT5: Complete Theory of 0 and S)
+Extended Theories
+1. BT1.
+Primitive Constants
+7. BT5-DEC-PROCǫ→ ǫ.
+Deﬁned Constants (selected)
+6. IS-FO-BT1-ABSǫ→ ǫ =
+λ xǫ . (if (is-absǫ→ o xǫ) (IS-FO-BT1ǫ→ ǫ (abs-bodyǫ→ ǫ xǫ)) ⌜Fo⌝).
+Axioms
+27. Induction Schema for S
+∀ fǫ . ((is-exprι→ o
+ǫ→ o fǫ ∧ /llbracketIS-FO-BT1-ABSǫ→ ǫ fǫ/rrbracketo) ⊃
+((/llbracketfǫ/rrbracketι→ o 0ι ∧ (∀ xι . /llbracketfǫ/rrbracketι→ o xι ⊃ /llbracketfǫ/rrbracketι→ o (S xι))) ⊃ ∀ xι . /llbracketfǫ/rrbracketι→ o xι)).
+28. Meaning Formula for BT5-DEC-PROCǫ→ ǫ
+∀ uǫ . ((is-expro
+ǫ→ o
+uǫ ∧ is-closedǫ→ o uǫ ∧ /llbracketIS-FO-BT1ǫ→ ǫ uǫ/rrbracketo) ⊃
+((BT5-DEC-PROCǫ→ ǫ uǫ = ⌜To⌝ ∨ BT5-DEC-PROCǫ→ ǫ uǫ = ⌜Fo⌝) ∧
+/llbracketBT5-DEC-PROCǫ→ ǫ uǫ/rrbracketo = /llbracketuǫ/rrbracketo)).
+20
+T ransformers
+11. π11 for BT5-DEC-PROCǫ→ ǫ→ ǫ is an eﬃcient decision procedure that sat-
+isﬁes Axiom 28.
+12. π12 for IS-FO-BT1-ABSǫ→ ǫ is an eﬃcient program that accesses the data
+stored in the data structures that represent expressions.
+13. π13 for IS-FO-BT1-ABSǫ→ ǫ uses the deﬁnition of IS-FO-BT1-ABSǫ→ ǫ.
+Biform Theory 6 (BT6: Presburger Arithmetic)
+Extended Theories
+1. BT2.
+5. BT5.
+Primitive Constants
+8. BT6-DEC-PROCǫ→ ǫ.
+Deﬁned Constants (selected)
+7. IS-FO-BT2-ABSǫ→ ǫ =
+λ
+xǫ . (if (is-absǫ→ o xǫ) (IS-FO-BT2ǫ→ ǫ (abs-bodyǫ→ ǫ xǫ)) ⌜Fo⌝).
+Axioms
+29. Induction Schema for S and +
+∀ fǫ . ((is-exprι→ o
+ǫ→ o fǫ ∧ /llbracketIS-FO-BT2-ABSǫ→ ǫ fǫ/rrbracketo) ⊃
+((/llbracketfǫ/rrbracketι→ o 0ι ∧ (∀ xι . /llbracketfǫ/rrbracketι→ o xι ⊃ /llbracketfǫ/rrbracketι→ o (S xι))) ⊃ ∀ xι . /llbracketfǫ/rrbracketι→ o xι)).
+30. Meaning formula for BT6-DEC-PROCǫ→ ǫ.
+∀ uǫ . ((is-expro
+ǫ→ o
+uǫ ∧ is-closedǫ→ o uǫ ∧ /llbracketIS-FO-BT2ǫ→ ǫ uǫ/rrbracketo) ⊃
+((BT6-DEC-PROCǫ→ ǫ uǫ = ⌜To⌝ ∨ BT6-DEC-PROCǫ→ ǫ uǫ = ⌜Fo⌝) ∧
+/llbracketBT6-DEC-PROCǫ→ ǫ uǫ/rrbracketo = /llbracketuǫ/rrbracketo)).
+T ransformers
+14. π14 for BT6-DEC-PROCǫ→ ǫ→ ǫ is an eﬃcient decision procedure that sat-
+isﬁes Axiom 30.
+15. π15 for IS-FO-BT2-ABSǫ→ ǫ is an eﬃcient program that accesses the data
+stored in the data structures that represent expressions.
+16. π16 for IS-FO-BT2-ABSǫ→ ǫ uses the deﬁnition of IS-FO-BT2-ABSǫ→ ǫ.
+Theorems (selected)
+3. Meaning formula for BPLUSǫ→ ǫ→ ǫ
+∀ uǫ . ∀ vǫ . ((is-bnum uǫ ∧ is-bnum vǫ) ⊃
+(is-bnum (uǫ BPLUS vǫ) ∧
+(/llbracketuǫ BPLUS vǫ/rrbracketι = /llbracketuǫ/rrbracketι + /llbracketvǫ/rrbracketι))).
+Biform Theory 7 (BT7: First-Order Peano Arithmetic)
+Extended Theories
+3. BT3.
+6. BT6.
+Deﬁned Constants (selected)
+8. IS-FO-BT3-ABSǫ→ ǫ =
+λ
+xǫ . (if (is-absǫ→ o xǫ) (IS-FO-BT3ǫ→ ǫ (abs-bodyǫ→ ǫ xǫ)) ⌜Fo⌝).
+Axioms
+21
+31. Induction Schema for S, +, and ∗
+∀ fǫ . ((is-exprι→ o
+ǫ→ o fǫ ∧ /llbracketIS-FO-BT3-ABSǫ→ ǫ fǫ/rrbracketo) ⊃
+((/llbracketfǫ/rrbracketι→ o 0ι ∧ (∀ xι . /llbracketfǫ/rrbracketι→ o xι ⊃ /llbracketfǫ/rrbracketι→ o (S xι))) ⊃ ∀ xι . /llbracketfǫ/rrbracketι→ o xι)).
+T ransformers
+17. π17 for IS-FO-BT3-ABSǫ→ ǫ is an eﬃcient program that accesses the data
+stored in the data structures that represent expressions.
+18. π18 for IS-FO-BT3-ABSǫ→ ǫ uses the deﬁnition of IS-FO-BT3-ABSǫ→ ǫ.
+Theorems (selected)
+4. Axiom 26.
+5. Meaning formula BTIMESǫ→ ǫ→ ǫ
+∀
+uǫ . ∀ vǫ . ((is-bnum uǫ ∧ is-bnum vǫ) ⊃
+(is-bnum (uǫ BTIMES vǫ) ∧
+(/llbracketuǫ BTIMES vǫ/rrbracketι = /llbracketuǫ/rrbracketι ∗ /llbracketvǫ/rrbracketι))).
+Biform Theory 8 (BT8: Higher-Order Peano Arithmetic)
+Extended Theories
+1. BT1.
+Deﬁned Constants (selected)
+9. +ι→ ι→ ι = I fι→ ι→ ι . ∀ xι . ∀ yι .
+(fι→ ι→ ι xι 0ι = xι ∧
+fι→ ι→ ι xι (S yι) = S (fι→ ι→ ι xι yι)).
+10. ∗ι→ ι→ ι = I fι→ ι→ ι . ∀ xι . ∀ yι .
+(fι→ ι→ ι xι 0ι = 0 ι ∧
+fι→ ι→ ι xι (S yι) = ( fι→ ι→ ι xι yι) + xι).
+Axioms
+32. Induction Axiom for the Natural Numbers
+∀ pι→ o . ((pι→ o 0ι ∧ (∀ xι . (pι→ o xι ⊃ pι→ o (S xι)))) ⊃
+∀ xι . p ι→ o xι).
+Theorems (selected)
+6. Axiom 27 (Induction Schema for S).
+7. Axiom 39 (Induction Schema for S and +).
+8. Axiom 31 (Induction Schema for S, +, and ∗).
+Theory Morphism 1 (BT4-to-BT7)
+Source Theory BT4.
+T arget Theory BT7.
+T ranslation
+µ is deﬁned as follows:
+µ (o) = λ xo . T o.
+µ (ǫ) = λ xǫ . T o.
+µ (ι) = λ xι . T o.
+ν is the identity on the constants of BT4.
+Nontrivial Obligations
+Axiom 26.
+22
+Theory Morphism 2 (BT7-to-BT8)
+Source Theory BT7.
+T arget Theory BT8.
+T ranslation
+µ is deﬁned as follows:
+µ (o) = λ xo . T o.
+µ (ǫ) = λ xǫ . T o.
+µ (ι) = λ xι . T o.
+ν is the identity on the constants of BT7.
+Nontrivial Obligations
+Axioms 3–25, 27–31.
+B Agda Formalization
+First, some infrastructure, then the theories themselves.
+B.1 Deﬁnite Description
+This deﬁnes the tools needed to do the equivalent of deﬁnite d escription in
+MLTT.
+module DeﬁniteDescr where
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Product using (Σ ;_× _)
+Normal contractability of a type
+isContr : Set0 → Set0
+isContr A = Σ A (ń a → ∀ b → a ≡ b)
+We now "expand out" that deﬁnition when A is a Σ -type with the ﬁrst
+type that of a 2-argument function, and the second is a predic ate (and thus
+automatically contractible). We could elide the second par t via proof irrelevance.
+isContr2 : ( B : Set0) → let bin = B → B → B in (bin → Set0) → Set0
+isContr2 A P =
+let bin = A → A → A in
+Σ bin (ń f → P f ×
+(∀ (g : A → A → A) → P g → ∀ a b → f a b ≡ g a b ) ×
+(∀ (pf1 pf2 : P f ) → pf1 ≡ pf2))
+B.2 Equivalences of Types
+{-# OPTIONS –without-K #-}
+module Equiv where
+open import Level using (_⊔ _)
+open import Function using (_◦_; id; ﬂip)
+23
+open import Relation.Binary using (IsEquivalence)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ; sym; trans; cong; cong2; module ≡ -Reasoning)
+inﬁx 4 _∼ _
+inﬁx 4 _≃ _
+inﬁxr 5 _•_
+–––––––––––––––––––––––––––––––––––––––
+– Extensional equivalence of (unary) functions
+_∼ _ : ∀ {ℓ ℓ’} → {A : Set ℓ} { B : Set ℓ’} → (f g : A → B) → Set (ℓ ⊔ ℓ’)
+_∼ _ {A = A} f g = ( x : A) → f x ≡ g x
+reﬂ∼ : ∀ {ℓ ℓ’} { A : Set ℓ} { B : Set ℓ’} { f : A → B} → (f ∼ f)
+reﬂ∼ _ = reﬂ
+sym∼ : ∀ {ℓ ℓ’} { A : Set ℓ} { B : Set ℓ’} { f g : A → B} → (f ∼ g) → (g ∼ f)
+sym∼ H x = sym (H x )
+trans∼ : ∀ {ℓ ℓ’} { A : Set ℓ} { B : Set ℓ’} { f g h : A → B} → (f ∼ g) → (g ∼ h) → (f ∼ h)
+trans∼ H G x = trans (H x ) ( G x )
+◦-resp-∼ : ∀ {ℓA ℓB ℓC} { A : Set ℓA} { B : Set ℓB} { C : Set ℓC} { f h : B → C} { g i : A → B} →
+(f ∼ h) → (g ∼ i) → f ◦ g ∼ h ◦ i
+◦-resp-∼ {f = f} { i = i} f∼ h g ∼ i x = trans (cong f (g∼ i x )) ( f∼ h (i x ))
+isEquivalence∼ : ∀ {ℓ ℓ′} { A : Set ℓ} { B : Set ℓ′} → IsEquivalence (_∼ _ {ℓ} { ℓ′} { A} { B})
+isEquivalence∼ = record { reﬂ = reﬂ∼ ; sym = sym∼ ; trans = trans∼ }
+–––––––––––––––––––––––––––––––––––––––
+– Quasi-equivalences, in a more useful packaging
+record _≃ _ {ℓ ℓ’} ( A : Set ℓ) ( B : Set ℓ’) : Set (ℓ ⊔ ℓ’) where
+constructor qeq
+ﬁeld
+f : A → B
+g : B → A
+α : ( f ◦ g) ∼ id
+B : ( g ◦ f) ∼ id
+– to make it contractible, could add
+– τ : ∀ x → cong f ( B x) P. ≡ α (f x)
+id≃ : ∀ {ℓ} { A : Set ℓ} → A ≃ A
+id≃ = qeq id id (ń _ → reﬂ) ( ń _ → reﬂ)
+24
+sym≃ : ∀ {ℓ ℓ′} { A : Set ℓ} { B : Set ℓ′} → (A ≃ B) → B ≃ A
+sym≃ (qeq f g α B) = qeq g f B α
+trans≃ : ∀ {ℓ ℓ′ ℓ′′} { A : Set ℓ} { B : Set ℓ′} { C : Set ℓ′′} →
+A ≃ B → B ≃ C → A ≃ C
+trans≃ {A = A} { B} { C} ( qeq f f -1 fα fB) ( qeq g g -1 gα gB) =
+qeq (g ◦ f) ( f-1 ◦ g-1) ( ń x → trans (cong g (fα (g-1 x))) ( gα x))
+(ń x → trans (cong f-1 (gB (f x ))) ( fB x))
+– more convenient infix version, flipped
+_•_ : ∀ {ℓ ℓ′ ℓ′′} { A : Set ℓ} { B : Set ℓ′} { C : Set ℓ′′} →
+B ≃ C → A ≃ B → A ≃ C
+_•_ = ﬂip trans ≃
+≃ IsEquiv : IsEquivalence {Level.suc Level.zero } { Level.zero} { Set} _≃ _
+≃ IsEquiv = record { reﬂ = id≃ ; sym = sym≃ ; trans = trans≃ }
+– equivalences are injective
+inj≃ : ∀ {ℓ ℓ’} { A : Set ℓ} { B : Set ℓ’} →
+(eq : A ≃ B) → (x y : A) → (_≃ _.f eq x ≡ _≃ _.f eq y → x ≡ y)
+inj≃ (qeq f g α B) x y p = trans
+(sym (B x)) ( trans
+(cong g p ) (
+B y))
+B.3 Numerals
+module Numerals where
+Rather that deﬁning our own isomorphic copy, re-use N and Vec.
+open import Data.Nat using (N; suc)
+open import Data.Vec using (_ _; []; Vec)
+plus is a function on N, which will (of course) implement addition. Note that
+this is not a ’good’ function, in the sense that it is extremel y ineﬃcient. it does
+have the advantage of being simple and facilitate proofs. No te that it is deﬁned
+(on purpose) by recursion on the left argument, while the pro perties in T2 turn
+out to be "recursive" on the right.
+plus : N → N → N
+plus 0 y = y
+plus (suc x) y = suc (plus x y )
+We represent numerals as vectors (of length at least 1) of binary digits.
+data BinDigit : Set where zero one : BinDigit
+data BNum : Set where
+bn : { n : N} → Vec BinDigit (suc n) → BNum
+25
+This then allows a straightforward implementation of bplus to add numerals. It
+is then possible to prove that the meaning function for bplus is a theorem.
+Convenient abbreviations
+0b 1b 2b : BNum
+0b = bn (zero [] )
+1b = bn (one [] )
+2b = bn (zero one [] )
+« : BNum → BNum
+« (bn l) = bn (zero l)
+Note how +1 is deﬁned by induction on BNum.
++1 : BNum → BNum
++1 (bn (zero l)) = bn (one l)
++1 (bn (one [] )) = bn (zero one [] )
++1 (bn (one x l )) = « (+1 (bn (x l )))
+Now we want to deﬁne a transformer on BNum with a "meaning form ula"
+that says that it is addition. this too is deﬁned by induction on BNum bplus is
+essentially ξ3. It is not the only such transformer, as diﬀerent representa tions
+could be even more eﬃcient. It is also kind of ξ4 ! What happens it that all
+the conditions are all vacuously true. So the axioms are then just a bunch of
+pattern-match. Turns out that the rules below are more ’synt ax directed’ than
+the ones given in the axioms.
+bplus : BNum → BNum → BNum
+bplus (bn {0} ( zero [] )) y = y
+bplus (bn {0} ( one [] )) y = +1 y
+bplus (bn {suc n} ( d0 l0)) ( bn {N.zero} ( zero [] )) = bn (d0 l0)
+bplus (bn {suc n} ( d0 l0)) ( bn {N.zero} ( one [] )) = +1 (bn (d0 l0))
+bplus (bn {suc n} ( zero l0)) ( bn {suc m} ( zero l1)) =
+« (bplus (bn l0) ( bn l1))
+bplus (bn {suc n} ( one l0)) ( bn {suc m} ( zero l1)) =
++1 (« (bplus (bn l0) ( bn l1)))
+bplus (bn {suc n} ( zero l0)) ( bn {suc m} ( one l1)) =
++1 (« (bplus (bn l0) ( bn l1)))
+bplus (bn {suc n} ( one l0)) ( bn {suc m} ( one l1)) =
++1 (+1 (« (bplus (bn l0) ( bn l1))))
+Important: because BNum is a type, there is no need for is-bnu m, as it is
+simply true by construction. However, here BNum is an explic it representation
+(as a Vector of digits) whereas in cttuqe it is done as a ’recognizer of expres-
+sions’ which picksout expressions which are made up of seque nces of digits. The
+sequencing is buried (as a right-leaning tree) in a bunch of ’ bnat’ calls. If we’re
+going to go through codes to represent things, may as well use codes which are
+specially built for the task!
+Of course, we will need an interpretation of BNum in nat, but t hat will be
+done inside T2.
+For btimes, rather than be axiomatic, we go directly to a tran sformer.
+26
+_btimes_ : BNum → BNum → BNum
+x btimes bn (zero [] ) = 0b
+x btimes bn (one [] ) = x
+bn (zero [] ) btimes bn (x2 x3 x4) = 0b
+bn (one [] ) btimes bn (x2 x3 x4) = bn (x2 x3 x4)
+bn (zero x1 x2) btimes bn (x3 x4 x5) =
+« (bn (x1 x2) btimes bn (x3 x4 x5))
+bn (one x1 x2) btimes bn (x3 x4 x5) =
+let y = bn (x3 x4 x5) in
+bplus (« (bn (x1 x2) btimes y)) y
+B.4 NumPlus
+module NumPlus where
+data N+ : Set0 where
+z+ : N+
+s+ : N+ → N+
+_‘+_ : N+ → N+ → N+
+data N+X (V : Set0) : Set0 where
+z : N+X V
+s : N+X V → N+X V
+_‘+_ : N+X V → N+X V → N+X V
+v : V → N+X V
+B.5 NumPlusTimes
+module NumPlusTimes where
+data N* (V : Set0) : Set0 where
+z : N* V
+s : N* V → N* V
+_‘+_ : N* V → N* V → N* V
+_‘*_ : N* V → N* V → N* V
+v : V → N* V
+B.6 Naturals as variables, and with variables
+Showing that N has decidable equality (and thus can be used as a set of vari-
+ables). Also build NX which is N augmented with variables.
+module NatVar where
+open import Level renaming (zero to lzero) hiding (suc)
+open import Data.Nat using (N; zero; suc; _
+?
+=_)
+27
+open import Equiv
+open import Data.Empty using (⊥ )
+open import Function using (_◦_; id)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ; cong; isEquivalence)
+open import Relation.Binary using (DecSetoid)
+private
+DT : Set1
+DT = DecSetoid lzero lzero
+NS : DT
+NS = record
+{ Carrier = N
+; _≈ _ = _≡ _
+; isDecEquivalence = record
+{ isEquivalence = isEquivalence
+; _
+?
+=_ = _
+?
+=_ } }
+data NX (Var : Set0) : Set0 where
+z : NX Var
+s : NX Var → NX Var
+v : Var → NX Var
+N⊥≃ N : NX ⊥ ≃ N
+N⊥≃ N = qeq f g f ◦g∼ id g ◦f∼ id
+where
+f : NX ⊥ → N
+f z = 0
+f (s x) = suc (f x)
+f (v ())
+g : N → NX ⊥
+g zero = z
+g (suc n) = s (g n)
+f◦g∼ id : f ◦ g ∼ id
+f◦g∼ id zero = reﬂ
+f◦g∼ id (suc x) = cong suc (f◦g∼ id x)
+g◦f∼ id : g ◦ f ∼ id
+g◦f∼ id z = reﬂ
+g◦f∼ id (s x) = cong s (g◦f∼ id x)
+g◦f∼ id (v ())
+B.7 Language infrastructure
+Note that much of this code is in the main paper already.
+module Language where
+28
+open import Level using (Level; zero; suc; _⊔ _)
+open import Relation.Binary using (DecSetoid)
+open import Relation.Nullary using (Dec; yes; no; ¬ _)
+open import Data.Bool using (Bool; true; false; _∧ _; _∨ _; _xor_)
+renaming (not to bnot; _
+?
+=_ to _=B_)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ; sym; trans; cong2)
+open import Data.Empty using (⊥ )
+open import Data.Unit using (⊤ )
+open import Data.Product using (Σ ; _× _; proj1; proj2; _,_)
+open import Data.Sum using (_⊎ _)
+open import Data.List using (List; []; _ _; [_])
+open import Variables
+private
+DT : Set (suc zero )
+DT = DecSetoid zero zero
+One of the important concepts is that of a language with variables , in other
+words a language with a reasonable deﬁnition of substitutio n. This requires vari-
+ables to come from a type which has the structure of a decidable seto id (from
+the Agda library DecSetoid, and denoted DT below).
+A language, expressed as an inductive type, is closed, i.e., cannot be extended.
+If a language does not have variables, we cannot add them. One solution is to
+deal with contexts as ﬁrst-class citizens. While that is likely the best long-t erm
+solution, here we have gone with something simpler: create a nother language
+which does, and show that its variable-free fragment is equi valent to the original.
+As that aspect of our development is straightforward, albei t tedious, we elide it.
+As we are concerned with statements in ﬁrst-order logic over a variety of
+languages, it makes sense to modularize this aspect somewha t. Note that, as we
+are building syntax via inductive types, we can either build these as functors and
+then use a ﬁxpoint combinator to tie the knot, or we can just bi te the bullet and
+make one large deﬁnition. For now, we chose the latter. We do p arametrize over
+a ground language with variables . In turn, this is deﬁned as a type parametrized
+by a decidable setoid along with an evaluation function into some type T.
+record GroundLanguage (T : Set0) : Set1 where
+open DecSetoid using (Carrier)
+ﬁeld
+Lang : DT → Set0
+value : { V : DT} → Lang V → (Carrier V → T) → T
+A logic over a language (with variables), is then also a param etrized type
+as well as a parametrized interpretation into types. The deﬁ nition is almost the
+same, except that a ground language interprets into T and a logic into Set0.
+record LogicOverL (T : Set0) ( L : GroundLanguage T) : Set1 where
+open DecSetoid using (Carrier)
+29
+ﬁeld
+Logic : DT → Set0
+/llbracket_/rrbracket_ : ∀ {V} → Logic V → (Carrier V → T) → Set0
+The deﬁnition of ﬁrst-order logic is then straightforward.
+module FOL {T : Set0} ( L : GroundLanguage T) where
+open DecSetoid using (Carrier)
+open GroundLanguage L
+data FOL (V : DT) : Set where
+tt : FOL V
+ﬀ : FOL V
+_and_ : FOL V → FOL V → FOL V
+_or_ : FOL V → FOL V → FOL V
+not : FOL V → FOL V
+_⊃ _ : FOL V → FOL V → FOL V
+_==_ : Lang V → Lang V → FOL V
+all : Carrier V → FOL V → FOL V
+exist : Carrier V → FOL V → FOL V
+override : { V : DT} → (Carrier V → T) → Carrier V → T → (Carrier V → T)
+override {V} f x t y with DecSetoid._
+?
+=_ V y x
+... | yes _ = t
+... | no _ = f y
+We can also prove that FOL is a logic over L by providing an interpretation. Of
+course, as we are modeling classical logic into a constructi ve logic, we have to use
+a double-negation embedding. We also choose to interpret th e logic’s equality
+_==_ as propositional equality, but we could make that choice a parameter as
+well.
+LoL-FOL : LogicOverL T L
+LoL-FOL = record { Logic = FOL ; /llbracket_/rrbracket_ = interp }
+where
+interp : { Var : DT} → FOL Var → (Carrier Var → T) → Set0
+interp tt env = ⊤
+interp ﬀ env = ⊥
+interp (e and f) env = interp e env × interp f env
+interp (e or f) env = ¬ ¬ (interp e env ⊎ interp f env )
+interp (not e) env = ¬ (interp e env )
+interp (e ⊃ f) env = ( interp e env ) → (interp f env )
+interp (x == y) env = value x env ≡ value y env
+interp {V} ( all x p ) env = ∀ z → interp p (override {V} env x z )
+interp {V} ( exist x p ) env = ¬ ¬ (Σ T (ń t → interp p (override {V} env x t )))
+B.8 Some languages of variables
+module Variables where
+30
+open import Level using (Level; zero; suc)
+open import Relation.Binary using (DecSetoid)
+open import Relation.Nullary using (Dec; yes; no)
+open import Data.Bool using (Bool) renaming (_
+?
+=_ to _=B_)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ; sym; trans)
+open import Data.Empty using (⊥ )
+open import Data.Unit using (⊤ ; tt)
+private
+DT : Set (suc zero )
+DT = DecSetoid zero zero
+NoVars : DT
+NoVars = record
+{ Carrier = ⊥
+; _≈ _ = ń _ _ → ⊤
+; isDecEquivalence = record
+{ isEquivalence = record { reﬂ = tt ; sym = ń _ → tt ; trans = ń _ _ → tt }
+; _
+?
+=_ = ń () } }
+DBool : DT
+DBool = record
+{ Carrier = Bool
+; _≈ _ = _≡ _
+; isDecEquivalence = record
+{ isEquivalence = record { reﬂ = reﬂ ; sym = sym ; trans = trans }
+; _
+?
+=_ = _=B_ } }
+– For convenience, some simple "languages of variables"
+module VarLangs where
+data X : Set0 where x : X
+XV : DT
+XV = record
+{ Carrier = X
+; _≈ _ = ń _ _ → ⊤
+; isDecEquivalence = record
+{ isEquivalence = record
+{ reﬂ = tt
+; sym = ń _ → tt
+; trans = ń _ _ → tt }
+; _
+?
+=_ = ń _ _ → yes tt } }
+31
+B.9 T1
+– The encoding uses the ’local method’.
+module T1 where
+open import Relation.Binary using (DecSetoid)
+open DecSetoid using (Carrier)
+open import Level using () renaming (zero to lzero)
+– we use ⊥ , ¬ and ≡ from the ’meta’ logic
+open import Data.Empty using (⊥ )
+open import Relation.Nullary using (¬ _)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ)
+open import Data.Nat using (N; suc) – instead of defining our own
+– isomorphic copy
+open import Data.Product using (Σ ; _,_; proj1; proj2)
+open import Data.List using ([_])
+open import Data.Bool using (false)
+– we will eventually need this
+open import Language
+open import NatVar
+private
+DT = DecSetoid lzero lzero
+record BT1 : Set1 where
+ﬁeld
+nat : Set0
+Z : nat
+S : nat → nat
+S̸=Z : ∀ x → ¬ (S x ≡ Z)
+inj : ∀ x y → S x ≡ S y → x ≡ y
+One : nat
+One = S Z
+where we see a ﬁeld nat for the new type (pronounced Set in Agda), the two
+constants, and the two axioms. The host logic is dependently typed, and so
+the axioms refer to the constants just deﬁned. One is not a ﬁeld, but a deﬁned
+constant.
+For simplicity, we will take the built-in type N, deﬁned as an inductive type,
+as the syntax for natural numbers, which is also the syntax associated to t he
+theory BT1. Whereas in cttuqe there is a global evaluation, here we also need
+to deﬁne evaluation explicitly (a subscript is used to indic ate which theory it
+32
+belongs to).
+/llbracket_/rrbracket1 : N → nat
+/llbracket0 /rrbracket1 = Z
+/llbracketsuc x /rrbracket1 = S /llbracketx /rrbracket1
+– and some coherence theorems:
+pres-S̸=Z : ( x : N) → ¬ /llbracketsuc x /rrbracket1 ≡ /llbracket0 /rrbracket1
+pres-S̸=Z x = S̸=Z /llbracketx /rrbracket1
+pres-inj : ( x y : N) → S /llbracketx /rrbracket1 ≡ S /llbrackety /rrbracket1 → /llbracketx /rrbracket1 ≡ /llbrackety /rrbracket1
+pres-inj x y pf = inj /llbracketx /rrbracket1 /llbrackety /rrbracket1 pf
+The accompanying code furthermore proves some basic cohere nce theorems which
+are elided here. We make two further deﬁnitions ( GroundLanguage describing
+some language features, and FOL as our deﬁnition of ﬁrst order logic) which will
+be explained in more detail on the next page.
+nat-lang : GroundLanguage nat
+nat-lang = record { Lang = ń X → NX (Carrier X)
+; value = ń {V} → val {V} }
+where
+val : { V : DT} → NX (Carrier V) → (Carrier V → nat) → nat
+val z env = Z
+val {V} ( s e) env = S (val {V} e env )
+val (v x) env = env x
+module fo1 = FOL nat-lang
+We can also demonstrate that the natural numbers are a model:
+N-is-T1 : BT1
+N-is-T1 = record { nat = N ; Z = 0 ; S = suc
+; S̸=Z = ń x → ń () ; inj = ń { x .x reﬂ → reﬂ } }
+– inverse of the type of sub-term of NX
+SubTermType : { V : DT} → NX (Carrier V) → Set0
+SubTermType {_} z = ⊥
+SubTermType {V} ( s x) = NX (Carrier V)
+SubTermType {V} ( v x) = Carrier V
+– paths in a NX
+data Path {V : DT} : ( e : NX (Carrier V)) → SubTermType {V} e → Set0 where
+sp : ( x : NX (Carrier V)) → Path (s x) x
+vp : ( x : Carrier V) → Path (v x) x
+B.10 T2
+module T2 where
+open import T1 using (BT1)
+33
+open import Numerals
+open import NumPlus
+open import NatVar using (NX)
+open import Relation.Binary using (DecSetoid)
+open DecSetoid using (Carrier)
+open import Level using () renaming (zero to lzero)
+open import Relation.Binary.PropositionalEquality
+using (_≡ _; reﬂ; trans; cong; sym; cong2)
+open import Data.Nat using (N; suc) – instead of defining our own
+– isomorphic copy
+open import Data.Vec using (_ _; []; Vec)
+open import Language using (GroundLanguage; module FOL)
+open GroundLanguage using (value)
+private
+DT = DecSetoid lzero lzero
+–––––––––––––––––––––––––––––––––-
+record BT2 (t1 : BT1) : Set where
+open BT1 t1 public
+ﬁeld
+_+_ : nat → nat → nat
+right-0 : ∀ x → x + Z ≡ x
+x+Sy≡ Sx+y : ∀ x y → x + S y ≡ S (x + y)
+– Wikipedia lists
+– y ≡ 0 ⊎ Σ N (ń x → S x ≡ y)
+– as an additional axiom. It allows addition
+– to be defined recursively.
+bnat : nat → nat → nat
+bnat x y = ( x + x) + y
+– the following two functions are not (unfortunately)
+– private, as T2a will need to prove things about them.
+dig-to-nat : BinDigit → nat
+dig-to-nat zero = Z
+dig-to-nat one = S Z
+unroll : { n : N} → Vec BinDigit n → nat
+unroll [] = Z
+unroll (x l ) = bnat (unroll l) ( dig-to-nat x)
+/llbracket_/rrbracket2 : BNum → nat
+34
+/llbracketbn (x l ) /rrbracket2 = bnat (unroll l) ( dig-to-nat x)
+– just to make sure we’ve done things right.
+lemma1 : /llbracket0b /rrbracket2 ≡ Z
+lemma1 = trans (right-0 _) ( right-0 Z)
+lemma2 : /llbracket1b /rrbracket2 ≡ S Z
+lemma2 = trans (cong (ń z → z + S Z ) ( right-0 Z)) (
+trans (x+Sy≡ Sx+y Z Z )
+(cong S (right-0 Z)))
+– two coherence theorems are provable here (« x is x + x and + 1 on the right is S)
+«-is-*2 : ∀ x → /llbracket« x /rrbracket2 ≡ /llbracketx /rrbracket2 + /llbracketx /rrbracket2
+«-is-*2 (bn (x x 1)) = let num = /llbracketbn (x x 1) /rrbracket2 in right-0 (num + num)
+x+1 : ∀ x → S x ≡ x + /llbracket1b /rrbracket2
+x+1 x = sym (trans (cong (ń z → x + z) lemma2) (
+trans (x+Sy≡ Sx+y x Z) (
+cong S (right-0 x))))
+nat+-lang : GroundLanguage nat
+nat+-lang = record { Lang = ń X → N+X (Carrier X)
+; value = ń {V} → val {V} }
+where
+val : { V : DT} → N+X (Carrier V) → (Carrier V → nat) → nat
+val z env = Z
+val {V} ( s n) env = S (val {V} n env )
+val {V} ( e ‘+ f) env = val {V} e env + val {V} f env
+val (v x) env = env x
+module fo2 = FOL nat+-lang
+– we can inject NX into N+X
+inject1⇒ 2 : ∀{V} → NX V → N+X V
+inject1⇒ 2 NX.z = z
+inject1⇒ 2 (NX.s t) = s (inject1⇒ 2 t)
+inject1⇒ 2 (NX.v x) = v x
+B.11 T2a
+module T2a where
+open import T1 using (BT1)
+open import T2 using (BT2)
+open import Numerals
+open import Relation.Binary.PropositionalEquality
+35
+using (_≡ _; reﬂ; trans; cong; sym; cong2)
+open import Data.Nat using (N; suc) – instead of defining our own
+– isomorphic copy
+open import Data.Vec using (_ _; []; Vec)
+–––––––––––––––––––––––––––––––––-
+– an extension of BT 2 that assumes commutativity and associativity
+record BT2ext {t1 : BT1} ( t2 : BT2 t1) : Set0 where
+open BT2 t2 public
+ﬁeld
+– commutativity is needed for some proofs
+– and is not provable; neither is associativity,
+– in general. So while this is more than Q,
+– it is still ’ok’ in the sense that these are
+– equational axioms and not schemas.
+comm-+ : ∀ x y → x + y ≡ y + x
+assoc-+ : ∀ x y z → (x + y) + z ≡ x + (y + z)
+– useful below.
+left-0 : ∀ x → Z + x ≡ x
+left-0 x = trans (comm-+ Z x) ( right-0 x)
+– to show that this definition is correct, we need a number
+– of properties
+shift-S : ∀ x y → x + S y ≡ S x + y
+shift-S x y = trans (x+Sy≡ Sx+y x y ) (
+trans (cong S (comm-+ x y )) (
+trans (sym (x+Sy≡ Sx+y y x )) (
+(comm-+ y (S x)))) )
+– two different ways of writing 2x+2
+2x+2 : ∀ x → S x + S x ≡ S ((x + x) + S Z )
+2x+2 x = trans (x+Sy≡ Sx+y (S x) x)
+(cong S (trans (comm-+ (S x) x) (
+trans (x+Sy≡ Sx+y x x ) (
+trans (cong S (sym (right-0 (x + x)))) (
+(sym (x+Sy≡ Sx+y (x + x) Z)))))))
+shuﬄe : ∀ x y → (x + y) + (x + y) ≡ (x + x) + (y + y)
+shuﬄe x y = trans (assoc-+ x y (x + y))
+(trans (cong (ń z → x + z) ( trans (sym (assoc-+ y x y ))
+(trans (cong (ń z → z + y) ( comm-+ y x ))
+(assoc-+ x y y ))))
+(sym (assoc-+ x x _)))
+36
+add1-is-S : ∀ x → /llbracket1b /rrbracket2 + x ≡ S x
+add1-is-S x = trans (cong (ń z → z + x) ( lemma2)) (
+trans (comm-+ (S Z ) x) (
+trans (x+Sy≡ Sx+y x Z)
+(cong S (right-0 x))))
++1-is-S : ∀ x → /llbracket+1 x /rrbracket2 ≡ S /llbracketx /rrbracket2
++1-is-S (bn (zero l)) = x+Sy≡ Sx+y (unroll l + unroll l) Z
++1-is-S (bn (one [] )) =
+trans (right-0 _) (
+trans (cong (ń x → /llbracket1b /rrbracket2 + x) lemma2) (
+trans (x+Sy≡ Sx+y _ Z)
+(cong S (right-0 _))))
++1-is-S (bn (one x x 1)) =
+trans («-is-*2 (+1 (bn (x x 1)))) (
+trans (cong2 _+_ (+1-is-S (bn (x x 1))) ( +1-is-S (bn (x x 1))))
+(2x+2 _))
+– because of the invariants that we keep in the types, and the
+– way that bplus is defined _as a function_, we can actually
+– prove the meaning function ’internally’. Only needs 8 case s
+– whereas the paper proof needs 10 (?).
+– Plus I have no idea if the paper spec is complete.
+bplus-is-+ : ∀ x y → /llbracketbplus x y /rrbracket2 ≡ /llbracketx /rrbracket2 + /llbrackety /rrbracket2
+bplus-is-+ (bn {0} ( zero [] )) y = trans (sym (left-0 /llbrackety /rrbracket2)) ( cong (ń z → z + /llbrackety /rrbracket2) ( sym lemma 1))
+bplus-is-+ (bn {0} ( one [] )) y = trans (+1-is-S y) ( sym (add1-is-S /llbrackety /rrbracket2))
+bplus-is-+ (bn {suc n} ( d0 l0)) ( bn {N.zero} ( zero [] )) =
+trans (sym (right-0 _)) ( cong (ń x → /llbracketbn (d0 l0) /rrbracket2 + x) ( sym lemma 1))
+bplus-is-+ (bn {suc n} ( d0 l0)) ( bn {N.zero} ( one [] )) =
+let num = bn (d0 l0) in
+trans (+1-is-S num) ( x+1 /llbracketnum /rrbracket2)
+bplus-is-+ (bn {suc n} ( zero l0)) ( bn {suc n1} ( zero l1)) =
+let n1 = bn l0
+n2 = bn l1
+num = bplus n1 n2
+v1 = /llbracketn1 /rrbracket2
+v2 = /llbracketn2 /rrbracket2 in
+trans («-is-*2 num) ( trans (cong2 _+_ (bplus-is-+ n1 n2) ( bplus-is-+ n1 n2))
+(trans (cong (ń z → z + (v1 + v2)) ( comm-+ v1 v2))
+(trans (assoc-+ v2 v1 _) (
+trans (cong (ń z → v2 + z) ( trans (sym (assoc-+ v1 v1 v2)) ( cong (ń z → z + v2) ( sym («-is-*2 n1)))))
+(trans (comm-+ v2 _) (
+trans (assoc-+ _ v2 v2)
+(cong (ń z → /llbracket« n1 /rrbracket2 + z) ( sym («-is-*2 n2)))))))))
+bplus-is-+ (bn {suc n} ( zero l0)) ( bn {suc n1} ( one l1)) =
+37
+let n1 = bn l0
+n2 = bn l1
+num = bplus n1 n2
+v1 = /llbracketn1 /rrbracket2
+v2 = /llbracketn2 /rrbracket2 in
+trans (+1-is-S (« num)) (
+trans (cong S (trans («-is-*2 num)
+(trans (cong2 _+_ (bplus-is-+ n1 n2) ( bplus-is-+ n1 n2))
+(shuﬄe v1 v2))))
+(trans (sym (x+Sy≡ Sx+y (v1 + v1) ( v2 + v2)))
+(cong2 _+_ (sym («-is-*2 n1))
+(trans (x+1 _)
+(cong2 _+_ (trans (sym («-is-*2 n2)) ( right-0 _)) lemma2)))))
+bplus-is-+ (bn {suc n} ( one l0)) ( bn {suc n1} ( zero l1)) =
+let n1 = bn l0
+n2 = bn l1
+num = bplus n1 n2
+v1 = /llbracketn1 /rrbracket2
+v2 = /llbracketn2 /rrbracket2 in
+trans (+1-is-S (« num)) (
+trans (cong S (trans («-is-*2 num)
+(trans (cong2 _+_ (bplus-is-+ n1 n2) ( bplus-is-+ n1 n2))
+(trans (shuﬄe v1 v2)
+(comm-+ _ _)))))
+(trans (sym (x+Sy≡ Sx+y _ _))
+(trans (comm-+ _ _) ( cong2 _+_ (trans (x+1 _) ( trans (cong2 _+_ (sym («-is-*2 n1)) lemma2) ( cong (ń z → z + S Z ) ( right-0 _))))
+(sym («-is-*2 n2))))))
+bplus-is-+ (bn {suc n} ( one l0)) ( bn {suc n1} ( one l1)) =
+let n1 = bn l0
+n2 = bn l1
+num = bplus n1 n2
+v1 = /llbracketn1 /rrbracket2
+v2 = /llbracketn2 /rrbracket2 in
+trans (+1-is-S (+1 (« num)))
+(trans (cong S (+1-is-S (« num)))
+(trans (cong (ń z → S (S z)) ( trans («-is-*2 num)
+(trans (cong2 _+_ (bplus-is-+ n1 n2) ( bplus-is-+ n1 n2))
+(shuﬄe v1 v2))))
+(trans (cong S (trans (sym (x+Sy≡ Sx+y _ _)) ( comm-+ _ _)))
+(trans (sym (x+Sy≡ Sx+y _ _))
+(trans (comm-+ _ _)
+(cong2 _+_ (trans (cong S (sym («-is-*2 n1))) ( sym (x+Sy≡ Sx+y _ _)))
+(trans (cong S (sym («-is-*2 n2))) ( sym (x+Sy≡ Sx+y _ _)))))))))
+38
+B.12 T3
+module T3 where
+open import T1 using (BT1)
+open import T2 using (BT2)
+open import Numerals using (_btimes_)
+open import NumPlusTimes
+open import Language using (GroundLanguage; module FOL)
+open import Level renaming (zero to lzero)
+open import Relation.Binary using (DecSetoid)
+open DecSetoid using (Carrier)
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+private
+DT = DecSetoid lzero lzero
+record BT3 (t1 : BT1) ( t2 : BT2 t1) : Set0 where
+open BT2 t2 public
+ﬁeld
+_*_ : nat → nat → nat
+right-zero : ∀ x → x * Z ≡ Z
+S* : ∀ x y → x * S y ≡ (x * y) + x
+btimes-is-* : ∀ a b → /llbracketa btimes b /rrbracket2 ≡ /llbracketa /rrbracket2 * /llbracketb /rrbracket2
+nat*-lang : GroundLanguage nat
+nat*-lang = record { Lang = ń X → N* (Carrier X)
+; value = ń {V} → val {V} }
+where
+val : { V : DT} → N* (Carrier V) → (Carrier V → nat) → nat
+val z env = Z
+val {V} ( s n) env = S (val {V} n env )
+val {V} ( e ‘+ f) env = val {V} e env + val {V} f env
+val {V} ( e ‘* f) env = val {V} e env + val {V} f env
+val (v x) env = env x
+module fo3 = FOL nat*-lang
+B.13 T4
+module T4 where
+open import T1 using (BT1)
+open import T2 using (BT2)
+open import T3 using (BT3)
+open import Numerals
+39
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Sum using (_⊎ _)
+open import Data.Product using (Σ )
+record BT4 (t1 : BT1) ( t2 : BT2 t1) ( t3 : BT3 t1 t2 ) : Set0 where
+open BT3 t3 public
+ﬁeld
+no-junk : ∀ x → x ≡ Z ⊎ Σ nat (ń y → S y ≡ x)
+B.14 T5
+module T5 where
+open import Relation.Binary using (DecSetoid)
+open import Level using () renaming (zero to lzero)
+DT : Set1
+DT = DecSetoid lzero lzero
+open import T1 using (BT1)
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Empty using (⊥ )
+open import Data.Sum using (_⊎ _)
+open import Data.Product using (Σ ;_× _;_,_)
+open import Data.Bool using (Bool)
+open import Equiv using (_≃ _)
+open import Variables using (module VarLangs; NoVars; DBool)
+open import Language
+using (module FOL;
+module LogicOverL)
+record BT5 (t1 : BT1) : Set1 where
+open BT1 t1 public
+open VarLangs using (XV; x)
+open DecSetoid using (Carrier)
+open DecSetoid DBool using (_≈ _)
+open LogicOverL fo1.LoL-FOL
+open fo1 using (FOL; tt; ﬀ)
+ﬁeld
+induct : ( e : FOL XV ) →
+/llbrackete /rrbracket(ń { x → Z }) →
+(∀ (y : nat) → /llbrackete /rrbracket(ń {x → y}) → /llbrackete /rrbracket(ń {x → S y})) →
+∀ (y : nat) → /llbrackete /rrbracket(ń {x → y})
+postulate
+40
+decide : ∀ {W} → (Carrier W → nat) → FOL W → FOL NoVars – T5-dec-proc
+meaning-decide : { W : DT} ( env : Carrier W → nat) → (env′ : ⊥ → nat) →
+(e : FOL W) →
+let res = decide env e in
+(res ≡ tt ⊎ res ≡ ﬀ) × (/llbrackete /rrbracketenv) ≃ (/llbracketres /rrbracketenv′)
+B.15 T6
+module T6 where
+open import Relation.Binary using (DecSetoid)
+open import Level using () renaming (zero to lzero)
+DT : Set1
+DT = DecSetoid lzero lzero
+open import T1 using (BT1)
+open import T2 using (BT2)
+open import T5 using (BT5)
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Empty using (⊥ )
+open import Data.Sum using (_⊎ _)
+open import Data.Product using (Σ ;_× _;_,_)
+open import Data.Bool using (Bool)
+open import Equiv using (_≃ _)
+open import Variables using (module VarLangs; NoVars; DBool)
+open import Language
+using (module FOL;
+module LogicOverL)
+With the appropriate infrastructure in place, it is now poss ible to deﬁne BT6
+from the theories it extends.
+record BT6 {t1 : BT1} ( t2 : BT2 t1) ( t5 : BT5 t1) : Set1 where
+open VarLangs using (XV; x)
+open DecSetoid using (Carrier)
+open BT2 t2 public
+open fo2 using (FOL; tt; ﬀ; LoL-FOL; _and_; all)
+open LogicOverL LoL-FOL
+ﬁeld
+induct : ( e : FOL XV ) →
+/llbrackete /rrbracket(ń { x → /llbracket0 /rrbracket1 }) →
+(∀ y → /llbrackete /rrbracket(ń {x → y}) → /llbrackete /rrbracket(ń {x → S y})) →
+∀ y → /llbrackete /rrbracket(ń {x → y})
+postulate
+decide : ∀ {W} → (Carrier W → nat) → FOL W → FOL NoVars
+41
+meaning-decide : { W : DT} ( env : Carrier W → nat) → (env′ : ⊥ → nat) →
+(e : FOL W) →
+let res = decide env e in
+(res ≡ tt ⊎ res ≡ ﬀ) × (/llbrackete /rrbracketenv) ≃ (/llbracketres /rrbracketenv′)
+While section 4 presents the ﬂattened theory, here we need only deﬁne what is
+new over the extended theory, namely an induction schema, a d ecision procedure
+and its meaning formula.
+Here is a guide to understanding the above deﬁnition: (1) XV is a (decid-
+able) type with a single inhabitant, x. (2) All ﬁelds of BT2 are made publicly
+visible for BT6. (3) The language of ﬁrst-order logic FOL over t2 (and some of
+its constructors) is also made visible. (4) (ń {x → y}) denotes a substitution for
+the single variable x. (5) ≃ denotes type equivalence.
+B.16 T7
+module T7 where
+open import Relation.Binary using (DecSetoid)
+open import Level using () renaming (zero to lzero)
+DT : Set1
+DT = DecSetoid lzero lzero
+open import T1 using (BT1)
+open import T2 using (BT2)
+open import T3 using (BT3)
+open import T5 using (BT5)
+open import T6 using (BT6)
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Empty using (⊥ )
+open import Data.Sum using (_⊎ _)
+open import Data.Product using (Σ ;_× _;_,_)
+open import Data.Bool using (Bool)
+open import Equiv using (_≃ _)
+open import Variables using (module VarLangs; NoVars; DBool)
+open import Language
+using (module FOL;
+module LogicOverL)
+record BT7 {t1 : BT1} { t2 : BT2 t1} ( t3 : BT3 t1 t2) ( t5 : BT5 t1) ( t6 : BT6 t2 t5) : Set1 where
+open VarLangs using (XV; x)
+open DecSetoid using (Carrier)
+open BT3 t3 public
+open fo3 using (FOL; tt; ﬀ; LoL-FOL; _and_; all)
+open LogicOverL LoL-FOL
+42
+ﬁeld
+induct : ( e : FOL XV ) →
+/llbrackete /rrbracket(ń { x → /llbracket0 /rrbracket1 }) →
+(∀ y → /llbrackete /rrbracket(ń {x → y}) → /llbrackete /rrbracket(ń {x → S y})) →
+∀ y → /llbrackete /rrbracket(ń {x → y})
+postulate
+decide : ∀ {W} → (Carrier W → nat) → FOL W → FOL NoVars
+meaning-decide : { W : DT} ( env : Carrier W → nat) → (env′ : ⊥ → nat) →
+(e : FOL W) →
+let res = decide env e in
+(res ≡ tt ⊎ res ≡ ﬀ) × (/llbrackete /rrbracketenv) ≃ (/llbracketres /rrbracketenv′)
+B.17 T8
+module T8 where
+open import DeﬁniteDescr using (isContr2)
+open import Relation.Nullary using (¬ _)
+open import Relation.Binary.PropositionalEquality using (_≡ _)
+open import Data.Product using (Σ ; proj1; _× _)
+record BT8 : Set1 where
+ﬁeld
+Ì : Set0
+ze : Ì
+S : Ì → Ì
+S̸=Z : ∀ x → ¬ (S x ≡ ze)
+inj : ∀ x y → S x ≡ S y → x ≡ y
+induct : ( p : Ì → Set0) → p ze → (∀ x → p x → p (S x)) → (∀ y → p y )
+bin : Set0
+bin = Ì → Ì → Ì
++-pred : bin → Set0
++-pred f = ( ∀ x → f x ze ≡ x) ×
+(∀ x y → f x (S y) ≡ S (f x y ))
+ﬁeld
++-uniq : isContr2 Ì +-pred
+_+_ : bin
+_+_ = proj1 +-uniq
+*-pred : bin → Set0
+*-pred f = ( ∀ x → f x ze ≡ ze) ×
+(∀ x y → f x (S y) ≡ f x y + x)
+43
+ﬁeld
+*-uniq : isContr2 Ì *-pred
+_*_ : bin
+_*_ = proj1 *-uniq

@@ -1,0 +1,12 @@
+{
+  "slug": "gaoshu-xia",
+  "source": "高等数学第二版下册黄立宏主编.pdf",
+  "pageCount": 274,
+  "dpi": 120,
+  "quality": 82,
+  "width": 992,
+  "height": 1402,
+  "format": "webp",
+  "totalBytes": 24043622,
+  "pagePattern": "page-{page:03d}.webp"
+}

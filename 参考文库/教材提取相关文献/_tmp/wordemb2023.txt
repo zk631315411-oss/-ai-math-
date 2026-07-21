@@ -1,0 +1,391 @@
+
+--- PAGE 1 ---
+informatio n
+Article
+Automatic Construction of Educational Knowledge Graphs:
+A Word Embedding-Based Approach
+QuratUlAin* ,MohamedAmineChatti* ,KomlanGluckCharlesBakar,ShoebJoarderandRawaaAlatrash
+SocialComputingGroup,FacultyofEngineering,UniversityofDuisburg-Essen,47057Duisburg,Germany;
+komlan.bakar@stud.uni-due.de(K.G.C.B.);shoeb.joarder@uni-due.de(S.J.);
+rawaa.alatrash@stud.uni-due.de(R.A.)
+* Correspondence:qurat.ain@stud.uni-due.de(Q.U.A.);mohamed.chatti@uni-due.de(M.A.C.)
+Abstract: Knowledgegraphs(KGs)arewidelyusedintheeducationdomaintoofferlearnersa
+semanticrepresentationofdomainconceptsfromeducationalcontentandtheirrelations,termedas
+educationalknowledgegraphs(EduKGs).PreviousstudiesonEduKGshaveincorporatedconcept
+extractionandweightingmodules. However,thesestudiesfacelimitationsintermsofaccuracy
+andperformance. Toaddressthesechallenges,thisworkaimstoimprovetheconceptextraction
+andweightingmechanismsbyleveragingstate-of-the-artwordandsentenceembeddingtechniques.
+Concretely, we enhance the SIFRank keyphrase extraction method by using SqueezeBERT and
+we propose a concept-weighting strategy based on SBERT. Furthermore, we conduct extensive
+experimentsondifferentdatasets,demonstratingsignificantimprovementsoverseveralstate-of-the-
+artkeyphraseextractionandconcept-weightingtechniques.
+Keywords: technology-enhancedlearning;massiveopenonlinecourses;educationalknowledge
+graphs;courseknowledgegraphs;naturallanguageprocessing
+1. Introduction
+Citation:Ain,Q.U.;Chatti,M.A.;
+Inrecentyears,knowledgegraphs(KGs),asformsofstructuredhumanknowledge,
+Bakar,K.G.C.;Joarder,S.;Alatrash,R.
+havegarneredconsiderableresearchattentionfrombothacademiaandindustry[1,2]. A
+AutomaticConstructionof
+EducationalKnowledgeGraphs:A KG,whereinnodesrepresententitiesandedgesdepictrelationshipsbetweenentities,serves
+WordEmbedding-BasedApproach. asanintegratedinformationrepositorythatinterlinksheterogeneousdatafromdiverse
+Information2023,14,526. https:// domains[3,4]. KGshavedemonstratedrobustcapabilitytoprovidemoreefficientservices
+doi.org/10.3390/info14100526 inavastnumberofapplicationdomains,suchasrecommendersystems(Netflix[5]),search
+engines(Microsoft’sSatoriandGoogle’sKnowledgeGraph[1]),personalassistantapps
+AcademicEditors:MohamedHedi
+(Apple’sSiri[6]),andquestionanswering(e.g.,IBM’sWatson[7],WolframAlpha[8]),and
+Karray,LindaElmhadhbi,Arkopaul
+manymore[9]. However,thesegenericKGstypicallydonotoffersubstantialsupportfor
+SarkarandAntonioDeNicola
+manydomain-specificapplicationsbecausetheyrequiredeepdomaininformationand
+Received:16August2023 knowledge[3].Learningandeducationisoneofsuchdomains.Inthisresearch,wefocuson
+Revised:15September2023 theapplicationofKGintheeducationaldomain,referredtoastheeducationalknowledge
+Accepted:25September2023 graph(EduKG).RelatedtoEduKGsareconceptmaps[3]andconceptgraphs[10],which
+Published:27September2023
+areoftenusedintechnology-enhancedlearning(TEL)systems. Thesesystems,suchas
+massive open online courses (MOOCs) and learning management systems (LMSs), are
+instrumentalinextractingconceptsfromlearningmaterialsandvisualizingthemtolearners
+inordertohelpthemjudgethevitalpartsofthelearningmaterials[11].
+Copyright: © 2023 by the authors.
+Awell-constructedEduKGhasmanybenefits. Itcanassistlearnersineasilyunder-
+Licensee MDPI, Basel, Switzerland.
+standingfactsandconnectingdifferentconcepts,andispivotalinaccuratelymodelingthe
+This article is an open access article
+knowledgestateoflearners. Moreover,itcancontributefacilitatetheprovisionofmore
+distributed under the terms and
+accurateandpersonalizedrecommendationsofrelatedconceptstobemasteredorrele-
+conditionsoftheCreativeCommons
+Attribution(CCBY)license(https:// vantlearningresourcestobridgetheunderstandinggap. Previousworksonconstructing
+creativecommons.org/licenses/by/ EduKGstypicallyreliedondomainexpertstobuildtheKGmanually, aprocessthatis
+4.0/). time-consumingandcostly[12]. Furthermore,theenormousincreaseineducationaldata
+Information2023,14,526.https://doi.org/10.3390/info14100526 https://www.mdpi.com/journal/information
+--- PAGE 2 ---
+Information2023,14,526 2of18
+on TEL platforms necessitates an automatic approach to building EduKGs. Automatic
+construction of an EduKG is, however, a difficult problem, and brings new challenges,
+suchasaccuracyandperformance,whichrequireaddressingfortheeffectiveassembly
+ofEduKGs. Tothisend,inthispaper,wefocusonthetaskofautomaticallyconstructing
+anEduKGinaMOOCplatform,takingintoconsiderationtheaccuracyandperformance
+aspects. TheproposedapproachcanbeeasilyextendedtoanyotherTELplatform.
+Theprimarygoalofthisresearchistoinvestigatethepotentialofusingword/sentence
+embeddingtechniquestoeffectivelyandefficientlyconstructanEduKG.Thisresearchaims
+toanswerthefollowingresearchquestion(RQ): Howcanweleverageknowledgebasesand
+word/sentenceembeddingtechniquestoautomaticallyconstructanEduKGbasedontheconcepts
+extractedfromlearningmaterials? Toaddresstheaccuracyandperformancechallenges,we
+proposeapipelinefortheautomatic,unsupervisedconstructionofEduKGs,relyingon
+state-of-the-artwordandsentenceembeddingtechniques. Tothisend,ourmethodology
+effectivelycombinesseveralmethods. Theseincludeanunsupervisedembedding-based
+method that extracts keyphrases from the learning materials, a concept identification
+methodthatidentifiesconceptsfromthekeyphrases, aconceptexpansionmethodthat
+provides more context to the learners by introducing them to new concepts, a concept-
+weightingapproachthatrankstheconceptsaccordingtotheirrelevancetothelearning
+materials,andthevisualizationoftheconceptsandrelationshipswithinanEduKG.
+Throughthisresearch,wemakethefollowingcontributions: (1)weadoptandadapt
+state-of-the-artword/sentenceembeddingtechniquestoautomaticallyconstructanEduKG,
+(2)weenhancetheSIFRankkeyphraseextractionmethodproposedin[13]byadopting
+SqueezeBERT[14],atransformermodelforwordembedding,(3)weproposeanembedding-
+basedconcept-weightingstrategyusingthesentenceembeddingtechniqueSBERT[15],and
+(4)weconductempiricalstudiesondifferentdatasets,demonstratingtheeffectivenessof
+theSqueezeBERT-enhancedSIFRankkeyphraseextractionmethodaswellastheefficiency
+ofSBERT-basedconcept-weightingstrategyagainstseveralbaselines.
+Therestofthispaperisorganizedasfollows: Section2outlinesthetheoreticalback-
+ground of this research and discusses related work. Section 3 introduces our MOOC
+platform,CourseMapper. Section4describesourproposedmethodologyfortheautomatic
+constructionofEduKGs. Section5demonstratestheexperimentalevaluationandresults.
+Finally,Section6concludesthepaperandhighlightsfutureresearchdirections.
+2. BackgroundandRelatedWork
+2.1. EducationalKnowledgeGraphs
+EduKGsareusedforvariouseducationalpurposes,e.g.,tosupportlearningandsci-
+entificdiscovery[3],predictprerequisitedependenciesamongcoursesinMOOCs[10,16],
+providecomputer-aidededucation[17],supportscientificresourceretrieval[18],andrec-
+ommendlearningresources[19],learningpaths,knowledgelevels[20],andcurricula[21].
+A variant of EduKG, the course knowledge graph (CKG), integrates scattered courses
+withknowledgepoints,andfullyreflectstherelationshipbetweencoursesandknowledge
+points[22,23]. TheseCKGsarealsobeingwidelyusedtoimprovelearningoutcomes,solve
+problemsintraditionalteaching,andenhancethepossibilityofeffectivelearning[23].More-
+over,CKGsarebeingusedasthebasisforanintelligentquestion–answeringsystemfor
+highschoolcourses[24]andcourserecommendationsbasedonstudentinformation[25].
+In general, an EduKG is a heterogeneous graph, where nodes denote entities, and
+edgesrepresentrelationsbetweenentities. Theseentitiesandedgescanmodeldifferent
+aspectsinTELenvironments. Forinstance,theseEduKGsusuallycomprisevariousenti-
+ties,namelycourseconceptsorknowledgepoints[3,26–32],courses[26,29,30,32],course
+groups[26],courseinstructorsorlecturers[26,32],universities[26,32],websites[26],learn-
+ingplatforms[32],wikiexplanationsofconcepts[27],coursesections[28],questions[28],
+keywords [33], and categories [28,33]. In general, it can be concluded that concepts or
+knowledge points are the basic building blocks of every EduKG and, hence, must be
+extractedaccuratelyandefficiently.
+--- PAGE 3 ---
+Information2023,14,526 3of18
+Previously, EduKGs were manually constructed by course experts. However, due
+tothelimitationsofthismanualapproachintermsoftimeandeffort,differentworksin
+recentyearshaveaddressedtheproblemofautomaticallygeneratingEduKGsbyemploy-
+ingmachinelearning(ML)andnaturallanguageprocessing(NLP)techniques. Various
+methodshavebeenintroducedbyresearchersdependingontherequirementsandtasks
+to be achieved. The most essential task in the construction of EduKGs is entity extrac-
+tion. ThistaskhasbeenachievedbasedonavarietyofMLandNLP-basedmethodsand
+willbediscussedindetailinSection2.2. Anotherimportanttaskintheconstructionof
+EduKGsisrelationextraction,whichinvolvesconnectingdifferententitiesintheEduKG.
+Theserelationshipsaremainlysequentialorsemanticrelationshipsandarefoundusing
+DBpediaspotlight[25],ruleprocessing,KNN[26],probabilisticassociationrulemining[3],
+binaryclassificationonmodelstrainedwithlabeleddatasets[34],binaryclassificationon
+trainedmodelsusingfeedforwardneuralnetworks[35],prompt-tuningwithsynergistic
+optimization[36],cosinesimilarity[27,29],PMI,normalizedgoogledistance[31],semantic
+rolelabeling[37],prerequisiterelationcalculationsbasedonthepreliminaryknowledge
+tagsofthecourses[20],andrule-basedrelationextraction[38]. Anotherwidelyadopted
+task in the construction of EduKGs is entity linking with an external knowledge base,
+mainlyWikipedia[25,27,28,32,33,39]. ThisisachievedusingWikipediaAPIordifferent
+entity-linkingservices,suchasDBpediaSpotlight[25,39]andBabelfy[39]. Someofthe
+research studies have also focused on concept expansion for the semantic enrichment
+withnewrelatedconcepts,forexample,usingWikipediacategories[25,33,39]ortheBaidu
+Encyclopedia [31]. Furthermore, some of the studies have also incorporated concept-
+weightingstrategiestoranktheidentifiedconceptsbasedontheirweights. Theweighting
+strategyusedinmostofthestudiesistermfrequency–inversedocumentfrequency(TF-
+IDF)[25,26,37,39].
+Mostrelatedworksprimarilyfocusonasubsetofthetasksmentionedabove.Only[25]
+adoptedamorecompletesetofsteps,includingconceptlinking,expansion,andweighting.
+UnliketheEduKGconstructionpipelinein[25],weperformkeyphraseextractionbeforethe
+conceptlinkingstep. Thisstepisintroducedtothepipelinetoachievebetterefficiencyand
+performancebyannotatingonlytheextractedkeyphraseswiththeentity-linkingservice
+ratherthansendingthewholetextofthelearningmaterialforannotation. Furthermore,
+in the concept-weighting step, we use word embedding techniques instead of TF-IDF.
+Althoughefficient,TF-IDF-basedconcept-weightingmethodsareusuallyimprecisebecause
+theydonotconsiderthesemanticrelatednessbetweenconcepts.
+2.2. AutomaticConceptExtraction
+Concepts represent the core part of any EduKG. Thus, concept extraction is an es-
+sentialstepintheconstructionofEduKGs. Toobtainconcept-levelknowledge,manual
+indexingoflearningmaterialsortextbooksischallenging,time-consuming,andproneto
+errors[40]. Therehasbeenincreasedresearchonautomaticconceptextractionfromlearn-
+ingmaterials,mainlythroughdirectentitylinkingofthematerialstoexternalknowledge
+bases,orbyperformingkeyphraseextractiononthetextofthelearningmaterials.
+Several research studies have used direct entity linking via named entity recogni-
+tion(NER)[38,41,42]andentity-linkingservices[25,26,28,32,33,39,41,43]. Itisacommon
+practicetouseentitylinkingtoidentifyconceptsfromthetext. However,applyingentity
+linkingtolearningmaterialswithalargeamountoftextisnotefficient,asthissteprequires
+sendingmultiplerequeststoanentity-linkingservice. Toovercomethisissue,fewworks
+havefocusedonfirstextractingkeyphrasesfromthetextandthenusingthesekeyphrases
+toidentifyconcepts. Theseworkshaveemployedvariousmachinelearningmethods,such
+asrule-basedlearning[44],supervisedlearning[40],unsupervisedlearning[37],anddeep
+neuralnetworks[3,31].
+In our work, we apply keyphrase extraction as a pre-step to entity linking from
+Wikipedia. Ouraimistofilterthelistofconceptcandidates,thusmakingtheautomatic
+concept extraction more efficient. We focus on unsupervised methods for keyphrase
+--- PAGE 4 ---
+Information2023,14,526 4of18
+extraction,asthesupervisedmethodsneedmodelstrainedonthedomain-specificcorpus
+todetectconcepts,requiringasignificantamountoftrainingdata,whicharenotavailable
+inourcontext. Weadopt,enhance,andcompareastate-of-the-artwordembedding-based
+keyphraseextractionapproachwithseveralbaselines.Tothebestofourknowledge,itisthe
+firstworkapplyingwordembedding-basedkeyphraseextractionmethodsforeducational
+conceptextraction. OtherworksusedwordembeddingstoconstructanEduKGbutfora
+purposeotherthanautomaticconceptextraction[20,27].
+3. EduKGinCourseMapper
+OurmaingoalistoautomaticallyconstructanEduKGforthelearningmaterialin
+CourseMapper. CourseMapperisaMOOCplatformthatwedevelopedtohelplearnersef-
+fectivelycreateandmanagecourses,collaboratewitheachother,andinteractwithlearning
+materialsusingsharedannotations[45]. Generally,anEduKGontopofaMOOCplatform
+isaheterogeneousinformationnetworkconsistingofdifferententitiesandrelationships
+between them. Concepts represent important entities to be modeled in any EduKG in
+ordertoprovideanoverviewofthemainconceptsinthelearningmaterials,helplearners
+beawareofwhatistobelearned,anddrawtheirattentiontothemostcrucialconcepts.
+Consequently,thisfacilitatesthelearners’achievementandcreatesapositiveperception
+ofthematerials[46]. Inadditiontoconcepts,theEduKGnormallycontainsotherentities,
+suchaslearners,teachers,courses,andvideos,aswellastherelationshipsamongthose
+entities. Figure1showsapartofthenetworkschemaofourEduKGinCourseMapperwith
+differententitytypesandthesemanticlinksbetweenthem. ThispartoftheEduKGconsists
+offivetypesofentities,namelytheuser,learningmaterial(slidesorvideo),concept,related
+concept,andcategory,aswellastherelationshipsbetweentheseentities.
+Figure1.NetworkschemarepresentingtheEduKGentitiesandtherelationshipsbetweenthem.
+Witheverylearningmaterial(slidesinourexample), learnersareprovidedwitha
+“DidNotUnderstand(DNU)”button,whichtheycanclicktoviewtheconceptsextracted
+fromthecurrentslide(seeFigure2). Then,theycanclicktoselecttheconcreteconceptsthat
+theydonotunderstandfromthatslide. Thisinformationisusedtomodeltherelationships
+“Understand”(U)and“Did-Not-Understand”(DNU)betweenlearnersandconceptsin
+the EduKG. This can provide an effective way to model the learner’s knowledge state,
+--- PAGE 5 ---
+Information2023,14,526 5of18
+whichcanbeusedtoprovidepersonalizedrecommendationsofprerequisiteconceptsto
+bemastered,aswellasrelevantrelatedexternallearningresourcesthatcanhelplearners
+understandtheconceptsontheslide. Theconceptsextractedfromthelearningmaterials
+are expanded based on related concepts and categories in Wikipedia (see Figure 1). In
+thenextsection,wewilldiscussourproposedapproachfortheautomaticextractionof
+conceptsintheEduKG.
+Figure2.CourseMapper’suserinterface,showingtheDNUbutton.
+4. Methodology
+RegardingthedevelopmentoftheKGforlearningmaterials,thefollowingessential
+factors must be considered: The KG aims to highlight the relevant concepts inside the
+learningmaterials,aswellasallowlearnerstodiscovernewconceptsthatarenotnecessarily
+mentionedinthelearningmaterials. Thissectiondescribesthepipelineweusedforthe
+automaticextractionofconceptstobuildtheEduKGinCourseMapper(seeFigure3);we
+specificallyfocusonthekeyphraseextractionandconcept-weightingmodules,whichare
+the core contributions of this paper. Note that, although we are building an EduKG in
+a MOOC platform, all the components of our pipeline can be replicated for any other
+TELenvironment.
+Figure3.PipelinefortheautomaticconstructionofanEduKG.
+--- PAGE 6 ---
+Information2023,14,526 6of18
+4.1. TextExtraction
+ThefirststepintheconstructionofourEduKGistextextractionfromPDFlearning
+materialsinCourseMapper. ExtractingtexteffectivelyandaccuratelyfromthePDFisone
+of the most challenging tasks in text mining because of the variation in text styles and
+formats. Usually,theextractionmethodlacksawarenessofthelayoutofthePDFfile. To
+solvethisproblem,thelayoutaspectofthePDFfilehastobetakenintoconsiderationto
+makesurethatwordsinthesameboxareaccuratelyextracted.Weusedasimpleformofthe
+methodproposedin[47],alayout-awarePDFtextextraction. Themethodconsistsofthree
+steps: (1)detectingcontiguoustextblocks,(2)classifyingtextblocksintocategoriesusing
+arule-basedmethod,and(3)stitchingclassifiedtextblockstogetherinthecorrectorder.
+Forthefirststep,contiguoustextblocksaredetectedfromthePDFusinganopen-source
+toolPDFMiner[48]. WithPDFMiner,informationaboutcharactersandtheirpositionsin
+thePDFfileisobtained. Thenasinstep(3)ofthementionedapproach[47],basedonthe
+proximityoftheircoordinates,charactersaregroupedintolinesandblocksoftext.
+4.2. KeyphraseExtraction
+Weappliedkeyphraseextractionasapre-steptoentitylinkingfromWikipedia. This
+step is motivated by the need to avoid sending learning materials with large amounts
+oftexttoanentity-linkingservice,thusitimprovestheefficiencyofthenextstepinthe
+pipeline,i.e.,conceptidentification(seeSection4.3). Thekeyphraseextractionstepisbuilt
+onthebasisofSIFRank[13],astate-of-the-artunsupervisedkeyphraseextractionmethod
+thatisbasedonapre-trainedlanguagemodel. ThefirststepintheSIFRankprocessistext
+preprocessing. TokenizationisperformedonthetextusingtheCoreNLPlibrary. Then,
+part-of-speech (POS) tagging is applied to the generated tokens using the same library.
+Lastly,embeddingsofthesePOS-taggedtokensaregeneratedusingembeddingtechniques.
+Theauthorsin[13]createdwordembeddingsofthetokenswithELMo[49],andsentence
+embeddingswithsentenceinversefrequency(SIF)[50]. Accordingtotheauthorsin[13],
+SIFRankachievedthebestperformanceinkeyphraseextractionforshortdocuments. For
+longdocuments,theauthorsextendedSIFRanktoSIFRankplus,whichusesposition-biased
+weighttoimproveitsperformanceinlongdocuments.
+WeadoptedtheSIFRankkeyphraseextractionprocesswithsomemodificationsto
+achievebetterresults,basedonourexperiments. Firstly,weperformedtokenizationon
+the text. Then, we applied POS tagging on the generated tokens. Lastly, we generated
+embeddingsofthesePOS-taggedtokensusingtheSIFRankandSIFRankplusembedding
+techniquesforshortandlongdocuments,respectively. Recognizingtheperformanceof
+state-of-the-arttransformer-basedpre-trainedlanguagemodels,wereplacedELMowiththe
+pre-trainedSqueezeBERT[14]asawordembeddingmethodinSIFRankandSIFRankplus.
+ThedecisiontouseSqueezeBERTismotivatedbyitslightweighttransformerarchitecture
+with higher information flow between the layers; moreover, it is faster than the BERT
+model[14]. WeconductedextensiveexperimentsusingtheSIFRank/SIFRankpluswith
+ELMo-basedandSIFRank/SIFRankpluswithSqueezeBERT-basedpre-trainedmodelsand
+comparedthemwithdifferentstatistical,graph-based,andembedding-basedkeyphrase
+extractionmethodsintermsofaccuracy(seeSection 5.1). Theresultsshowthatwhileour
+proposedSIFRank/SIFRankpluswithSqueezeBERTmethodsoutperformedotherbaseline
+models,theaccuracyofthekeyphraseextractiontaskwasrelativelylowwithanF1-score
+of40.38%inthebestcase.
+4.3. ConceptIdentification
+Thekeyphrasesobtainedinthepreviousstepareusedasinputfortheconceptiden-
+tification step. Identifying concepts from the keyphrases requires the use of external
+knowledge bases. Similar to [25], we use DBpedia Spotlight [51] to link keyphrases to
+conceptsinDBpedia. DBpediaSpotlightisapowerfulentity-linkingtoolthatcanquickly
+and efficiently identify meaningful substrings (or annotations) in a text and link them
+to related DBpedia concepts. DBpedia Spotlight is used for automatically annotating
+--- PAGE 7 ---
+Information2023,14,526 7of18
+mentionsofDBpediaresourcesintext,basedonthreesteps: (1)spotting,i.e.,applyinga
+string-matchingalgorithmbasedontheDBpedialexicontoidentifyanymentioninthe
+textmatchingaDBpediaresource,withprioritygiventothelongestcase-insensitivematch;
+(2)candidateselection,i.e.,selectingcandidateDBpediaresourcesforeachspottedmention
+to narrow down the space of disambiguation possibilities; and (3) disambiguation, i.e.,
+finding the best candidate DBpedia resource for the spotted mention using contextual
+information. We use the DBpedia Spotlight web service, which supplies endpoints for
+spotting,disambiguation,andannotationbykeepingthesupportparametersetto5andthe
+confidenceparameterto0.35,asusedby[39]. Wealsousethecontextualscoreassignedby
+DBpediaSpotlighttoacandidateDBpediaresourceusingitscontextualinformation[51].
+Concepts can, however, wrongly be identified when using DBpedia Spotlight or
+anyotherentity-linkingservices. Manriqueetal. [25]refertothisproblemasincorrect
+annotation,i.e.,“theconceptsaremistakenlylinked”. Sincethisisanautomaticprocess
+and,thus,theidentifiedconceptsarenotmanuallyevaluated,weuseaweightingstrategy
+thatlooksatthesemanticsimilaritiesoftheidentifiedconceptstothelearningmaterials.
+ThisweightingstrategyisdiscussedindetailinSection4.5.
+4.4. ConceptExpansion
+ToenrichtheEduKG,weapplyanexpansionsteptotheidentifiedconcepts. Con-
+sideringthatthekeyphraseextractionstepdoesnotproduceresultswithhighaccuracy
+(seeSection 4.2)and,consequently,theconceptidentificationstepdoesnotdetermineall
+conceptsrelevanttothelearningmaterials,weexpandtheEduKGwithadditionalconcepts.
+Theseadditionalconceptscanimprovethecoverageanddiversityoftheidentifiedconcepts,
+enhancethestructureoftheEduKG,helpfurtherdevelopthelearners’knowledge,and
+promote concept exploration and discovery. Expanded concepts can also be important
+toreinforcethemaintopicofthelearningmaterialiftheyarenotpresentinthelearning
+material[52]. Theexpansionisperformedwhileconsideringthesemanticrelationships
+of the concepts in the knowledge base. We adopt the two types of expansion, namely
+category-basedexpansionandproperty-basedexpansion,asproposedin[25]. Wereferto
+property-basedexpansionasarelatedconceptexpansioninthiswork.
+4.4.1. Category-BasedExpansion
+TheEduKGisenrichedwiththecategoriesoftheidentifiedconcepts. Forexample,for
+theconceptof“Naturallanguageprocessing”,thecategories“Category:Computational
+linguistics”and“Category:Artificialintelligence”areaddedtotheEduKG.Theseadded
+categoriesprovidehierarchicalinformationabouttheconceptsandallowuserstodiscover
+more broad concepts. SPARQL queries retrieving the categories (through the ontology
+propertydct:subject)oftheconceptsareexecutedagainstthepublicSPARQLendpoint
+ofDBpedia.
+4.4.2. RelatedConceptExpansion
+The EduKG is enriched with the related concepts of the identified concepts. For
+example,fortheconceptof“Naturallanguageprocessing”,therelatedconceptof“Natural
+languageunderstanding”isaddedtothegraph. Therelatedconceptsareextractedusing
+SPARQLandtheontologypropertydbo:wikiPageWikiLink. Todeterminetheexistenceof
+apathbetweenthetwoconcepts,SPARQLqueriesareexecutedagainstthepublicSPARQL
+endpointofDBpediatoretrievethepropertypathsbetweenthetwoconcepts. Anedgeis
+createdbetweenthetwonodesifapropertypathisfound.
+4.5. ConceptWeighting
+The expansion is a beneficial step in creating the EduKG; however, the expansion
+canintroduceevenmorenoisyconceptsinthegraph[53]. Toovercomethisproblem,the
+concept-weightingstrategyisusedtoweighttheconceptsinthegraph.Withthisweighting
+--- PAGE 8 ---
+Information2023,14,526 8of18
+strategy,conceptsthatarecontextuallyandsemanticallysimilartothelearningmaterials
+willhavehighweightsasopposedtonoisyconceptswhoseweightswillbelower.
+Manrique et al. [25] proposed a weighting strategy to solve the aforementioned
+problem, basedonthreesteps: (1)conceptfrequency: aTF-IDF-basedweightingofthe
+concepts in the KG, which helps determine the importance of a concept to a particular
+pieceoflearningmaterialbypenalizingconceptsthatappearoftenacrossmultiplelearning
+materials;(2)categorydiscount: thispenalizescategoriesthataretoobroadandgeneric
+in the hierarchy of the KG; and (3) related concept discount: this penalizes frequently
+relatedconcepts. Thisstrategy,albeiteffectiveasaweightingstrategy,failstoconsiderthe
+contextofthewordsandcapturethesemanticawarenessfromboththelearningmaterials
+and the concepts. Recently, word and sentence embedding techniques have garnered
+increasingattentionduetotheimpressiveperformancetheyhavedemonstratedacross
+awiderangeofNLP-relatedscenarios. Thesetechniquesexcelatcapturingthesemantic
+meaningofwordsordocumentsandthecontextualrelationshipsbetweenthem,which
+canbeeffectivelyusedtoextractmeaningfuldatarepresentations, gainasemanticand
+relationalunderstandingofthedata,andmeasuresemanticsimilaritiesbetweenwordsor
+documents[54,55]. Forthisreason,weproposeanotherweightingstrategyfortheconcepts
+byleveragingtheadvantagesoftransformermodels,particularlytheSBERTmodel[15].
+Ourapproach(w )worksasfollows.
+SBERT
+4.5.1. ConceptWeighting
+Theembeddingofthecontentofthelearningmaterialemb andtheembeddingof
+lmi
+thecontentoftheconcept(i.e.,thetextcontentofitsWikipediaarticle)emb aredefined
+c
+usingSBERT.ToretrievetheWikipediaarticletext,theWikipediaAPI(https://pypi.org/
+project/Wikipedia-API/, accessed on 1 August 2023 ) is used. Then, the weight of the
+conceptinthelearningmaterialiscomputedasthecosinesimilarityscorebetweenemb
+lmi
+andemb .
+c
+4.5.2. RelatedConceptWeighting
+The embedding of the content of the learning material emb and the embedding
+lmi
+ofthecontentoftherelatedconcept(thetextcontentoftheWikipediaarticle)emb are
+rel
+computedusingSBERT.Theweightoftherelatedconceptisthecosinesimilarityscore
+betweenemb andemb .
+lmi rel
+4.5.3. CategoryWeighting
+Theembeddingofthecontentofthelearningmaterialemb andtheembeddingof
+lmi
+thecategorynameemb arecomputedusingSBERT.Wikipediacategorypagesarenot
+cat
+Wikipediaarticlesand,thus,donothavetextcontent. Therefore,thenameofthecategory
+isused. Theweightofthecategoryisthecosinesimilarityscorebetweenemb andemb .
+lmi cat
+Thiswillhelpdeterminethecategory’simportanceinthelearningmaterial.
+4.6. KnowledgeGraphStorage
+AgraphdatabaseishighlysuitableforstoringtheKGdatasincetheconceptswill
+needtobestoredwithseveralproperties. TheconstructedKGisstoredinaNeo4jgraph
+databaseasfollows:
+• EachconceptintheKGisstoredasanode. Theconceptisattachedtoproperties,such
+asthenameoftheconcept.
+• Arelationshipofthetyperelated_toisstoredtoconnecttwonodes,eitheraconcept
+fromtheidentificationmoduleorarelatedconceptfromtheexpansionmodule.
+• Arelationshipofthetypebelongs_toisstoredtoconnectanodetoanodeofthetype
+category.
+• Thelearningmaterialisstoredasanode.
+• Arelationshipofthetypecontainsisstoredtoconnectthelearningmaterialtothe
+concepts.

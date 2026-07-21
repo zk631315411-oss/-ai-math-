@@ -1,0 +1,461 @@
+
+--- PAGE 1 ---
+Linguistically-Driven Strategy for Concept Prerequisites Learning on
+Italian
+AlessioMiaschi(cid:63),(cid:5),ChiaraAlzetta•,(cid:5),FrancoAlbertoCardillo(cid:5),FeliceDell’Orletta(cid:5)
+(cid:63)DipartimentodiInformatica,Universita` diPisa
+•DIBRIS,Universita` degliStudidiGenova
+(cid:5)IstitutodiLinguisticaComputazionale“AntonioZampolli”(ILC-CNR),Pisa
+ItaliaNLPLab–www.italianlp.it
+alessio.miaschi@phd.unipi.it,
+chiara.alzetta@edu.unige.it,
+{francoalberto.cardillo,felice.dellorletta}@ilc.cnr.it
+Abstract them to build educational materials such as text-
+books, coursesor, moreingeneral, learningpaths
+We present a new concept prerequisite learn-
+bycombiningvariousLOsofthesamesubject.
+ing method for Learning Object (LO) or-
+Being able to give a pedagogical meaning to
+dering that exploits only linguistic features
+extracted from textual educational resources. the content of a set of LOs by ordering them re-
+The method was tested in a cross- and in- specting their pedagogical precedence is not triv-
+domain scenario both for Italian and English. ial: uncovering educational relationship between
+Additionally,weperformedexperimentsbased LOsisadifficultandtimeconsumingpracticeusu-
+onaincrementaltrainingstrategytostudythe
+ally performed by domain experts (Gordon et al.,
+impact of the training set size on the classi-
+2017). Amongallpedagogicalrelations, themost
+fier performances. The paper also introduces
+fundamental is the prerequisite relation, which
+ITA-PREREQ, to the best of our knowledge
+bestdescribespedagogicalprecedencesinceitde-
+the first Italian dataset annotated with prereq-
+uisite relations between pairs of educational fines what one needs to know before approaching
+concepts, and describe the automatic strategy anewcontent.
+devisedtobuildit. PreviousworkincourseandLOsequencingand
+knowledge tracing infers prerequisite relation be-
+1 Introduction
+tween LOs based on their metadata and/or stu-
+Learning Objects (LO) are digital or non-digital dents’ preferences and competences (De-Marcos
+educational resources deliverable over the Inter- etal.,2009;Vuongetal.,2011;Piechetal.,2015;
+netthatcanbeemployedintechnology–supported Me´ndez et al., 2016). Educational Data Mining
+learning (Wiley, 2000). According to the Learn- methods usually rely also on graph information
+ingTechnologyStandardsCommittee,beingsmall of ontologies, university programs or Wikipedia
+and re-usable educational elements (e.g. lecture graphstructure(Scheinesetal.,2014;Chenetal.,
+notes, multimedia content, presentations) is what 2016).
+mostly distinguishes LOs form other educational In this paper we present a novel method based
+resources (IEEE, 2002). Recommendations for on deep learning applied to the task of automatic
+creating LOs in fact suggest that, although there prerequisite relations identification between con-
+is no standard LO structure, the content should cepts to automatically create pedagogically moti-
+be direct, succinct and homogeneous (Thompson vatedsequencesofLOs. Tothebestofourknowl-
+and Yonekura, 2005). Grounded in the notion of edge, this is the first method that exploits exclu-
+object-oriented computing and programming, LO sively linguistic feature extracted from textual re-
+aredesignedaccordingtotheideathatcombining sources. Considering only textual content is pos-
+smallchunksofknowledgeiswhatbuildsupanef- siblythemostcomplexconditiontoinferrelation-
+fective learning path. In order to promote sharing ships between educational concepts since it can-
+andre-usability,LOrepositoriesweremadeavail- not rely on any structured information. At the
+able on the web, where LOs are stored, collected same time this is also the closest condition to a
+and can be searched by means of metadata pro- real world scenario, hence we aim to demonstrate
+vided by their authors (Tzikopoulos et al., 2009). thattextualcontentcanbesufficienttoinferaped-
+Teachers and instructional designers can highly agogicallymotivatedorderingofLOpairs.
+benefit from LO repositories since they can use To verify the effectiveness of our strategy, we
+285
+ProceedingsoftheFourteenthWorkshoponInnovativeUseofNLPforBuildingEducationalApplications,pages285–295
+Florence,Italy,August2,2019.(cid:13)c2019AssociationforComputationalLinguistics
+--- PAGE 2 ---
+performed experiments on the AL-CPL dataset such as curriculum planning (Agrawal, 2016),
+(Liang et al., 2018b), an English dataset manu- course sequencing (Vuong et al., 2011), reading
+allyannotatedwithprerequisiterelationsbetween listgeneration(Gordonetal.,2017),automaticas-
+educational concepts, and on an Italian dataset sessment (Wang and Liu, 2016) and domain on-
+we created. Hence, we introduce ITA-PREREQ1, tologyconstruction(Zouaqetal.,2007;Larranaga
+the first Italian dataset, to the best of our knowl- etal.,2014).
+edge, annotated with prerequisite relations be-
+NLP techniques usually exploit structured in-
+tweenpairsofconcepts,builtcompletelyautomat-
+formation (e.g. hyperlinks, citations, DBpedia
+ically.
+structure) combined with content-based informa-
+Alongthepaper,weusethetermsLearningOb-
+tionextractedfromeducationalmaterials,likesci-
+ject (LO) and Wikipedia page interchangeably: in
+entific literature (Gordon et al., 2016; Li et al.,
+a broad sense, Wikipedia entries can be consid-
+2019), knowledge units in courses (Yang et al.,
+ered Ls (Nash, 2005), moreover previous work
+2015; Chaplot et al., 2016; Pan et al., 2017; Li
+in related fields represent educational units as
+etal.,2019)orLearningObjects(Gasparettietal.,
+Wikipedia pages (Gasparetti et al., 2018). This
+2018),oftenunderstoodasWikipediapages(Gas-
+fits our needs since a Wikipedia page consists of
+paretti et al., 2015). Talukdar and Cohen (2012)
+textualcontentpertainingtoasingleunitoflearn-
+presented the first work on predicting prerequi-
+ing. The term concept is also frequently used in
+site structure of concepts using Wikipedia, which
+theliteraturereferringtoeducationalunitsingen-
+eventually became the most widely used resource
+eral, and annotated dataset are usually described
+forthistask. Theycollectedamanuallyannotated
+as identifying prerequisite relations between con-
+dataset of page pairs using crowd-sourcing and
+cepts. In this paper we use the term concept rely-
+then trained a MaxEnt classifier using Wikipedia
+ing on the same sense of Liang et al. (2018b) as
+graph features, page content and edits to repro-
+equivalenttothetermLO.
+ducetheprerequisitestructurebetweenpages. The
+The remaining part of the paper is organised as
+classifier was tested both in and across domains,
+follows. First we present related work (Sec 2),
+obtaining higher results in terms of accuracy if
+then, after briefly presenting our approach (Sec.
+compared against a random baseline. The same
+3), we describe in more detail the data (Sec. 3.1),
+dataset was used by (Liang et al., 2015) to test
+used features (3.2) and the classifier (Sec. 3.3).
+the RefD metric, that models the prerequisite re-
+We also provide an insight of feature analysis in
+lation by measuring how differently two concepts
+Sec 3.2.1. Experiments, results and incremental
+refer to each other using the tf-idf measure. Re-
+training tests are described in Section 4. In Sec-
+sults are comparable with the MaxEnt classifier
+tion5weconcludethepaper.
+but the metric does not take into account all the
+available information in the resource so we argue
+OurContribution. Inthispaper,wepresent: (i)
+thatitcouldbeimprovedfurther. TheRefDmetric
+thefirstsystembasedonneuralnetworkwhichex-
+was also used by (Wang et al., 2016) in a method
+ploits only linguistic features extracted from LO
+that jointly extracts relevant concepts and prereq-
+content and does not rely on Wikipedia graph
+uisitestructurefromtextbooksexploitingalsoex-
+or LO metadata information; (ii) the first Italian
+ternal knowledge from Wikipedia. Relying on
+dataset annotated with prerequisite relations be-
+textbooks but not on structured resources, Adorni
+tween pairs of concepts (ITA-PREREQ) and the
+et al. (2019) describe a method to infer prerequi-
+automaticstrategydevisedtoconstructit; (iii)the
+site relations between concepts using burst anal-
+firstsystemforprerequisiterelationsextractionon
+ysis of concept occurrences in text and patterns
+Italian.
+based on temporal reasoning to identify possible
+2 RelatedWork propaedeuticrelations.
+Machine and deep learning techniques have
+Identifying prerequisite relations between educa-
+been applied only recently to the prerequisite
+tional materials is a task that has recently gained
+learning task. In (Liang et al., 2018b,a), the au-
+muchattentionbothintheNLPcommunity,aided
+thors investigated the effects of integrating an ac-
+by the fact that it is applicable to many contexts,
+tive learning strategy in automatic extraction of
+1http://www.italianlp.it/resources/ prerequisites using a Random Forest classifier.
+286
+--- PAGE 3 ---
+Gasparetti et al. (2018) proposed a ML methods AL-CPL
+Domain Concepts Pairs Prerequisites
+based on Multilayer Perceptron exploiting LOs,
+DataMining 120 826 292
+Wikipedia pages of concepts mentioned in the Geometry 89 1,681 524
+LOs and Wikipedia hierarchical category struc- Physics 153 1,962 487
+Precalculus 224 2,060 699
+ture. Roy et al. (2018) presented a supervised
+Total 586 6,529 2,002
+learningmethodusingaSiameseNetworktopre-
+ITA-PREREQ/EnglishReduced
+dict prerequisite relations between University and Domain Concepts Pairs Prerequisites
+MOOCcourses. DataMining 75 429 154
+Geometry 73 1,338 430
+The above methods strictly rely on Wikipedia Physics 131 1,651 409
+Precalculus 176 1,504 502
+graphinformation,whichtheyreportashighlyin-
+Total 455 4,922 1,495
+formative, but that is not available when applying
+themethodondifferenteducationalmaterials. We Table 1: Number of concepts, pairs, pairs show-
+showhowcomparableresultscanbeobtainedcon- ing a prerequisite relation for each domain of each
+dataset and total values considering all domains for
+sideringonlytextualinformation.
+eachdataset.
+Anotheracknowledgedlimitoftheabovemeth-
+ods is the need of large annotated datasets. Man-
+ualannotationbydomainexpertsisthemostcom-
+3.1 Dataset
+monly adopted strategy to build such resources,
+For our experiments on the English language,
+regardless the knowledge unit considered (Wang
+we relied on the AL-CPL Dataset (Liang et al.,
+et al., 2016; Pan et al., 2017; Liang et al., 2017;
+2018b), which is in turn based on the Wiki Con-
+Alzetta et al., 2018; Fabbri et al., 2018), with the
+ceptMapdataset(Wangetal.,2016).
+notable exception of the crowd-sourcing strategy
+of Talukdar and Cohen (2012). The dataset we The Wiki Concept Map dataset is a manually
+present in this paper is the first dataset annotated constructed dataset consisting of binary-labelled
+with prerequisite relations between concepts for concept pairs collected from textbooks on differ-
+Italianbuildcompletelyautomatically. ent educational domains: data mining, geome-
+try, physics and precalculus. Concepts mentioned
+in the textbooks and appearing in the title of a
+Wikipediapagewereconsidereddomainconcepts.
+3 OurApproach
+Among them, key concepts and prerequisite rela-
+tionshipsbetweenthemwereannotatedbyexperts
+We tackle the problem of LO ordering as a task foreachdomain,resultinginaconceptmap,aspe-
+of automatic prerequisite relationship identifica- cific type of knowledge graph where each node is
+tionbetweenLOs,heredefinedasfollows: givena a scientific concept and edges represent pedagog-
+pairofLOs(A,B),wepredictwhetherornotBisa ical relations. Pairs not having prerequisite rela-
+prerequisite of A. As mentioned above, we define tionwerealsoannotated,thereforethefinaldataset
+a LO as a concept corresponding to a Wikipedia consistsofbothpositiveandnegativepairs.
+page.
+InLiangetal.(2018b)thedatasetwasexpanded
+We trained deep learning models to predict by adding (i) irreflexive and (ii) transitive rela-
+whether or not two concepts are in a prerequisite tions: consideringA,BandCasdistinctconcepts,
+relationship using a pre-trained word embedding (i) add (B, A) as a negative sample of (A, B); (ii)
+lexicons and a set of linguistic features extracted add (A, C) as positive sample if (A, B) and (B, C)
+from the pages of the concepts in the pair. The arepositivesamples.
+modelwastestedontwodatasets: ITA-PREREQ, The AL-CPL dataset was also used by us to
+anItaliandatasetannotatedwithprerequisiterela- build ITA-PREREQ, the first Italian dataset an-
+tions,and,toprovetheeffectivenessofthemodel, notated with prerequisite relation between pair of
+also on AL-CPL, an English dataset already used concepts, which we used to test our model on
+for the task of automatic prerequisite identifica- Italian. Considering the concepts of the AL-CPL
+tion. In particular, the AL-CPL dataset was used dataset,weretrievedtheirItalianWikipediapages
+both in its original and reduced version, as de- bymatchingthepagetitlewiththeconceptname.
+scribedinthenextSection. If the Italian page of a concept was not available,
+287
+--- PAGE 4 ---
+the concept was excluded from the dataset. At respectively, the.itand.ukdomains(Baronietal.
+the end of this process, we obtained an automat- 2009,Ferraresietal.2008).
+ically constructed version of the AL-CPL dataset
+for Italian with a subset of 418 concepts (77.40% Globalfeatures. Thesecondtypeoffeaturewas
+oftheoriginaldataset). devisedtoextractlinguisticinformationfromboth
+Note that the dataset only provides concept A and B Wikipedia pages. Specifically, for each
+names (i.e. page titles), which means that down- pair (A, B), we extracted the following set of 16
+loading the pages from Wikipedia at different text-basedfeatures:
+times might results in a slightly different corpus,
+since Wikipedia pages are frequently edited. In • Intext(#1,#2): ifB t /A t appearsinA/B.
+ourcase,weusedthelatestWikipediadumpatthe
+• Count (#3, #4): how many times B /A is
+t t
+timeoftheexperiments(February2019).
+mentionedinA/B.
+ConsideringsuchWikipediaimpactfactors(i.e.
+editing and differences between languages), we • Infirstline(#5,#6): ifB /A appearsinA/B’s
+t t
+created a third dataset, again generated starting firstline,i.e. A/Bdefinition.
+from AL-CPL. We call this version English Re-
+• Intitle(#7): IfB appearsinA .
+duced since it is built excluding all those English t t
+Wikipedia pages that do not have a correspond- • Length(#8,#9): thenumberofwordsofA/B.
+ingItalianone. Therefore,thesizeofEnglishRe-
+• JaccardSim. (#10): theJaccardsimilaritybe-
+duced is the same of ITA-PREREQ. The aim of
+tweenAandB.
+having this dataset is to check the real impact of
+languagesdifferencesbybalancingthenumberof • JaccardSim. (Nouns)(#11): theJaccardsim-
+pages taken into account, as we will discuss fur- ilaritybetweennounsappearinginAandB.
+therinthenextSection.
+• RefD (#12): the RefD metric between A and
+Table 1 summarises the statistics of the three
+B(Liangetal.,2015).
+datasets. AlthoughITA-PREREQandEnglishRe-
+ducedresultedinsmallerdatasetsintermsofboth • LDA Entropy (#13, #14): the Shannon en-
+concepts and relations, their sizes are suited for tropy of the LDA vector of A/B. Note that
+trainingoursystems. we trained three different LDA (Deerwester
+et al., 1990) topic models, one for each
+3.2 Features
+dataset.
+For each concept pair, we extracted two differ-
+• LDACrossEntropy(#15,#16): thecrossen-
+ent sets of linguistic features: (i) lexical features,
+tropy between the LDA vector of A/B and
+i.e. features that pertain to a single concept/page,
+B/A.
+and (ii) global features, i.e. features derived from
+the combination of concepts in pairs. All features
+Features from #1 to #6, #8, #9 and form #13
+were extracted for the AL-CPL, ITA-PREREQ
+to #16 were used also in Liang et al. (2018a),
+andEnglishReduceddatasets.
+but we expanded their set of features considering
+Hereafter, we denote by A and B the content of
+mentionsintitlesandJaccardSimilaritiesbetween
+theWikipediapageAorB;(A,B)ishowwerefer
+bothwholepagecontentsandnounsonly. Ourset
+to the concept pair, while A /B refers to the title
+t t
+of linguistic features includes also the RefD met-
+ofthecorrespondingpage.
+ric (Liang et al., 2015), a feature usually consid-
+Lexical features. The first type of feature cor- ered a graph-based feature, that we adapted in or-
+responds to pre-trained word embeddings (WE) der to be applicable also to those contexts where
+computed for the first 400 words of each no structured information (i.e. hyperlinks) is pro-
+Wikipedia page. Specifically, we used a WE lex- vided. In fact, contrary to Liang et al. (2015)
+icon with 128 dimensions built with word2vec wheretheRefDvalueiscomputedconsideringhy-
+(Mikolovetal.,2013)bothforItalianandEnglish. perlinks between Wikipedia pages, we computed
+WegeneratedthetwolexiconsusingtheitWacand themetricusingthementionofconceptB/Ainthe
+ukWac corpora, two collections of approximately page content of A/B, regardless the association of
+2billionwordsconstructedfromwebpagesunder, anhyperlinktothatmention. Specifically,weim-
+288
+--- PAGE 5 ---
+plementedRefDasfollows:
+(cid:80)N
+r(c ,B)·w(c ,A)
+RefD(A,B)= i=1 i i −
+(cid:80)N
+w(c ,A)
+i=1 i
+(cid:80)N
+r(c ,A)·w(c ,B)
+i=1 i i
+(cid:80)N
+w(c ,B)
+i=1 i
+wherec isaconceptfromourconceptspaceC(all
+i
+theWikipediaarticlesinthedomain);r(c ,B)isa
+i
+binary indicator showing whether c is mentioned
+i
+inthecontentofpageB;w(c ,A)isaweightindi-
+i
+catoroftheimportanceofc topageA(measured
+i
+intermsoftf-idf).
+Figure1: M3architecture. M1roughlycorrespondsto
+3.2.1 FeatureAnalysis theleftpartofthearchitecture.
+Inordertounderstandtherelevanceandbehaviour
+oftheglobalfeaturesindifferentdomainsandlan-
+3.3 Classifier
+guages,wedecidedtoperformfeatureanalysis.
+Following Liang et al. (2018a), we computed ForourLOsorderingexperiments,wetestedthree
+the feature importance by ”mean decrease impu- different neural network models: (M1) one that
+rity” using an Extra-Trees Classifier, an imple- learnstoclassifythebinarylabelsusingonlypre-
+mentationofadecisiontreeclassifier. Wedecided trainedWE,(M2)onethatlearnsusingtheglobal
+also to perform the analysis using both the ITA- featuresautomaticallyextractedand(M3)thelast
+PREREQandEnglishReduceddatasetinorderto onewhichmergesM1withtheinputofM2.
+comparetheresultsinacross-lingualscenario. M1 is composed of two identical LSTM-based
+sub-networks with 32 units, whose outputs are
+As we can see in Table 2, the results obtained
+concatenated and classified by the outer Dense
+from the English Reduced dataset show that, de-
+Layer. Each sub-network receive as input the
+spite the ranking positions, there are many fea-
+WE of the first 400 words of the corresponding
+turesthatarecommontoallfourdomains. Specif-
+Wikipediapageofagivenconceptpair(A,B).The
+ically, the top features are RefD, LDA (entropy
+two LSTM outputs are then concatenated (V ⊕
+and cross-entropy), Length of B and B in first A
+t
+V )andpassedtoalastDenseLayer.
+line of A. Moreover, we can notice that, except B
+M2 is based on a feedforward neural network
+for graph features, our results are comparable to
+that takes as input the global features of the pair
+those obtained by Liang et al. (2018a). Neverthe-
+(A, B) and passes them to a multilayer perceptron
+less, the two rankings present some differences:
+neuralnetwork(3layerswithReLUactivation).
+e.g. LengthofA/Btendstobemoresignificantfor
+M3(representedinFigure1)combinesthepre-
+ourdataset. Thiscouldbetothefactthat,asmen-
+vious two, joining the two sub-networks of M1
+tioned, the Wikipedia version used for our exper-
+withtheinputofM2.
+iments could be different if compared to the one
+Each output layer of the three models consists
+used by Liang et al. (2018b). It is also important
+of a single dense unit with sigmoid activation
+tonoticethattheEnglishReduceddatasetcontains
+function.
+lessconceptpairswithrespecttotheoriginalone.
+ThemodelsaretrainedmaximisingtheF-Score
+Comparingtheresultsaccordingtothetwolan-
+on the validation set, which corresponds to the
+guages,wecannoticethatthemostimportantfea-
+30% of the training data. The training stops after
+tures tend to be quite similar. We can, however,
+acertainnumberofepochswithoutimprovement.
+identify some differences. For instance, we ob-
+serve that Data Mining in ITA-PREREQ is the
+4 Experiments
+only domain for which RefD is not the most sig-
+nificant feature. Interestingly enough, the first 4 We tested our approach predicting in-domain and
+positions in the English Reduced dataset for Ge- cross-domainprerequisiterelationships. Sincethe
+ometry, Physics and Precalculus seem to be more majorityof(A,B)pairsdonotpresentaprerequi-
+homogeneouswhencomparedtotheItalianones. siterelation,webalancedthetrainingandtestsets
+289
+--- PAGE 6 ---
+ITA-PREREQ
+DataMining Geometry Physics Precalculus
+LengthofB RefD RefD RefD
+LengthofA B intextofA LengthofB LengthofB
+t
+RefD LengthofB LDAentropyofB B infirstlineofA
+t
+JaccardSim. LDAentropyofB LengthofA LDAentropyofB
+JaccardSim.(Nouns) B infirstlineofA LDAcross-entropyofB/A LengthofA
+t
+LDAentropyofB A intextofB LDAcross-entropyofA/B JaccardSim.
+t
+LDAentropyofA LengthofA LDAentropyofA B intextofA
+t
+LDAcross-entropyofB/A LDAentropyofA JaccardSim. JaccardSim.(Nouns)
+LDAcross-entropyofA/B LDAcross-entropyofA/B JaccardSim.(Nouns) LDAcross-entropyofA/B
+B infirstlineofA LDAcross-entropyofB/A B infirstlineofA LDAentropyofA
+t t
+EnglishReduced
+DataMining Geometry Physics Precalculus
+RefD RefD RefD RefD
+LengthofB B infirstlineofA B infirstlineofA B infirstlineofA
+t t t
+LDAentropyofB LDAentropyofB LengthofB LengthofB
+LDAentropyofA LengthofB LDAentropyofB LDAentropyofB
+LDAcross-entropyofB/A A intextofB LengthofA A infirstlineofB
+t t
+LenghtofA LDAcross-entropyofB/A LDAcross-entropyofA/B LengthofA
+LDAcross-entropyofA/B LDAentropyofA CountofB intextofA LDAentropyofA
+t
+JaccardSim. B intextofA LDAcross-entropyofB/A JaccardSim.(Nouns)
+t
+JaccardSim.(Nouns) JaccardSim. JaccardSim.(Nouns) JaccardSim.
+B infirstlineofA JaccardSim.(Nouns) A intextofB LDAcross-entropyofA/B
+t t
+Table2: Rankingsofthefirst10featuresforeachdomainintheITA-PREREQandEnglishReduceddatasets.
+byoversamplingtheminorityclass. cationalmaterialsusinglinguisticinformationex-
+All experiments were performed on AL-CPL, tractedfromtextualcontentalone.
+ITA-PREREQ and English Reduced datasets. As Best results are obtained using M3, the classi-
+baseline,weusedtheZeroRulealgorithm,andF- fier that exploits both lexical and global features.
+Scoreasevaluationmetric. Interestingly, M1 model performs are constantly
+betterthanM2,especiallyfortheDataMiningdo-
+4.1 ExperimentalSettings
+main: this suggests that lexical information from
+Werunexperimentsusingthethreeclassifierspre- theWElexiconcontributessignificantly.
+sentedinSec3.3oneachdataset,consideringeach Although comparable, the AL-CPL dataset is
+of the four domains independently (i.e Data Min- the one obtaining best results, with an average
+ing, Geometry, Physics and Precalculus). Each F-Score of 92.21%. This is probably due to
+classifierwastestedbothinain-domainandcross- the fact that the other two datasets are smaller
+domainscenario. than AL-CPL in terms of number of Wikipedia
+To perform in-domain experiments, we trained pages. However, comparing the results obtained
+and tested the classifiers on concept pairs belong- with ITA-PREREQ and English Reduced we no-
+ing to the same domain. The evaluation is per- tice that ITA-PREREQ is the one that achieves
+formed using a 5-fold cross validation. Cross- lower results. This could be due to differences in
+domain experiments were performed in a leave- the composition of the two datasets. For exam-
+one-domain-out manner: classifiers were trained ple, we noticed that there is a high difference in
+onthreedomainsandtestedonthefourth. theaveragepagelength(numberoftokens)ofthe
+two languages: for English Wikipedia pages it is
+4.2 ResultsandDiscussion
+about twice the Italian ones (2,728 and 1,073 to-
+In-domain. As it can be noted in Table 3, kensrespectively). Theimpactofthischaracteris-
+our systems performs extremely well for the in- tic can be twofold, both on the lexical and global
+domainsetting,achievinghighscoresforbothEn- features. For what concerns the lexical features,
+glish and Italian pages. Note that our results al- sinceweconsideredWEofthefirst400tokensof
+ways outperform both the Zero Rule baseline and each Wikipedia page this means that if a page is
+theresultsobtainedbyLiangetal.(2018a)forall shorter then that our network can acquire less in-
+domains. Thisconfirmsourhypothesis: itispossi- formation. As proof, the number of pages shorter
+bletoidentifyprerequisiterelationsbetweenedu- than 400 tokens is higher in ITA-PREREQ (138)
+290

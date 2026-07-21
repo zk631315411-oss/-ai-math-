@@ -1,0 +1,258 @@
+
+--- PAGE 1 ---
+Digging Into Prerequisite Annotation
+Chiara Alzetta, Ilenia Galluccio, Frosina Koceva,
+Samuele Passalacqua, Ilaria Torre
+DIBRIS, University of Genoa, Italy
+{chiara.alzetta,ilenia.galluccio,frosina.koceva}@edu.unige.it,
+samuele.passalacqua@dibris.unige.it, ilaria.torre@unige.it
+Abstract. Intelligent textbooks are often engineered with an explicit
+representationoftheirconceptsandprerequisiterelations(PR).PRiden-
+tificationishencecrucialforintelligenttextbooksbutstillpresentssome
+challenges,alsowhenperformedbyhumanexperts.ThismaycausePR-
+annotated datasets to be inconsistent and compromise the accuracy of
+automatic creation of enhanced learning materials. This paper investi-
+gates possible reasons for PR disagreement and the nature of PR itself,
+withtheaimofcontributingtothedevelopmentofsharedstrategiesfor
+PR annotation, analysis and modelling in textbooks.
+Keywords: prerequisite relation · annotation · agreement.
+1 Introduction
+Fundamentalfunctionalitiesofintelligenttextbooks,suchascontentenrichment
+[23,21,9] and personalization [35,31,2], exploit the knowledge contained in the
+text to select relevant content and organise it according to a structure that
+reflects the prerequisite relations (PR) among concepts [17,19]. PRs are utterly
+relevantineducationsincetheyestablishwhichconceptsareneededbyastudent
+to understand a further concept without loss of information or misconceptions
+[20,15,1,14]. Despite their importance, PRs recognition, both in manual and
+automatic form, still presents many open challenges. PR manual annotation is
+inmanycasesacommonwaytoachieveaPR-enrichedintelligenttextbook,but
+is also an essential step for developing automatic textbook content modelling.
+SystemsforautomaticPRlearning(e.g.[22,1])oftenrelyonmanuallyannotated
+goldstandards[29,34,15]forevaluatingortrainingmachinelearningalgorithms.
+Agreement rates [6] are often used to estimate annotations’ reliability [8], but
+these measures are conditioned by many factors, including the design of the
+annotation task and the subjectivity of the phenomenon to be labelled [5,28].
+PR-annotationsrarelyachievehighagreementvaluesunlesstheannotationtask
+is extremely guided [18]. A broad literature discusses causes of disagreement in
+annotation[12,11,7],howeverthishasnotbeenfullyexploredforPRs.Ourgoal
+Copyright(cid:13)c 2020forthispaperbyitsauthors.UsepermittedunderCreativeCom-
+mons License Attribution 4.0 International (CC BY 4.0).
+--- PAGE 2 ---
+2 C.Alzetta, I. Galluccio et al.
+istoinvestigatethismatterandhighlightpossiblecausesoferrorsandissues,in
+order to provide a way to improve PR modelling for intelligent textbooks. This
+is useful especially when increasing the size of the dataset is not a practical way
+toreducetheimpactoferrors(asincaseofhighdemandingandtime-consuming
+annotation tasks like PR).
+2 Experimental Study, Results and Discussion
+Our analyses are conducted on PRET dataset described in [4], obtained by
+asking five domain experts to manually annotate PRs between the concepts
+mentioned in a computer science textbook chapter[10]. Experts had to read the
+textand inparallelannotate PRsamongthe encounteredconcepts. We stressed
+this point since our annotation goal is to model the textbook content rather
+than elicit the PR of a domain from the expert’s mind. For the purpose of this
+paper,inordertoinvestigatethevariabilityofannotations,weperformedanin-
+contextannotationcheck,showingtoeachexpertasubsetofher/hisannotations
+and asking to confirm or revise their annotation, after reading again the text.
+This process involved only “rare” annotations (concept pairs annotated only by
+him/her) since errors are known to be more probable among them [13]. In the
+end, the manual annotation resulted in 25 concept pairs annotated by all five
+experts, 46 annotated by four experts, 83 by three, 214 by two and 477 by only
+one annotator, for a total of 845 unique pairs.
+2.1 Interpretation Variability and Annotation Errors.Thissectiondeals
+with the research question, i.e. which are the main causes of disagreement and
+errors. Our results cannot be generalised but are discussed in the light of the
+literature. During the annotation check mentioned above, we asked experts to
+specify the motivation for their revisions, among the following: a) Not a Con-
+cept: at least one concept of the pair is not a domain term; b) Background
+Knowledge: the PR derives form the expert’s domain knowledge since it’s not
+expressed in the text; c) Too Far: the concepts are too distant in the path; d)
+Annotation Error:mistakeduetodistraction;e) Wrong Direction:theconcepts
+should be reversed; f) Co-Requisites: there is no dependency relation between
+thetwoconcepts.ThetableinFig.1reportsthedistributionoftheselabelsinthe
+revised pairs. Not a Concept is the most recurrent problem for all annotators:
+common-usage terms like channel and system were added as domain concepts,
+but then revised. As it will be discussed below, this error does not seem mostly
+a trivial one, but an interpretation error commonly observed for educational
+concepts [33], whose boundaries verge on subjectivity [5]. Other error types are
+unevenly distributed: Too Far seems again related to interpretation and subjec-
+tivityissues,thatmayarisefromtheexpertquestioninghis/herannotationstyle
+(e.g.,annotatingasPRalsoindirectlyrelatedconcepts),Background Knowledge
+mightbeagainaccountedasannotationstyleerror,howeverinthiscaseitisnot
+due to subjectivity, but to wrong interpretation of the task (i.e., the tendency
+to infer from other sources PRs that are not explicitly written in the text). The
+lastthreetypesseemallduetodistraction.Whiledistractionisinevitable(thus
+--- PAGE 3 ---
+Digging Into Prerequisite Annotation 3
+some kind of revision could be a good practice), subjectivity and annotation
+style errors are more tricky, but the possibility of revision could allow to obtain
+amorereliableannotation[26,24].Conceptinterpretationerrorwillbeanalysed
+belowmoreindepthsinceitisparticularlycriticalforintelligenttextbooks,even
+independently of PR relations, as discussed also in [33].
+Fig.1. ’Revision’ and ’Error Type’ percentages.
+Concept Interpretation. Despite the guidelines, the notion of concept was faced
+in different ways, using a fine vs coarse-grained interpretation. To understand
+the role played by concepts on agreement, we performed Pearson correlation
+between root and leaf nodes (those with zero in- and out-degree respectively)
+in annotations’ graphs [16]. Our intuition is that graphs with high root nodes
+correlationsuggestanagreementonwhatisintendedascoreknowledge,i.e.Pri-
+maryNotions(PN)forthedomain;similarly,correlationonleaves,reflectingthe
+paths’ Learning Outcomes (LO), indicates a common interpretation of concepts
+granularity.Wenoticedthatrevisionhelpedtoharmonisetheannotations:while
+prior the revision we obtained on average a stronger correlation between root
+nodes(0.49)thanleaves(0.29)(p<0.05),ontherevisedgraphsthecorrelations
+became similar (0.47 for roots and 0.46 for leaves with p<0.05).
+2.2 Semantic and Lexical Relationships in PRs. We investigate here if
+thereareanysemanticrelationsandlinguisticpatternsthatcanbeidentifiedas
+frequently occurring in PRs with high vs low agreement. As Fig.2 shows, lexical
+Fig.2.SemanticRelationshipTypedistributionanddescriptionforPRsannotatedby
+3 or more experts (High Agr) or 1 expert only (Low Agr).
+relations are the most frequent semantic type among PRs with high agreement,
+--- PAGE 4 ---
+4 C.Alzetta, I. Galluccio et al.
+covering more than 60% of cases, while Functional Relations are more common
+among PRs with low agreement. This could be due to the fact that taxonomies,
+by definition, exploit a“dependency relation” to classify elements. On the other
+handtheFunctionalRelationishighlyaffectedbythepresentationofconceptsin
+thetext,whichentailsatextinterpretationandasubsequentlowagreementdue
+to subjectivity. Such distributions highlight the need for annotation guidelines
+with clear examples of PRs not involved in lexical relations, since those types
+might be harder to identify along a text and could give raise to disagreement.
+2.3 Holistic Nature of the Annotation Process. Previous work [29,34,
+36] mostly addressed PR annotation and evaluation as a pairwise combination
+of concepts; we also used this approach [3]. However, we believe that such ap-
+proach over-simplifies the annotation and may result in misinterpretations of
+the relations contained in the text. Indeed, semantic annotations often result in
+(directed)graphs[27,25,30]inwhicheachpathisaninterpretationofarelation
+that arises from reading the whole text (this explains their holistic nature) and
+should be evaluated accounting for those peculiarities. The commonly adopted
+pairwiseevaluationofPRsmissestheinterdependencebetweenconceptsinvolved
+in a PR path and does not take into account the pedagogical characteristics of
+the annotated graph as a whole. Temporal relation processing may represent an
+interesting ground of comparison for PR, since precedence relation also shows
+a transitive and sequential nature. Researchers in both fields encounter similar
+limitations using traditional performance metrics used in information retrieval,
+e.g. precision, recall [32]. A common scenario in both fields is when three items
+A,B,C (concepts or events) are annotated by a rater such that A<B and
+B <C, but another rater identifies the relation A<C: in such cases, tradi-
+tional agreement metrics will fail to identify A<C as a shared relation, even if
+it is an implicit consequence of the other two relations [32]2. This suggests that
+agreement could be computed by considering transitive edges and path similar-
+ity in the two graphs. However, it is worth nothing that this approach involving
+transitive closure might result in considering as PR some relations that are too
+far in a path. This is an open issue, as well as the selection of proper metrics
+to compare PR graph similarities. In our current work we are testing metrics
+that work at different levels, among them Graph Edit Distance (GED), Vertex
+Edge Overlap (VEO), PageRank, inter-agreement in learning pahts based on
+the transitive characteristic of the PR (for details see [16]). We believe this re-
+search direction is a relevant contribution wrt the current approaches in order
+tocomputenotjustagreementbetweenannotators,butalsobetweenautomatic
+methods for knowledge graph creation, highly useful in intelligent textbooks.
+Conclusions In this paper we investigated different forms of disagreement on
+PR annotation that affect PR processing and management, and consequently
+textbookmodelling.OuraimisthustocontributetothemodellingofPRstruc-
+ture in textbooks by developing a subjectivity-aware PR coding protocol. The
+analysisalsoopensthestudyoffutureresearchonusingfuzzyPRsforstructur-
+ing knowledge behind text instead of yes/no (binary) PRs.
+2 < indicates both the temporal relation before and the prerequisite relation ≺
+--- PAGE 5 ---
+Digging Into Prerequisite Annotation 5
+References
+1. Adorni, G., Alzetta, C., Koceva, F., Passalacqua, S., Torre, I.: Towards the iden-
+tification of propaedeutic relations in textbooks. In: International Conference on
+Artificial Intelligence in Education. pp. 1–13. Springer (2019)
+2. Alpizar-Chacon, I., Sosnovsky, S.: Interlingua: Linking textbooks across different
+languages (2019)
+3. Alzetta, C., Koceva, F., Passalacqua, S., Torre, I., Adorni, G.: Pret: Prerequisite-
+enriched terminology. a case study on educational texts. In: Proceedings of the
+Fifth Italian Conference on Computational Linguistics CLiC-it 2018 (2018)
+4. Alzetta, C., Miaschi, A., Adorni, G., Dell’Orletta, F., Koceva, F., Passalacqua,
+S., Torre, I.: Prerequisite or not prerequisite? that’s the problem! an nlp-based
+approachforconceptprerequisiteslearning.In:6thItalianConferenceonCompu-
+tational Linguistics, CLiC-it 2019. vol. 2481. CEUR-WS (2019)
+5. Amidei, J., Piwek, P., Willis, A.: Rethinking the agreement in human evaluation
+tasks (2018)
+6. Artstein, R.: Inter-annotator agreement. In: Handbook of linguistic annotation,
+pp. 297–313. Springer (2017)
+7. Artstein,R.,Poesio,M.:Inter-coderagreementforcomputationallinguistics.Com-
+putational Linguistics 34(4), 555–596 (2008)
+8. Bayerl, P.S., Paul, K.I.: What determines inter-coder agreement in manual anno-
+tations? a meta-analytic investigation. Computational Linguistics 37(4), 699–725
+(2011)
+9. Boulanger, D., Kumar, V.: An overview of recent developments in intelligent e-
+textbooks and reading analytics (2019)
+10. Brookshear,G.,Brylow,D.:ComputerScience:AnOverview,GlobalEdition,chap.
+4 Networking and the Internet. Pearson Education Limited. (2015)
+11. Carletta,J.:Assessingagreementonclassificationtasks:thekappastatistic.Com-
+putational linguistics 22(2), 249–254 (1996)
+12. Feinstein, A.R., Cicchetti, D.V.: High agreement but low kappa: I. the problems
+of two paradoxes. Journal of clinical epidemiology 43(6), 543–549 (1990)
+13. Fort,K.,Nazarenko,A.,Rosset,S.:Modelingthecomplexityofmanualannotation
+tasks:agridofanalysis.In:InternationalConferenceonComputationalLinguistics.
+pp. 895–910 (2012)
+14. Gagne, R.M.: Learning hierarchies. Educational psychologist 6(1), 1–9 (1968)
+15. Gasparetti,F.,DeMedio,C.,Limongelli,C.,Sciarrone,F.,Temperini,M.:Prereq-
+uisitesbetweenlearningobjects:Automaticextractionbasedonamachinelearning
+approach. Telematics and Informatics 35(3), 595–610 (2018)
+16. Koceva,F.,Alzetta,C.,Galluccio,I.,Passalacqua,S.,Torre,I.:Prerequisitesimi-
+larity metrics, http://teldh.dibris.unige.it/pr-similarity-metrics/
+17. Labutov, I., Huang, Y., Brusilovsky, P., He, D.: Semi-supervised techniques for
+mining learning outcomes and prerequisites. In: Proceedings of the 23rd ACM
+SIGKDDInternationalConferenceonKnowledgeDiscoveryandDataMining.pp.
+907–915. ACM (2017)
+18. Li,I.,Fabbri,A.R.,Tung,R.R.,Radev,D.R.:Whatshouldilearnfirst:Introducing
+lecturebankfornlpeducationandprerequisitechainlearning.ProceedingsofAAAI
+2019 (2019)
+19. Liang, C., Ye, J., Wang, S., Pursel, B., Giles, C.L.: Investigating active learning
+for concept prerequisite learning. Proc. EAAI (2018)
+--- PAGE 6 ---
+6 C.Alzetta, I. Galluccio et al.
+20. Manrique,R.,Sosa,J.,Marino,O.,Nunes,B.P.,Cardozo,N.:Investigatinglearn-
+ing resources precedence relations via concept prerequisite learning. In: 2018
+IEEE/WIC/ACM International Conference on Web Intelligence (WI). pp. 198–
+205. IEEE (2018)
+21. Matsuda,N.,Shimmei,M.:Pastel:Evidence-basedlearningengineeringmethodto
+create intelligent online textbook at scale (2019)
+22. Miaschi, A., Alzetta, C., Cardillo, F.A., Dell’Orletta, F.: Linguistically-driven
+strategyforconceptprerequisiteslearningonitalian.In:Proceedingsof14thWork-
+shoponInnovativeUseofNLPforBuildingEducationalApplications(BEA2019)
+(2019)
+23. Miller, B., Ranum, D.: Runestone interactive: tools for creating interactive course
+materials.In:ProceedingsofthefirstACMconferenceonLearning@scaleconfer-
+ence. pp. 213–214. ACM (2014)
+24. Plank, B., Hovy, D., Søgaard, A.: Linguistically debatable or just plain wrong?
+In:Proceedingsofthe52ndAnnualMeetingoftheAssociationforComputational
+Linguistics (volume 2: Short Papers). pp. 507–511 (2014)
+25. Poesio, M.: The mate/gnome proposals for anaphoric annotation, revisited. In:
+Proceedings of the 5th SIGdial Workshop on Discourse and Dialogue at HLT-
+NAACL 2004. pp. 154–162 (2004)
+26. Pustejovsky, J., Stubbs, A.: Natural Language Annotation for Machine Learning:
+A guide to corpus-building for applications. ” O’Reilly Media, Inc.” (2012)
+27. Ries, K.: Segmenting conversations by topic, initiative, and style. In: Workshop
+on Information Retrieval Techniques for Speech Applications. pp. 51–66. Springer
+(2001)
+28. Saldan˜a, J.: The coding manual for qualitative researchers. Sage (2015)
+29. Talukdar, P.P., Cohen, W.W.: Crowdsourced comprehension: predicting prerequi-
+site structure in wikipedia. In: Proceedings of the Seventh Workshop on Building
+EducationalApplicationsUsingNLP.pp.307–315.AssociationforComputational
+Linguistics (2012)
+30. Tannier,X.,Muller,P.:Evaluatingtemporalgraphsbuiltfromtextsviatransitive
+reduction. Journal of Artificial Intelligence Research 40, 375–413 (2011)
+31. Thaker, K., Brusilovsky, P., He, D.: Student modeling with automatic knowledge
+component extraction for adaptive textbooks (2019)
+32. UzZaman, N., Allen, J.: Temporal evaluation. In: Proceedings of the 49th An-
+nual Meeting of the Association for Computational Linguistics: Human Language
+Technologies. pp. 351–356 (2011)
+33. Wang, M., Chau, H., Thaker, K., Brusilovsky, P., He, D.: Concept annotation for
+intelligent textbooks. arXiv preprint arXiv:2005.11422 (2020)
+34. Wang, S., Ororbia, A., Wu, Z., Williams, K., Liang, C., Pursel, B., Giles, C.L.:
+Usingprerequisitestoextractconceptmapsfromtextbooks.In:Proceedingsofthe
+25thacminternationalonconferenceoninformationandknowledgemanagement.
+pp. 317–326. ACM (2016)
+35. Yin, C., Uosaki, N., Chu, H.C., Hwang, G.J., Hwang, J., Hatono, I., Tabata, Y.:
+Learning behavioral pattern analysis based on students’ logs in reading digital
+books. In: Proceedings of the 25th international conference on computers in edu-
+cation. pp. 549–557 (2017)
+36. Zhou,Y.,Xiao,K.:Extractingprerequisiterelationsamongconceptsinwikipedia.
+In: 2019 International Joint Conference on Neural Networks (IJCNN). pp. 1–8.
+IEEE (2019)
