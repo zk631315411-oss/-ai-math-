@@ -1,66 +1,55 @@
+# --- Python 环境产物 ---
 __pycache__/
 *.pyc
+venv/
+.pytest_cache/
+
+# --- 密钥与配置 ---
 .env
-data/*.db-journal
-data/*.db-wal
-data/*.db-shm
-data/screenshot_crops/*
-!data/screenshot_crops/.gitkeep
-*.lnk
-debug_content.txt
+
+# --- 前端构建产物 ---
 node_modules/
 frontend/dist/
-pipeline/*.pdf
-pipeline/*.md
-pipeline/*.json
-pipeline/*.log
-pipeline/.venv/
-pipeline/venv/
-pipeline/__pycache__/
-.opencode/review-state.json
-.opencode/SESSION_CONTEXT.md
+frontend/test-results/
+frontend/tsconfig.tsbuildinfo
 
-# 本地工具工作区（codex/agent 产生，非项目代码）
+# --- 本地工具工作区 ---
 .agents/
 .claude/
 .codex-tmp/
 .vscode/
-
-# 竞品参考项目（手动 clone，非本仓库代码）
-GitHub上面的类似项目参考/
-参考文库/
-
-# 虚拟环境
-venv/
-
-# KG 构建归档目录（历史产物，体积大）
-教材提取模块/正式脚本/归档/
-教材提取模块/高代提取/归档/
-教材提取模块/高数提取/归档/
-教材提取模块/高代提取/正式_runs/
-教材提取模块/高代提取/中间产物/
-教材提取模块/高数提取/正式旧_runs/
-
-# understand-anything 知识图谱（工具生成）
+.opencode/
 .understand-anything/
 
-# 临时/缓存目录
-.tmp/
-.pytest_cache/
-playwright-report/
-frontend/test-results/
-frontend/tests/
-
-# 大体积PDF教材（超过 GitHub 100MB 限制）
-frontend/public/*.pdf
-比赛相关文件与文件夹/
-参考项目/
-
-# 数据库文件（运行时产生，非项目代码）
+# --- 数据库文件（从服务器恢复，不提交） ---
 data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
 
-# 调试截图
+# --- 截图裁剪缓存 ---
+data/screenshot_crops/*
+!data/screenshot_crops/.gitkeep
+
+# --- 临时/运行时产物 ---
+.tmp/
+playwright-report/
+debug_content.txt
+*.lnk
 frontend/debug-*.png
 
-# TypeScript 构建缓存
-frontend/tsconfig.tsbuildinfo
+# --- 大体积PDF教材（超过 GitHub 100MB 限制） ---
+frontend/public/*.pdf
+
+# --- KG 构建归档（历史中间产物，体积大） ---
+教材提取模块/正式脚本/归档/
+教材提取模块/高代提取/归档/
+教材提取模块/高代提取/正式_runs/
+教材提取模块/高代提取/中间产物/
+教材提取模块/高数提取/归档/
+教材提取模块/高数提取/正式旧_runs/
+
+# --- pipeline 运行时产物 ---
+pipeline/.venv/
+pipeline/venv/
+pipeline/__pycache__/
