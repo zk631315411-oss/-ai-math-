@@ -13,6 +13,7 @@ import asyncio
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
 
+from app.services.qa.streaming_service import sse_format
 from app.models.schemas import (
     ExerciseGenerateRequest, ExerciseSubmitRequest,
     ExerciseSubmitResponse, ExerciseHintResponse,
@@ -87,7 +88,7 @@ async def generate_exercise(request: ExerciseGenerateRequest):
         full_text = ""
         try:
             # 阶段1：正在生成
-            yield f"data: {json.dumps({'status': 'generating', 'text': '正在生成题目...'})}\n\n"
+            yield sse_format("stage", {"stage": "generating", "text": "正在生成题目..."})
 
             stream = llm_service.stream_chat(messages, enable_thinking=False)
             for chunk in stream:
@@ -97,14 +98,14 @@ async def generate_exercise(request: ExerciseGenerateRequest):
                     continue
                 if text:
                     full_text += text
-                    yield f"data: {json.dumps({'content': text})}\n\n"
+                    yield sse_format("content", {"text": text})
 
             # 阶段2：解析
-            yield f"data: {json.dumps({'status': 'parsing', 'text': '正在解析题目...'})}\n\n"
+            yield sse_format("stage", {"stage": "parsing", "text": "正在解析题目..."})
 
             parsed = parse_markdown_sections(full_text)
             if not parsed:
-                yield f"data: {json.dumps({'error': '题目生成失败：解析结果不完整，缺少题目或答案'})}\n\n"
+                yield sse_format("error", {"error": "题目生成失败：解析结果不完整，缺少题目或答案"})
                 return
 
             computable = parsed.get("computable", {})
@@ -112,7 +113,7 @@ async def generate_exercise(request: ExerciseGenerateRequest):
             # 阶段3：验算
             quality = 0
             if computable and computable.get("type"):
-                yield f"data: {json.dumps({'status': 'verifying', 'text': '正在验算答案...'})}\n\n"
+                yield sse_format("stage", {"stage": "verifying", "text": "正在验算答案..."})
 
                 from app.services.sympy_sandbox import verify_computable
                 comp_type = computable.get("type", "")
@@ -121,7 +122,7 @@ async def generate_exercise(request: ExerciseGenerateRequest):
                 if not v_result.get("success"):
                     quality = -1
                     verify_err = v_result.get('error', '未知错误')
-                    yield f"data: {json.dumps({'error': f'验算失败：{verify_err}'})}\n\n"
+                    yield sse_format("error", {"error": f"验算失败：{verify_err}"})
                     # 不入库，直接返回
                     return
 
@@ -138,10 +139,10 @@ async def generate_exercise(request: ExerciseGenerateRequest):
                 sequence_id=sequence_id,
             )
 
-            yield f"data: {json.dumps({'done': True, 'exercise_id': eid})}\n\n"
+            yield sse_format("done", {"done": True, "exercise_id": eid})
 
         except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield sse_format("error", {"error": str(e)})
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

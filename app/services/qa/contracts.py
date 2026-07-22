@@ -76,7 +76,12 @@ class QAAnswerResult:
 class QAStreamEvent:
     """对外流式输出事件的统一形状。"""
 
-    event: Literal["stage", "content", "thinking", "done", "error", "heartbeat"]
+    event: Literal[
+        "stage", "content", "thinking", "thinking_chunk",
+        "done", "error", "heartbeat",
+        "wait_for_input", "progress",
+        "tool_call", "tool_result",
+    ]
     data: dict[str, Any] = field(default_factory=dict)
 
 
