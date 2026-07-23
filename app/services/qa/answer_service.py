@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+import asyncio
 import time
 import uuid
 from typing import AsyncIterator
@@ -12,10 +13,11 @@ from fastapi.concurrency import run_in_threadpool
 from app.config import config
 from app.services.llm_service import llm_service
 from app.services.qa.contracts import QATurnInput, QATurnRecord
+from app.services.qa.event_bus import StreamBus
 from app.services.qa.grounding_service import ground_text_turn
 from app.services.qa.prompt_builder import build_tutor_prompt
 from app.services.qa.streaming_service import sse_done, sse_error, sse_stage, sse_text
-from app.services.qa.turn_store import save_turn_record
+from app.services.qa.turn_store import save_turn_record, start_persist_consumer
 from app.services.qa.tutor_policy import decide_tutor_policy
 from app.services.qa.vision_context_service import (
     build_screenshot_locator_prompt,
@@ -148,7 +150,17 @@ async def _answer_text_turn(
             model_name=config.QA_LLM_MODEL,
             latency_ms=latency_ms,
         )
-        save_turn_record(record)
+        # 持久化改为异步，不阻塞 SSE 响应
+        persist_done = asyncio.Event()
+        bus = StreamBus()
+        asyncio.create_task(start_persist_consumer(bus, record, persist_done))
+        # 注册实时诊断消费者（延迟 import 避免循环依赖）
+        from app.services.diagnostic_worker import listen_qa_done
+        asyncio.create_task(listen_qa_done(bus, turn_input.user_id, persist_done))
+        # 让出控制权，确保消费者 task 先调度再 emit 事件
+        await asyncio.sleep(0)
+        bus.emit({"type": "done"})
+        bus.close()
 
         yield sse_done(
             full_text=full_response,
@@ -363,7 +375,17 @@ async def _answer_vision_turn(turn_input: QATurnInput) -> AsyncIterator[dict]:
             model_name=config.QA_VL_MODEL,
             latency_ms=latency_ms,
         )
-        save_turn_record(record)
+        # 持久化改为异步，不阻塞 SSE 响应
+        persist_done = asyncio.Event()
+        bus = StreamBus()
+        asyncio.create_task(start_persist_consumer(bus, record, persist_done))
+        # 注册实时诊断消费者（延迟 import 避免循环依赖）
+        from app.services.diagnostic_worker import listen_qa_done
+        asyncio.create_task(listen_qa_done(bus, turn_input.user_id, persist_done))
+        # 让出控制权，确保消费者 task 先调度再 emit 事件
+        await asyncio.sleep(0)
+        bus.emit({"type": "done"})
+        bus.close()
 
         yield sse_done(
             full_text=full_answer,

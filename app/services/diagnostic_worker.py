@@ -13,6 +13,40 @@ from app.services.diagnosis.v2_service import process_exercise_attempt, process_
 DIAGNOSTIC_BATCH_THRESHOLD = 5
 DIAGNOSTIC_CHECK_INTERVAL = 30
 
+# user_id 级别的诊断锁，防止事件触发与轮询并发处理同一用户
+_diagnosis_locks: dict[str, asyncio.Lock] = {}
+
+
+def _get_diagnosis_lock(user_id: str) -> asyncio.Lock:
+    """获取用户级别的诊断锁，避免并发触发同一用户的多轮诊断。"""
+    if user_id not in _diagnosis_locks:
+        _diagnosis_locks[user_id] = asyncio.Lock()
+    return _diagnosis_locks[user_id]
+
+
+async def listen_qa_done(bus, user_id: str, persist_done: asyncio.Event | None = None) -> None:
+    """通过 StreamBus 监听 QA 完成事件，实时触发诊断。
+
+    作为 answer_turn 内部 StreamBus 的订阅者，收到 done 事件后：
+    1. 等待持久化完成（确保 qa_turn_records 已落盘）
+    2. 获取用户级锁防止并发
+    3. 立即触发诊断
+    不阻塞主事件流，诊断失败不影响主流程。
+    """
+    try:
+        async for event in bus.subscribe("diagnosis", replay=True):
+            if event.get("event") == "done" or event.get("type") == "done":
+                break
+        # 等待持久化完成，确保诊断能读到刚写入的记录
+        if persist_done is not None:
+            await persist_done.wait()
+        # 获取用户级锁，防止与轮询并发处理同一用户
+        lock = _get_diagnosis_lock(user_id)
+        async with lock:
+            await run_diagnostic_batch(user_id)
+    except Exception as exc:
+        print(f"[diagnostic_worker] 实时诊断触发失败: {exc}")
+
 
 def should_trigger_diagnostic_batch(user_id: str) -> bool:
     """Compatibility helper: true when either V2 source has pending records."""

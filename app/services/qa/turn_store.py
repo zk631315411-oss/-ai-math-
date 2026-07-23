@@ -207,3 +207,26 @@ def _sanitize_context(value: Any) -> Any:
             digest = hashlib.sha256(value.encode("utf-8", errors="ignore")).hexdigest()
             return value[:20000] + f"\n...[truncated sha256={digest} length={len(value)}]"
     return value
+
+
+async def start_persist_consumer(bus, turn_record, persist_done=None):
+    """作为 StreamBus 消费者，监听 done 事件后异步持久化。
+
+    不阻塞主事件流，持久化失败也不影响主流程。
+    失败时自动重试 1 次，重试仍失败则仅打印日志。
+    """
+    from fastapi.concurrency import run_in_threadpool
+
+    async for event in bus.subscribe("persist", replay=True):
+        if event.get("type") == "done":
+            break
+    for attempt in range(2):
+        try:
+            await run_in_threadpool(save_turn_record, turn_record)
+            break
+        except Exception as exc:
+            if attempt == 0:
+                continue
+            print(f"[persist_consumer] 持久化失败（已重试）: {exc}")
+    if persist_done is not None:
+        persist_done.set()
