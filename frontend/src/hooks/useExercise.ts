@@ -40,9 +40,14 @@ export function useExercise(user: User, currentPage: number, textbookId: string)
           if (line.startsWith('data: ')) {
             try {
               const d = JSON.parse(line.slice(6));
-              if (d.status) setGenerationStatus(d.text || d.status);
+              const payload = d.data || d;
+              if (payload.stage || payload.status) {
+                setGenerationStatus(payload.text || payload.stage || payload.status);
+              }
               if (d.error) errMsg = d.error;
+              if (payload.error) errMsg = payload.error;
               if (d.done) exerciseId = d.exercise_id;
+              if (payload.done) exerciseId = payload.exercise_id;
             } catch {}
           }
         }
