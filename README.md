@@ -97,12 +97,18 @@ KG extraction uses the **v4.4 pipeline** (教材提取模块/高代提取/): 25-
                        │ SSE / REST
 ┌──────────────────────┴──────────────────────────────┐
 │                  FastAPI Backend                     │
-│  ┌─────────────── Services ───────────────────┐    │
-│  │ prompt_engine · scaffolding_controller      │    │
-│  │ prerequisite_checker · error_analyzer       │    │
-│  │ exercise_generator · sympy_sandbox          │    │
-│  │ diagnostic_worker · pending_worker          │    │
-│  └─────────────────────────────────────────────┘    │
+│  ┌─────────────── Agent Layer ─────────────────┐    │
+│  │  QAAgent · ExerciseAgent · (预留 Function Calling) │
+│  │  BaseAgent 统一接口 · Registry 注册表        │    │
+│  └──────────────────────┬───────────────────────┘    │
+│                         │                             │
+│  ┌──────────────────────┴───────────────────────┐    │
+│  │              Services Layer                    │    │
+│  │  prompt_engine · scaffolding_controller       │    │
+│  │  prerequisite_checker · error_analyzer        │    │
+│  │  exercise_generator · sympy_sandbox           │    │
+│  │  diagnostic_worker · pending_worker           │    │
+│  └───────────────────────────────────────────────┘    │
 │  ┌─────────────── Data Layer ─────────────────┐    │
 │  │  SQLite (12 tables)  │  Neo4j (2,980 nodes)  │    │
 │  │  math_profiles       │  Concept · Theorem    │    │
@@ -136,7 +142,11 @@ Scaffolding controller: select teaching level (Modeling/Coaching/Scaffolding/Fad
 LLM generates answer constrained by whitelist + pedagogical strategy
         │
         ▼
-Answer streamed to student + saved as page marker + logged for diagnostic analysis
+Answer streamed to student via per-turn StreamBus event bus
+        │
+        ├──→ SSE route consumes events → frontend
+        ├──→ Persist consumer (async) → save turn record to DB
+        └──→ Diagnosis consumer (real-time) → update student state
 ```
 
 ---
@@ -193,6 +203,10 @@ cd frontend && npm run build    # vite build → dist/
 - Screenshot + text questions, with streaming thinking process + answer
 - Markdown + LaTeX rendering in chat
 - Neo4j whitelist constrains answers to textbook scope
+- **StreamBus event bus** decouples production from consumption
+- Persistence is **async** — turn record saving does not block the SSE response
+- Diagnosis is **real-time event-driven**
+- **Agent Layer**: BaseAgent uniform interface, QAAgent, ExerciseAgent, AgentRegistry
 
 ### Page-Anchored Question Markers
 - Red dots (screenshot questions) and blue dots (text questions) pinned to exact PDF page positions
@@ -211,7 +225,7 @@ cd frontend && npm run build    # vite build → dist/
 
 ### 6-Stage Cognitive Tracking
 - Each concept tracked through stages 0–5 (unfamiliar → mastered)
-- Background diagnostic worker analyzes conversations every 5 min
+- Background diagnostic worker analyzes conversations (real-time via StreamBus + 30s polling fallback)
 - Pending queue with debounced stage transitions
 
 ### Knowledge Graph Visualization
@@ -263,7 +277,9 @@ cd frontend && npm run build    # vite build → dist/
 ai-math/
 ├── app/
 │   ├── routers/         # 6 route modules
-│   ├── services/        # 10 service modules
+│   ├── services/        # 10+ service modules + agents/ + qa/ 子模块
+│   │   ├── agents/      # BaseAgent 统一接口 · Registry · QAAgent · ExerciseAgent
+│   │   └── qa/          # StreamBus · turn_store · prompt_builder · 其他 QA 子模块
 │   ├── db/              # 16 data modules
 │   └── models/          # Pydantic schemas
 ├── frontend/src/
