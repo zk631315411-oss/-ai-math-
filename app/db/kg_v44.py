@@ -527,6 +527,20 @@ def rule_cases_for_nodes(node_ids: list[str], book_id: str, limit: int = 5) -> l
         return [_rule_case_map(row) for row in rows]
 
 
+def get_rule_cases_for_node(concept_name: str, limit: int = 5) -> list[dict]:
+    """按概念名查询规则案例。
+
+    先通过概念名查找节点，再查询该节点关联的规则案例。
+    返回规则案例列表，每条包含条件、结论、适用对象等。
+    """
+    node = find_node(concept_name)
+    if not node or not node.get("node_id"):
+        return []
+    node_id = node["node_id"]
+    book_id = _book_id_from_section(node.get("section_node_id") or node.get("source_code") or "")
+    return rule_cases_for_nodes([node_id], book_id, limit=limit)
+
+
 def prerequisite_candidates_for_section(section_node_id: str, limit: int = 12) -> list[str]:
     nodes = nodes_for_section(section_node_id, limit=20)
     if not nodes:
