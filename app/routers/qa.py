@@ -1,12 +1,51 @@
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
+import asyncio
 import json
 from app.models.schemas import QARequest
 from app.auth.jwt_handler import decode_token
 from app.db.user_profile_db import get_user_profile
 from app.services.qa import QATurnInput, answer_turn, has_screenshot_context
+from app.services.qa.streaming_service import sse_event
 
 router = APIRouter(prefix="/api/qa", tags=["题目答疑"])
+
+
+# SSE 心跳间隔（秒），每 15s 发一次 heartbeat 防止前端超时断开
+SSE_HEARTBEAT_INTERVAL = 15
+
+
+async def _heartbeat(events: asyncio.Queue):
+    """后台心跳任务，每 15s 发一次 heartbeat 事件。"""
+    try:
+        while True:
+            await asyncio.sleep(SSE_HEARTBEAT_INTERVAL)
+            events.put_nowait(sse_event("heartbeat", {"text": ""}))
+    except asyncio.CancelledError:
+        pass
+
+
+async def _generate_with_heartbeat(generate):
+    """在 generate() 基础上叠加心跳事件。"""
+    events: asyncio.Queue = asyncio.Queue()
+    task = asyncio.create_task(_heartbeat(events))
+
+    async def producer():
+        try:
+            async for event in generate:
+                events.put_nowait(event)
+        finally:
+            task.cancel()
+            # 消费完所有事件后，放入 sentinel 标记结束
+            events.put_nowait(None)
+
+    asyncio.create_task(producer())
+
+    while True:
+        event = await events.get()
+        if event is None:
+            break
+        yield event
 
 
 def get_user_id_and_profile(request: QARequest) -> tuple:
@@ -87,7 +126,7 @@ async def solve_question_stream(request: QARequest):
         except Exception as e:
             yield {"event": "error", "data": json.dumps({"error": str(e)})}
 
-    return EventSourceResponse(generate())
+    return EventSourceResponse(_generate_with_heartbeat(generate()))
 
 
 

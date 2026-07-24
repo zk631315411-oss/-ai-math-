@@ -111,6 +111,70 @@ def build_tutor_prompt(
 请用中文回答，数学公式用 LaTeX。回答要围绕当前页和 KG 证据，不要无根据扩展。"""
 
 
+def build_lightweight_prompt(
+    question: str,
+    grounding: TurnGrounding,
+    student_state: StudentStateSummary,
+    policy: TutorPolicy,
+    history: list[dict] | None = None,
+) -> str:
+    """精简版 Prompt，用于工具调用模式。
+
+    去掉了教材全文（LLM 可以通过 search_textbook 工具按需获取），
+    只保留 KG 证据、学生状态和教学策略。
+    """
+    concept_names = [node.name for node in grounding.related_concepts if node.name][:12]
+    prereq_names = [node.name for node in grounding.prerequisite_concepts if node.name][:8]
+    evidence_lines = [
+        f"- {span.node_name or '教材'}: {span.text[:180]}"
+        for span in grounding.evidence_spans[:5]
+        if span.text
+    ]
+    weak_lines = [
+        f"- {gap.name}: stage={gap.stage if gap.stage is not None else '未知'} {gap.evidence}".strip()
+        for gap in student_state.weak_prerequisites[:6]
+    ]
+
+    return f"""你是“学数有道”的大学数学 AI 私教。你可以使用工具箱中的工具来查教材、查知识图谱、验算数学表达式。
+
+【本轮教材定位】
+- 教材：{grounding.textbook_id}
+- 页码：{grounding.page_number or '未知'}
+- 章节：{grounding.chapter_name or '未知'}
+
+【KG 相关概念】
+{_join_or_empty(concept_names)}
+
+【可能支撑/前置概念】
+{_join_or_empty(prereq_names)}
+
+【教材证据】
+{chr(10).join(evidence_lines) if evidence_lines else '（暂无可展示证据片段）'}
+
+【学生状态摘要】
+- 当前小节综合 stage：{student_state.current_section_stage if student_state.current_section_stage is not None else '未知'}
+- 可能卡点：{student_state.likely_breakpoint or '未知'}
+- 最近模式：{student_state.recent_pattern or '暂无'}
+- 薄弱前置：
+{chr(10).join(weak_lines) if weak_lines else '（暂无明确薄弱前置）'}
+
+【教学策略】
+- 模式：{policy.mode}/{policy.submode}
+- 先补前置：{policy.should_review_prerequisites}
+- 引导式提问：{policy.should_ask_guiding_question}
+- 允许完整解答：{policy.allow_full_solution}
+- 深度：{policy.answer_depth}
+- 策略理由：{policy.rationale or '按当前学生状态给出清晰讲解'}
+
+【最近相关历史】
+{_format_history(history)}
+
+【学生问题】
+{question}
+
+请用中文回答，数学公式用 LaTeX。如果需要查阅教材原文或知识图谱，请使用工具箱中的工具。不要在一开始就假设所有信息都在 prompt 里。"""
+
+
 def _format_history(history: list[dict] | None) -> str:
     if not history:
         return "（无）"

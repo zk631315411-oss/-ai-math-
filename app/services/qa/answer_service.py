@@ -715,7 +715,8 @@ async def answer_turn_with_tools(
             turn_input.teaching_mode,
             turn_input.socratic_submode,
         )
-        prompt = build_tutor_prompt(
+        from app.services.qa.prompt_builder import build_lightweight_prompt
+        prompt = build_lightweight_prompt(
             turn_input.question,
             grounding,
             student_state,
