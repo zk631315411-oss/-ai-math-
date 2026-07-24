@@ -8,6 +8,9 @@ interface DiagnosticCardProps {
   diagnosis: string;
   evidenceCount: number;
   lastUpdated: string;
+  sourceDisplay?: string;
+  textbookName?: string;
+  evidenceSpan?: string;
 }
 
 /** 认知阶段标签映射 */
@@ -32,6 +35,9 @@ export function DiagnosticCard({
   diagnosis,
   evidenceCount,
   lastUpdated,
+  sourceDisplay,
+  textbookName,
+  evidenceSpan,
 }: DiagnosticCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3">
@@ -54,6 +60,22 @@ export function DiagnosticCard({
           <p className="text-sm text-gray-700 bg-gray-50 rounded p-2 italic">
             "{evidenceQuote}"
           </p>
+        </div>
+      )}
+
+      {/* 教材出处 */}
+      {sourceDisplay && (
+        <div className="mb-2">
+          <p className="text-xs text-gray-500 mb-0.5">教材出处</p>
+          <p className="text-sm text-blue-700 bg-blue-50 rounded p-2">{sourceDisplay}</p>
+        </div>
+      )}
+
+      {/* 教材原文 */}
+      {evidenceSpan && (
+        <div className="mb-2">
+          <p className="text-xs text-gray-500 mb-0.5">教材原文</p>
+          <p className="text-sm text-gray-700 bg-gray-50 rounded p-2">{evidenceSpan}</p>
         </div>
       )}
 

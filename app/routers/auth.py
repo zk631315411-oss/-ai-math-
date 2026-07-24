@@ -359,9 +359,10 @@ async def get_diagnostic_cards(
     """获取用户的诊断卡片列表。
 
     从 knowledge_stages 取 stage ≤ 2 且有 evidence 的概念，
-    按 last_updated 降序排列。
+    按 last_updated 降序排列。附带教材出处信息。
     """
     from app.db.connection import get_conn
+    from app.db.textbook_section_db import parse_source_code
 
     conn = get_conn()
     try:
@@ -388,6 +389,21 @@ async def get_diagnostic_cards(
             # 取最新一条 evidence
             latest = evidence_list[-1] if evidence_list else {}
 
+            # 查询 KG 获取 source_code 和 evidence_span
+            source_code = ""
+            evidence_span = ""
+            try:
+                from app.db.kg_v44 import find_node
+
+                node = find_node(row["concept_name"])
+                if node:
+                    source_code = node.get("source_code") or ""
+                    evidence_span = node.get("evidence_span") or ""
+            except Exception:
+                pass
+
+            source_info = parse_source_code(source_code) if source_code else {}
+
             cards.append({
                 "concept_name": row["concept_name"],
                 "stage": row["stage"],
@@ -396,6 +412,10 @@ async def get_diagnostic_cards(
                 "diagnosis": latest.get("diagnosis", ""),
                 "evidence_count": len(evidence_list),
                 "last_updated": row["last_updated"],
+                "source_code": source_code,
+                "source_display": source_info.get("display", ""),
+                "textbook_name": source_info.get("textbook_name", ""),
+                "evidence_span": evidence_span[:300] if evidence_span else "",
             })
 
         return {"cards": cards}

@@ -1,8 +1,58 @@
 from typing import List, Optional
+
 from app.db.connection import get_conn
 
 
 GAOSHU_SECTION_PAGE_OFFSET = 11
+
+
+def parse_source_code(source_code: str) -> dict:
+    """将 KG source_code 解析为人类可读的教材定位信息。
+    
+    输入格式: "gaodai_shang:C03:S05:U01"
+    输出: {"textbook_name": "高等代数·上册", "chapter": "第3章", "section": "第5节", "unit": "第1单元", "display": "高等代数·上册 > 第3章 > 第5节 > 第1单元"}
+    """
+    if not source_code:
+        return {}
+    
+    parts = source_code.split(":")
+    if len(parts) < 2:
+        return {"display": source_code}
+    
+    book_code = parts[0]
+    
+    # 教材名称映射
+    book_names = {
+        "gaodai_shang": "高等代数·上册",
+        "gaodai_xia": "高等代数·下册",
+        "gaoshu_shang": "高等数学·上册",
+        "gaoshu_xia": "高等数学·下册",
+    }
+    textbook_name = book_names.get(book_code, book_code)
+    
+    result = {"textbook_name": textbook_name}
+    display_parts = [textbook_name]
+    
+    for part in parts[1:]:
+        if part.startswith("C"):
+            num = part[1:].lstrip("0")
+            result["chapter"] = f"第{num}章"
+            display_parts.append(result["chapter"])
+        elif part.startswith("S"):
+            num = part[1:].lstrip("0")
+            result["section"] = f"第{num}节"
+            display_parts.append(result["section"])
+        elif part.startswith("U"):
+            num = part[1:].lstrip("0")
+            result["unit"] = f"第{num}单元"
+            display_parts.append(result["unit"])
+        elif part.startswith("T"):
+            num = part[1:].lstrip("0")
+            result["topic"] = f"主题{num}"
+            display_parts.append(result["topic"])
+    
+    result["display"] = " > ".join(display_parts)
+    return result
 
 
 def _is_gaoshu_textbook(textbook_id: str) -> bool:

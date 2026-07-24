@@ -294,6 +294,9 @@ function DiagnosticCardsView({ userId }: { userId: string }) {
             diagnosis={card.diagnosis}
             evidenceCount={card.evidence_count}
             lastUpdated={card.last_updated}
+            sourceDisplay={card.source_display}
+            textbookName={card.textbook_name}
+            evidenceSpan={card.evidence_span}
           />
         ))}
     </div>
