@@ -44,18 +44,30 @@ def _session():
     if not _kg_may_be_available():
         raise ConnectionError(f"Neo4j unavailable: {config.NEO4J_URI}")
 
-    from neo4j import GraphDatabase
-
-    driver = GraphDatabase.driver(
-        config.NEO4J_URI,
-        auth=(config.NEO4J_USER, config.NEO4J_PASSWORD),
-        connection_timeout=1.0,
-    )
+    _driver = _get_driver()
     try:
-        with driver.session(database=_database()) as session:
+        with _driver.session(database=_database()) as session:
             yield session
     finally:
-        driver.close()
+        pass  # driver 是全局单例，不关闭
+
+
+# 全局单例 driver
+_DRIVER_INSTANCE = None
+
+
+def _get_driver():
+    global _DRIVER_INSTANCE
+    if _DRIVER_INSTANCE is None:
+        from neo4j import GraphDatabase
+
+        _DRIVER_INSTANCE = GraphDatabase.driver(
+            config.NEO4J_URI,
+            auth=(config.NEO4J_USER, config.NEO4J_PASSWORD),
+            connection_timeout=1.0,
+            max_connection_pool_size=10,
+        )
+    return _DRIVER_INSTANCE
 
 
 def _kg_may_be_available(ttl_seconds: float = 15.0, timeout_seconds: float = 0.35) -> bool:

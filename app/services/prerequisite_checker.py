@@ -5,17 +5,26 @@ For tutoring, we treat neighboring support nodes around the current section
 as "possible missing support knowledge" and then check the user's stage table.
 """
 
+from functools import lru_cache
+
 from app.db.knowledge_stages_db import get_stages_batch
 
 
-def get_prereq_gaps(sequence_id: str, user_id: str, textbook_id: str = "") -> list[dict]:
+# 前置候选缓存，最多缓存 64 个不同的 section_node_id
+@lru_cache(maxsize=64)
+def _cached_prereq_candidates(section_node_id: str) -> tuple:
     try:
         from app.db.kg_v44 import prerequisite_candidates_for_section
 
-        section_node_id = _v44_section_id(textbook_id, sequence_id)
-        prereq_names = prerequisite_candidates_for_section(section_node_id, limit=12)
+        names = prerequisite_candidates_for_section(section_node_id, limit=12)
+        return tuple(names)
     except Exception:
-        prereq_names = []
+        return ()
+
+
+def get_prereq_gaps(sequence_id: str, user_id: str, textbook_id: str = "") -> list[dict]:
+    section_node_id = _v44_section_id(textbook_id, sequence_id)
+    prereq_names = list(_cached_prereq_candidates(section_node_id))
 
     if not prereq_names:
         return []

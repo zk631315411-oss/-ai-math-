@@ -1,7 +1,39 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
+
+# 白名单缓存，最多缓存 64 个不同的 (textbook_id, sequence_id) 组合
+@lru_cache(maxsize=64)
+def _cached_whitelist(textbook_id: str, sequence_id: str) -> tuple:
+    result = _compute_whitelist(textbook_id, sequence_id)
+    # 缓存需要返回可 hash 类型，把 dict 转成 tuple of tuples
+    return (
+        ("macro", result["macro"]),
+        ("micro", result["micro"]),
+        ("current", tuple(result.get("current", []))),
+        ("prior", tuple(result.get("prior", []))),
+    )
+
 
 def get_whitelist(textbook_id: str, sequence_id: str) -> dict:
+    cached = _cached_whitelist(textbook_id, sequence_id)
+    return {
+        "macro": _cached_value(cached, "macro"),
+        "micro": _cached_value(cached, "micro"),
+        "current": list(_cached_value(cached, "current") or []),
+        "prior": list(_cached_value(cached, "prior") or []),
+    }
+
+
+def _cached_value(cached: tuple, key: str) -> str | tuple:
+    for k, v in cached:
+        if k == key:
+            return v
+    return ""
+
+
+def _compute_whitelist(textbook_id: str, sequence_id: str) -> dict:
     """Query the v4.4 textbook KG for the current answer-scope whitelist."""
     try:
         from app.db.kg_v44 import nodes_for_section, nodes_up_to_chapter
