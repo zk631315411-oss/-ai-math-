@@ -392,13 +392,28 @@ async def get_diagnostic_cards(
             # 查询 KG 获取 source_code 和 evidence_span
             source_code = ""
             evidence_span = ""
+            rule_cases = []
             try:
-                from app.db.kg_v44 import find_node
+                from app.db.kg_v44 import find_node, get_rule_cases_for_node
 
                 node = find_node(row["concept_name"])
                 if node:
                     source_code = node.get("source_code") or ""
                     evidence_span = node.get("evidence_span") or ""
+                    # 查询规则案例
+                    if node.get("node_id"):
+                        cases = get_rule_cases_for_node(row["concept_name"], limit=3)
+                        rule_cases = [
+                            {
+                                "name": c.get("rule_case", ""),
+                                "owner": c.get("owner_name", ""),
+                                "applies_to": c.get("applies_to", []),
+                                "condition_logic": c.get("condition_logic", ""),
+                                "conditions": c.get("conditions", []),
+                                "outcomes": c.get("outcomes", []),
+                            }
+                            for c in cases
+                        ]
             except Exception:
                 pass
 
@@ -416,6 +431,7 @@ async def get_diagnostic_cards(
                 "source_display": source_info.get("display", ""),
                 "textbook_name": source_info.get("textbook_name", ""),
                 "evidence_span": evidence_span[:300] if evidence_span else "",
+                "rule_cases": rule_cases,
             })
 
         return {"cards": cards}

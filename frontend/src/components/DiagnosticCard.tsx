@@ -1,5 +1,14 @@
 import React from 'react';
 
+interface RuleCase {
+  name: string;
+  owner: string;
+  applies_to: string[];
+  condition_logic: string;
+  conditions: string[];
+  outcomes: string[];
+}
+
 interface DiagnosticCardProps {
   conceptName: string;
   stage: number;
@@ -11,6 +20,7 @@ interface DiagnosticCardProps {
   sourceDisplay?: string;
   textbookName?: string;
   evidenceSpan?: string;
+  ruleCases?: RuleCase[];
 }
 
 /** 认知阶段标签映射 */
@@ -38,6 +48,7 @@ export function DiagnosticCard({
   sourceDisplay,
   textbookName,
   evidenceSpan,
+  ruleCases,
 }: DiagnosticCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3">
@@ -84,6 +95,27 @@ export function DiagnosticCard({
         <div className="mb-2">
           <p className="text-xs text-gray-500 mb-0.5">诊断结论</p>
           <p className="text-sm text-gray-700">{diagnosis}</p>
+        </div>
+      )}
+
+      {/* 规则案例 */}
+      {ruleCases && ruleCases.length > 0 && (
+        <div className="mb-2">
+          <p className="text-xs text-gray-500 mb-0.5">规则案例</p>
+          {ruleCases.map((rc, i) => (
+            <div key={i} className="text-sm text-gray-700 bg-green-50 rounded p-2 mb-1">
+              <p className="font-medium">{rc.owner} / {rc.name}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                适用对象：{rc.applies_to?.join('、') || '未指定'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {rc.condition_logic || '条件'}：{rc.conditions?.join('；') || '未列出'}
+              </p>
+              <p className="text-xs text-gray-500">
+                结论：{rc.outcomes?.join('；') || '未列出'}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
