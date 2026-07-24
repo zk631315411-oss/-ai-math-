@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Header
+import json
+
+from fastapi import APIRouter, HTTPException, Header, Query
 from typing import Optional
 from app.models.schemas import (
     UserRegister, UserLogin, TokenResponse,
@@ -347,6 +349,58 @@ async def regenerate_insight(authorization: Optional[str] = Header(None)):
 # === 知识图谱 API ===
 
 STAGE_LABELS = {0: "未接触", 1: "入门", 2: "理解", 3: "应用", 4: "分析", 5: "综合"}
+
+
+@router.get("/diagnostic-cards")
+async def get_diagnostic_cards(
+    user_id: str = Query(...),
+    limit: int = Query(default=20, le=50),
+):
+    """获取用户的诊断卡片列表。
+
+    从 knowledge_stages 取 stage ≤ 2 且有 evidence 的概念，
+    按 last_updated 降序排列。
+    """
+    from app.db.connection import get_conn
+
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT concept_name, stage, confidence, evidence, last_updated
+            FROM knowledge_stages
+            WHERE user_id=? AND stage IS NOT NULL AND stage <= 2
+              AND evidence IS NOT NULL AND evidence != '[]'
+            ORDER BY last_updated DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+
+        cards = []
+        for row in rows:
+            evidence_list = []
+            try:
+                evidence_list = json.loads(row["evidence"] or "[]")
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+            # 取最新一条 evidence
+            latest = evidence_list[-1] if evidence_list else {}
+
+            cards.append({
+                "concept_name": row["concept_name"],
+                "stage": row["stage"],
+                "confidence": row["confidence"],
+                "evidence_quote": latest.get("quote", ""),
+                "diagnosis": latest.get("diagnosis", ""),
+                "evidence_count": len(evidence_list),
+                "last_updated": row["last_updated"],
+            })
+
+        return {"cards": cards}
+    finally:
+        conn.close()
 
 
 @router.get("/knowledge-graph")

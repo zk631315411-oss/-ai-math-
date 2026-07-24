@@ -4,6 +4,7 @@ import { LearningTrajectory } from './LearningTrajectory';
 import { WeakPointGraph } from './WeakPointGraph';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { BasicInfoEditor } from './BasicInfoEditor';
+import { DiagnosticCard } from './DiagnosticCard';
 import { getMathProfile, getKnowledgeStats, getDiagnosticHistory, updateMathProfile, getInsight, regenerateInsight, MathProfile } from '../services/api';
 
 interface ProfilePanelProps {
@@ -12,7 +13,7 @@ interface ProfilePanelProps {
   onClose: () => void;
 }
 
-type Tab = 'radar' | 'trajectory' | 'weak' | 'graph' | 'insight';
+type Tab = 'radar' | 'trajectory' | 'weak' | 'graph' | 'insight' | 'diagnostic';
 
 export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('radar');
@@ -84,6 +85,7 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
     { key: 'weak', label: '薄弱点' },
     { key: 'graph', label: '知识图谱' },
     { key: 'insight', label: '学习洞察' },
+    { key: 'diagnostic', label: '诊断卡片' },
   ];
 
   return (
@@ -245,6 +247,10 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
                     )}
                   </div>
                 )}
+
+                {activeTab === 'diagnostic' && (
+                  <DiagnosticCardsView userId={username} />
+                )}
               </div>
             </>
           )}
@@ -255,3 +261,32 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
 };
 
 export default ProfilePanel;
+
+/** 诊断卡片列表视图——从后端获取数据并渲染卡片列表 */
+function DiagnosticCardsView({ userId }: { userId: string }) {
+  const [cards, setCards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/auth/diagnostic-cards?user_id=${encodeURIComponent(userId)}&limit=20`, {
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(r => r.json())
+      .then(data => setCards(data.cards || []))
+      .catch(() => setCards([]))
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  if (loading) return <div className="p-4 text-gray-500">加载中...</div>;
+  if (cards.length === 0) return <div className="p-4 text-gray-500">暂无诊断卡片</div>;
+
+  return (
+    <div className="p-4">
+      <p className="text-sm text-gray-500 mb-3">以下知识点认知阶段较低（Stage ≤ 2），建议优先复习：</p>
+      {cards.map((card, i) => (
+        <DiagnosticCard key={i} {...card} />
+      ))}
+    </div>
+  );
+}
