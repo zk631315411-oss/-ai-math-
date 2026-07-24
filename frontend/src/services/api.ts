@@ -141,6 +141,18 @@ export async function fetchWithStage(
           fullContent += data.text;
           if (onContent) onContent(data.text);
         }
+        // tool_call事件 - LLM正在调用工具
+        else if (currentEventType === 'tool_call' && data.name) {
+          if (onContent) onContent(`[正在${_getToolLabel(data.name)}...]`);
+        }
+        // tool_result事件 - 工具执行完成
+        else if (currentEventType === 'tool_result' && data.name) {
+          if (data.error) {
+            if (onContent) onContent(`[${_getToolLabel(data.name)}失败: ${data.error}]`);
+          } else {
+            if (onContent) onContent(`[${_getToolLabel(data.name)}完成]`);
+          }
+        }
         // done事件 - 提取sources和thinking
         else if (currentEventType === 'done') {
           if (!fullContent && data.full_text) fullContent = data.full_text;
@@ -153,6 +165,16 @@ export async function fetchWithStage(
 
   return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult };
 }
+
+function _getToolLabel(name: string): string {
+  const labels: Record<string, string> = {
+    'search_textbook': '查教材',
+    'lookup_kg_node': '查知识图谱',
+    'verify_math': '验算',
+  };
+  return labels[name] || name;
+}
+
 
 // === 教材偏好API ===
 
