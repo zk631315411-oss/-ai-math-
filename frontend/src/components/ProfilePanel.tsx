@@ -285,8 +285,17 @@ function DiagnosticCardsView({ userId }: { userId: string }) {
     <div className="p-4">
       <p className="text-sm text-gray-500 mb-3">以下知识点认知阶段较低（Stage ≤ 2），建议优先复习：</p>
       {cards.map((card, i) => (
-        <DiagnosticCard key={i} {...card} />
-      ))}
+          <DiagnosticCard
+            key={i}
+            conceptName={card.concept_name}
+            stage={card.stage}
+            confidence={card.confidence}
+            evidenceQuote={card.evidence_quote}
+            diagnosis={card.diagnosis}
+            evidenceCount={card.evidence_count}
+            lastUpdated={card.last_updated}
+          />
+        ))}
     </div>
   );
 }
