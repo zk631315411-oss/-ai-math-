@@ -16,7 +16,7 @@ from app.services.qa.contracts import QATurnInput, QATurnRecord
 from app.services.qa.event_bus import StreamBus
 from app.services.qa.grounding_service import ground_text_turn
 from app.services.qa.prompt_builder import build_tutor_prompt
-from app.services.qa.streaming_service import sse_done, sse_error, sse_stage, sse_text
+from app.services.qa.streaming_service import sse_done, sse_error, sse_event, sse_stage, sse_text
 from app.services.qa.turn_store import save_turn_record, start_persist_consumer
 from app.services.qa.tutor_policy import decide_tutor_policy
 from app.services.qa.vision_context_service import (
@@ -664,3 +664,219 @@ def _snapshot_value(value):
     if is_dataclass(value):
         return asdict(value)
     return value
+
+
+async def answer_turn_with_tools(
+    turn_input: QATurnInput,
+    *,
+    tools: list[dict] | None = None,
+    tool_defs: list | None = None,
+    max_tool_rounds: int = 5,
+) -> AsyncIterator[dict]:
+    """支持工具调用的 QA 入口。
+
+    LLM 可以通过工具调用自主决定查教材、查 KG、验算等，
+    结果回注后继续思考，直到输出最终回答。
+
+    Args:
+        turn_input: QA 输入
+        tools: OpenAI Function Calling 格式的 tools 参数（传给 LLM）
+        tool_defs: ToolDef 对象列表，用于执行工具。不传时从 tools 中尝试恢复
+        max_tool_rounds: 最大工具调用轮数，防止无限循环
+    """
+    import json
+
+    from app.services.qa.event_bus import StreamBus
+    from app.services.qa.turn_store import start_persist_consumer
+
+    if not turn_input.question:
+        yield sse_error("未能识别题目内容")
+        return
+
+    started_at = time.perf_counter()
+    turn_id = str(uuid.uuid4())
+    full_response = ""
+
+    try:
+        # 1. 前置定位（与现有纯 prompt 流程一致）
+        yield sse_stage("searching", "正在匹配教材与知识图谱...")
+        grounding = ground_text_turn(
+            turn_input.textbook_id or "",
+            turn_input.page_number,
+            turn_input.question,
+        )
+        kg_concepts = [node.name for node in grounding.related_concepts if node.name]
+        sources = _build_sources(grounding, kg_concepts)
+
+        yield sse_stage("planning", "正在组织本轮讲解策略...")
+        student_state = _coerce_student_state(turn_input.user_id, None)
+        policy = decide_tutor_policy(
+            student_state,
+            turn_input.teaching_mode,
+            turn_input.socratic_submode,
+        )
+        prompt = build_tutor_prompt(
+            turn_input.question,
+            grounding,
+            student_state,
+            policy,
+            history=turn_input.history,
+        )
+
+        # 2. 工具调用循环
+        messages = [{"role": "user", "content": prompt}]
+        tool_rounds = 0
+        tool_list = tools or []
+
+        # 获取 ToolDef 列表用于执行
+        from app.services.agents.tool_def import ToolDef
+        from app.services.agents.tools.search_textbook import search_textbook_tool
+        from app.services.agents.tools.lookup_kg_node import lookup_kg_node_tool
+        from app.services.agents.tools.verify_math import verify_math_tool
+
+        _tool_defs: list[ToolDef] = tool_defs or [
+            search_textbook_tool,
+            lookup_kg_node_tool,
+            verify_math_tool,
+        ]
+
+        while tool_rounds < max_tool_rounds:
+            yield sse_stage("thinking", "正在思考...")
+
+            # 调用 LLM（非流式，带 tools 参数）
+            response = llm_service.chat_with_tools(
+                messages=messages,
+                tools=tool_list,
+            )
+
+            finish_reason = response.choices[0].finish_reason
+            message = response.choices[0].message
+
+            if finish_reason == "tool_calls":
+                tool_calls = message.tool_calls
+
+                # 推送 tool_call 事件
+                for tc in tool_calls:
+                    yield sse_event("tool_call", {
+                        "tool_call_id": tc.id,
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    })
+
+                # 构造 assistant 消息（含 tool_calls）
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": message.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in tool_calls
+                    ],
+                }
+                messages.append(assistant_msg)
+
+                # 执行工具
+                from app.services.agents.tool_executor import execute_tool_calls as _execute_tool_calls
+
+                results = await _execute_tool_calls(tool_calls, _tool_defs)
+
+                # 处理执行结果
+                for tc, result in zip(tool_calls, results):
+                    if isinstance(result, Exception):
+                        error_msg = str(result)
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc.id,
+                            "content": json.dumps({"error": error_msg}, ensure_ascii=False),
+                        })
+                        yield sse_event("tool_result", {
+                            "tool_call_id": tc.id,
+                            "name": tc.function.name,
+                            "error": error_msg,
+                        })
+                    else:
+                        messages.append(result)
+                        yield sse_event("tool_result", {
+                            "tool_call_id": tc.id,
+                            "name": tc.function.name,
+                            "status": "success",
+                        })
+
+                tool_rounds += 1
+                continue
+
+            elif finish_reason == "stop":
+                # LLM 回答完毕，输出最终回答
+                content = message.content or ""
+                full_response = content
+                yield sse_text(content)
+                break
+
+            else:
+                yield sse_error(f"LLM 返回异常 finish_reason: {finish_reason}")
+                return
+
+        if tool_rounds >= max_tool_rounds:
+            yield sse_error("工具调用超过最大轮数限制，已截断")
+
+        # 3. 持久化（与现有纯 prompt 流程一致）
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        apprenticeship_level = None
+        record = QATurnRecord(
+            turn_id=turn_id,
+            user_id=turn_input.user_id,
+            chat_id=turn_input.chat_id,
+            input_type="text",
+            question=turn_input.question,
+            marker_id=turn_input.marker_id or turn_input.chat_id,
+            apprenticeship_level=apprenticeship_level,
+            answer=full_response,
+            textbook_id=grounding.textbook_id,
+            page_number=grounding.page_number,
+            sequence_id=grounding.sequence_id,
+            section_node_id=grounding.section_node_id,
+            chapter_name=grounding.chapter_name,
+            sources=sources,
+            context_snapshot={
+                "input_context": {
+                    "marker_id": turn_input.marker_id or turn_input.chat_id,
+                    "chat_id": turn_input.chat_id,
+                    "page_number": turn_input.page_number,
+                },
+                "tool_rounds": tool_rounds,
+                "max_tool_rounds": max_tool_rounds,
+            },
+            messages_snapshot=messages,
+            prompt_preview=prompt[:2000],
+            model_name=config.QA_LLM_MODEL,
+            latency_ms=latency_ms,
+        )
+
+        persist_done = asyncio.Event()
+        bus = StreamBus()
+        asyncio.create_task(start_persist_consumer(bus, record, persist_done))
+        # 注册实时诊断消费者（延迟 import 避免循环依赖）
+        from app.services.diagnostic_worker import listen_qa_done
+        asyncio.create_task(listen_qa_done(bus, turn_input.user_id, persist_done))
+        # 让出控制权，确保消费者 task 先调度再 emit 事件
+        await asyncio.sleep(0)
+        bus.emit({"type": "done"})
+        bus.close()
+
+        yield sse_done(
+            full_text=full_response,
+            thinking="",
+            sources=sources,
+            sequence_id=grounding.sequence_id,
+            qa_turn_id=turn_id,
+        )
+
+    except Exception as exc:
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        yield sse_error(str(exc))

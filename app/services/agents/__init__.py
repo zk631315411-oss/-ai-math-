@@ -10,12 +10,23 @@ from app.services.agents.base import BaseAgent
 from app.services.agents.exercise_agent import ExerciseAgent
 from app.services.agents.qa_agent import QAAgent
 from app.services.agents.registry import AGENT_REGISTRY, clear, get_agent, list_agents, register
+from app.services.agents.tool_def import ToolDef
+from app.services.agents.tool_executor import execute_tool_call, execute_tool_calls
+
+# 注册工具
+def _register_tools() -> None:
+    """注册所有工具定义到各 Agent。"""
+    pass  # 工具已通过各 tool 文件模块级注册
+
 
 __all__ = [
     "AGENT_REGISTRY",
     "BaseAgent",
     "ExerciseAgent",
     "QAAgent",
+    "ToolDef",
+    "execute_tool_call",
+    "execute_tool_calls",
     "clear",
     "get_agent",
     "list_agents",

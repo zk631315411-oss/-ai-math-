@@ -3,6 +3,7 @@
 """
 from openai import OpenAI, AsyncOpenAI
 from app.config import config
+from typing import Any
 
 
 class LLMService:
@@ -96,6 +97,30 @@ class LLMService:
             kwargs["response_format"] = response_format
 
         return client.chat.completions.create(**kwargs)
+
+    def chat_with_tools(
+        self,
+        messages: list,
+        tools: list[dict],
+        model: str | None = None,
+        temperature: float = 0.3,
+    ) -> Any:
+        """非流式调用，支持 Function Calling tools 参数。
+
+        返回 OpenAI 响应对象，包含 choices[0].finish_reason
+        和 choices[0].message.tool_calls。
+        """
+        if not self.qa_client:
+            raise RuntimeError("QA LLM 服务未初始化")
+
+        return self.qa_client.chat.completions.create(
+            model=model or config.QA_LLM_MODEL,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+            stream=False,
+            temperature=temperature,
+        )
 
     async def chat_async(self, messages: list, model: str = None, temperature: float = 0.3,
                          response_format: dict = None) -> str:
