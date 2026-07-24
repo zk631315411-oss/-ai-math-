@@ -34,6 +34,29 @@ def project_pending_stage_evidence(limit: int = 100) -> int:
     return count
 
 
+def _build_evidence_entry(evidence: dict) -> str:
+    """构造证据条目 JSON，追加到 knowledge_stages.evidence 数组。"""
+    import datetime
+    entry = {
+        "source": evidence.get("source_type", "qa_turn"),
+        "source_id": evidence.get("source_id", ""),
+        "quote": (evidence.get("student_quote") or "")[:500],
+        "diagnosis": "",
+        "observed_stage": evidence.get("observed_stage"),
+        "direction": evidence.get("direction"),
+        "strength": evidence.get("strength"),
+        "time": datetime.datetime.utcnow().isoformat(),
+    }
+    # 如果有 payload 中的 diagnosis 字段则提取
+    try:
+        payload = json.loads(evidence.get("payload") or "{}")
+        if isinstance(payload, dict) and payload.get("diagnosis"):
+            entry["diagnosis"] = payload["diagnosis"][:300]
+    except (TypeError, json.JSONDecodeError):
+        pass
+    return json.dumps(entry, ensure_ascii=False)
+
+
 def project_stage_evidence(evidence: dict) -> bool:
     """Project one evidence exactly once; only this function changes V2 Stage."""
 
@@ -103,24 +126,30 @@ def project_stage_evidence(evidence: dict) -> bool:
             if projection_role == "supporting":
                 pass
             elif row:
+                # 追加 evidence 到现有数组
+                evidence_entry = _build_evidence_entry(evidence)
                 conn.execute(
                     """
                     UPDATE knowledge_stages SET stage=?, confidence=?, projection_version=?,
+                        evidence=json_set(COALESCE(evidence, '[]'), '$[#]', json(?)), 
                         last_updated=CURRENT_TIMESTAMP WHERE id=?
                     """,
-                    (after["stage"], after["confidence"], PROJECTION_VERSION, row["id"]),
+                    (after["stage"], after["confidence"], PROJECTION_VERSION,
+                     evidence_entry, row["id"]),
                 )
             elif after["stage"] is not None:
+                evidence_entry = _build_evidence_entry(evidence)
                 conn.execute(
                     """
                     INSERT INTO knowledge_stages (
                         id, user_id, concept_name, stage, confidence, evidence,
                         baseline_version, projection_version
-                    ) VALUES (?, ?, ?, ?, ?, '[]', 'v2', ?)
+                    ) VALUES (?, ?, ?, ?, ?, json_array(json(?)), 'v2', ?)
                     """,
                     (
                         str(uuid.uuid4()), evidence["user_id"], evidence["concept_name"],
-                        after["stage"], after["confidence"], PROJECTION_VERSION,
+                        after["stage"], after["confidence"], evidence_entry,
+                        PROJECTION_VERSION,
                     ),
                 )
 
