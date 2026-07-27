@@ -48,7 +48,7 @@ class Config:
     DIAGNOSIS_V2_MODE: str = os.getenv("DIAGNOSIS_V2_MODE", "shadow").strip().lower()
 
 
-    DB_PATH: str = str(DATA_DIR / "learning.db")
+    DB_PATH: str = os.getenv("AI_MATH_DB_PATH", str(DATA_DIR / "learning.db"))
 
     # JWT 密钥
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")

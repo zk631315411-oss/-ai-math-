@@ -14,7 +14,11 @@ export function useExercise(user: User, currentPage: number, textbookId: string)
     setShowExercisePanel(true);
 
     const uid = user.userId || user.deviceId;
-    const exercises = await getExercisesByPage(currentPage, uid, textbookId || '高代上-丘维声');
+    if (!user.token || !user.userId) {
+      setGenerationStatus('登录状态尚未就绪，请稍后重试');
+      return;
+    }
+    const exercises = await getExercisesByPage(currentPage, uid, textbookId || '高代上-丘维声', user.token);
 
     if (exercises.length > 0) {
       setExerciseKey(k => k + 1);
@@ -55,7 +59,7 @@ export function useExercise(user: User, currentPage: number, textbookId: string)
       if (exerciseId) {
         setExerciseKey(k => k + 1);
         setGenerationStatus('');
-        const exercises = await getExerciseList(uid, 5);
+        const exercises = await getExerciseList(uid, 5, user.token);
         setExerciseList(exercises);
       } else {
         setGenerationStatus(errMsg || '生成失败，请重试');

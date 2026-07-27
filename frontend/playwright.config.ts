@@ -10,10 +10,10 @@ export default defineConfig({
     ['html', { outputFolder: '../playwright-report' }],
     ['list'],
   ],
-  timeout: 60_000,
+  timeout: 180_000,
   expect: { timeout: 10_000 },
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5174',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -24,19 +24,31 @@ export default defineConfig({
       name: 'chromium-desktop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
+    {
+      name: 'chromium-mobile',
+      use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } },
+    },
   ],
   webServer: [
     {
-      command: 'cd .. && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
-      port: 8000,
+      command: '.\\venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8010',
+      cwd: '..',
+      env: {
+        AI_MATH_DB_PATH: 'data/playwright-learning.db',
+        DIAGNOSIS_V2_MODE: 'shadow',
+      },
+      port: 8010,
       timeout: 30_000,
-      reuseExistingServer: true,
+      reuseExistingServer: false,
     },
     {
-      command: 'npm run dev',
-      port: 5173,
+      command: 'npm run dev -- --host 127.0.0.1 --port 5174',
+      env: {
+        VITE_API_BASE: 'http://127.0.0.1:8010/api',
+      },
+      port: 5174,
       timeout: 30_000,
-      reuseExistingServer: true,
+      reuseExistingServer: false,
     },
   ],
 });

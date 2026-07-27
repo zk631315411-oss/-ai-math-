@@ -13,6 +13,9 @@ interface Exercise {
   hint_level: number;
   is_answered: boolean;
   is_correct?: boolean;
+  student_answer?: string;
+  grading_feedback?: string;
+  grading_status?: string;
   error_analysis?: Record<string, string>;
 }
 
@@ -39,12 +42,37 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   comprehensive: '综合',
 };
 
-export default function ExercisePanel({ exercises, token: _token, userId, onClose, isGenerating, generationStatus }: Props) {
+function formatHintForMath(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.includes('$') || !trimmed.startsWith('\\')) return text;
+  return `$$\n${trimmed}\n$$`;
+}
+
+export default function ExercisePanel({ exercises, token, userId, onClose, isGenerating, generationStatus }: Props) {
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
+  const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>(() => Object.fromEntries(
+    exercises.filter((exercise) => exercise.student_answer).map((exercise) => [exercise.id, exercise.student_answer || '']),
+  ));
   const [submitting, setSubmitting] = useState<string | null>(null);
-  const [feedbacks, setFeedbacks] = useState<Record<string, { is_correct: boolean; grading_feedback: string; error_analysis?: Record<string, string> }>>({});
-  const [hintTexts, setHintTexts] = useState<Record<string, { text: string; level: number; exhausted: boolean }>>({});
+  const [feedbacks, setFeedbacks] = useState<Record<string, { is_correct: boolean; grading_feedback: string; grading_status?: string; error_analysis?: Record<string, string> }>>(() => Object.fromEntries(
+    exercises
+      .filter((exercise) => exercise.is_answered && exercise.grading_status !== 'not_submitted')
+      .map((exercise) => [exercise.id, {
+        is_correct: !!exercise.is_correct,
+        grading_feedback: exercise.grading_feedback || '',
+        grading_status: exercise.grading_status,
+        error_analysis: exercise.error_analysis,
+      }]),
+  ));
+  const [hintTexts, setHintTexts] = useState<Record<string, { text: string; level: number; exhausted: boolean }>>(() => Object.fromEntries(
+    exercises
+      .filter((exercise) => exercise.hint_level > 0)
+      .map((exercise) => {
+        const level = exercise.hint_level;
+        const hint = exercise.hints?.[Math.min(level, exercise.hints.length) - 1] || '';
+        return [exercise.id, { text: hint, level, exhausted: level >= 3 }];
+      }),
+  ));
   const [submittingStatus, setSubmittingStatus] = useState<string>('');
   const [exList, setExList] = useState(exercises);
 
@@ -91,11 +119,12 @@ export default function ExercisePanel({ exercises, token: _token, userId, onClos
   if (!ex) return null;
 
   const feedback = feedbacks[ex.id];
+  const gradingFailed = feedback?.grading_status === 'failed';
   const hintState = hintTexts[ex.id] || { text: ex.hints?.[0] || '', level: 0, exhausted: false };
 
   const requestHint = async () => {
     if (hintState.exhausted) return;
-    const data = await getExerciseHint(ex.id);
+    const data = await getExerciseHint(ex.id, token);
     setHintTexts((prev) => ({ ...prev, [ex.id]: data }));
   };
 
@@ -113,22 +142,34 @@ export default function ExercisePanel({ exercises, token: _token, userId, onClos
       });
     }, 1500);
 
-    const data = await submitExercise(ex.id, { student_answer: answer });
-    clearInterval(timer);
-    setSubmitting(null);
-    setSubmittingStatus('');
-    setFeedbacks((prev) => ({ ...prev, [ex.id]: data }));
+    try {
+      const data = await submitExercise(ex.id, { student_answer: answer }, token);
+      setFeedbacks((prev) => ({ ...prev, [ex.id]: data }));
 
-    // Poll for async error analysis if answer is wrong
-    if (!data.is_correct && !data.error_analysis) {
-      pollErrorAnalysis(ex.id);
+      // Poll only after a valid incorrect grade. Service failures are retryable.
+      if (data.grading_status !== 'failed' && !data.is_correct && !data.error_analysis) {
+        pollErrorAnalysis(ex.id);
+      }
+    } catch (error) {
+      setFeedbacks((prev) => ({
+        ...prev,
+        [ex.id]: {
+          is_correct: false,
+          grading_status: 'failed',
+          grading_feedback: error instanceof Error ? error.message : '批改服务暂时不可用，请重试',
+        },
+      }));
+    } finally {
+      clearInterval(timer);
+      setSubmitting(null);
+      setSubmittingStatus('');
     }
   };
 
   const pollErrorAnalysis = async (exerciseId: string) => {
     for (let i = 0; i < 15; i++) {
       await new Promise((r) => setTimeout(r, 2000));
-      const exercises = await getExerciseList(userId, 50);
+      const exercises = await getExerciseList(userId, 50, token);
       const found = exercises.find((e: Exercise) => e.id === exerciseId);
       if (found?.error_analysis) {
         setFeedbacks((prev) => ({
@@ -212,7 +253,7 @@ export default function ExercisePanel({ exercises, token: _token, userId, onClos
               {submitting === ex.id ? submittingStatus : '提交答案'}
             </button>
             <button
-              onClick={() => reportExerciseError(ex.id)}
+              onClick={() => reportExerciseError(ex.id, token)}
               className="px-3 py-2 text-xs text-slate-400 hover:text-red-500 transition-colors"
             >
               题目有误
@@ -222,15 +263,16 @@ export default function ExercisePanel({ exercises, token: _token, userId, onClos
           {/* Hint display */}
           {hintState.text && hintState.level > 0 && (
             <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg text-sm">
-              💡 提示：{hintState.text}
+              <div className="font-medium mb-1">💡 提示</div>
+              <MarkdownRenderer>{formatHintForMath(hintState.text)}</MarkdownRenderer>
             </div>
           )}
 
           {/* Feedback */}
           {feedback && (
-            <div className={`mt-4 p-4 rounded-lg border ${feedback.is_correct ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'}`}>
-              <p className={`font-bold ${feedback.is_correct ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                {feedback.is_correct ? '✅ 回答正确！' : '❌ 回答不正确'}
+            <div className={`mt-4 p-4 rounded-lg border ${gradingFailed ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800' : feedback.is_correct ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'}`}>
+              <p className={`font-bold ${gradingFailed ? 'text-amber-700 dark:text-amber-400' : feedback.is_correct ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                {gradingFailed ? '批改失败' : feedback.is_correct ? '✅ 回答正确！' : '❌ 回答不正确'}
               </p>
               <div className="text-sm mt-1 text-slate-600 dark:text-slate-400">
                 <MarkdownRenderer applyFormatMath={false}>{feedback.grading_feedback}</MarkdownRenderer>

@@ -1,6 +1,6 @@
 import { ApiError, ErrorType, fromNetworkError, fromResponse, timeoutError } from './error';
 
-const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
 
 const DEFAULT_TIMEOUT = 30_000;
 

@@ -26,6 +26,7 @@ data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+data/recovery-backups/
 
 # --- 截图裁剪缓存 ---
 data/screenshot_crops/*
@@ -35,6 +36,7 @@ data/screenshot_crops/*
 .tmp/
 playwright-report/
 debug_content.txt
+logs/
 *.lnk
 frontend/debug-*.png
 

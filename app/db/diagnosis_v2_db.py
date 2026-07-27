@@ -32,6 +32,8 @@ def save_exercise_attempt(
     grading_feedback: str,
     grader_version: str,
     grading_valid: bool = True,
+    user_id: str | None = None,
+    hint_level: int | None = None,
 ) -> str:
     attempt_id = _id()
     conn = get_conn()
@@ -48,7 +50,7 @@ def save_exercise_attempt(
             (
                 attempt_id,
                 exercise["id"],
-                exercise["user_id"],
+                user_id or exercise["user_id"],
                 exercise.get("sequence_id") or "",
                 exercise.get("topic") or "",
                 exercise.get("target_stage"),
@@ -57,10 +59,10 @@ def save_exercise_attempt(
                 student_answer,
                 exercise.get("answer") or "",
                 1 if is_correct else 0,
-                int(exercise.get("hint_level") or 0),
+                int((exercise.get("hint_level") if hint_level is None else hint_level) or 0),
                 grading_feedback or "",
                 grader_version or "",
-                "ready" if is_correct else "pending",
+                "ready" if is_correct or not grading_valid else "pending",
                 "valid" if grading_valid else "invalid",
             ),
         )

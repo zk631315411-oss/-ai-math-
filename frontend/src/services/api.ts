@@ -3,6 +3,8 @@ import { request, get, post, put, patch, del } from './request';
 
 // === 用户认证相关API ===
 
+const anonymousRequests = new Map<string, Promise<TokenResponse>>();
+
 export async function login(username: string, password: string): Promise<TokenResponse> {
   return post<TokenResponse>('/auth/login', { username, password });
 }
@@ -11,8 +13,18 @@ export async function register(username: string, password: string, deviceId: str
   return post<TokenResponse>('/auth/register', { username, password, device_id: deviceId });
 }
 
-export async function anonymousAccess(deviceId: string): Promise<TokenResponse> {
-  return post<TokenResponse>(`/auth/anonymous?device_id=${encodeURIComponent(deviceId)}`);
+export function anonymousAccess(deviceId: string): Promise<TokenResponse> {
+  const pending = anonymousRequests.get(deviceId);
+  if (pending) return pending;
+
+  const request = post<TokenResponse>(`/auth/anonymous?device_id=${encodeURIComponent(deviceId)}`);
+  const shared = request.finally(() => {
+    if (anonymousRequests.get(deviceId) === shared) {
+      anonymousRequests.delete(deviceId);
+    }
+  });
+  anonymousRequests.set(deviceId, shared);
+  return shared;
 }
 
 export async function getCurrentUser(token: string): Promise<UserProfile> {
@@ -277,8 +289,8 @@ export async function updateChatHistory(chatId: string, data: Record<string, any
 
 // === 练习API ===
 
-export async function getExercisesByPage(pageNumber: number, userId: string, textbookId: string): Promise<any[]> {
-  const data = await get<{ exercises?: any[] }>(`/exercise/by-page?page_number=${pageNumber}&user_id=${encodeURIComponent(userId)}&textbook_id=${encodeURIComponent(textbookId)}`);
+export async function getExercisesByPage(pageNumber: number, userId: string, textbookId: string, token: string): Promise<any[]> {
+  const data = await get<{ exercises?: any[] }>(`/exercise/by-page?page_number=${pageNumber}&user_id=${encodeURIComponent(userId)}&textbook_id=${encodeURIComponent(textbookId)}`, token);
   return data.exercises || [];
 }
 
@@ -293,25 +305,27 @@ export async function generateExercise(data: {
     url: '/exercise/generate',
     method: 'POST',
     body: data,
+    token: data.token,
     rawResponse: true,
   });
 }
 
-export async function getExerciseList(userId: string, limit: number): Promise<any[]> {
-  const data = await get<{ exercises?: any[] }>(`/exercise/list?user_id=${encodeURIComponent(userId)}&limit=${limit}`);
+export async function getExerciseList(userId: string, limit: number, token: string): Promise<any[]> {
+  const data = await get<{ exercises?: any[] }>(`/exercise/list?user_id=${encodeURIComponent(userId)}&limit=${limit}`, token);
   return data.exercises || [];
 }
 
-export async function getExerciseHint(exerciseId: string): Promise<any> {
-  return post(`/exercise/${exerciseId}/hint`);
+export async function getExerciseHint(exerciseId: string, token: string): Promise<{ text: string; level: number; exhausted: boolean }> {
+  const data = await post<{ hint: string; hint_level: number; exhausted: boolean }>(`/exercise/${exerciseId}/hint`, undefined, token);
+  return { text: data.hint, level: data.hint_level, exhausted: data.exhausted };
 }
 
-export async function submitExercise(exerciseId: string, data: { student_answer: string }): Promise<any> {
-  return post(`/exercise/${exerciseId}/submit`, data);
+export async function submitExercise(exerciseId: string, data: { student_answer: string }, token: string): Promise<any> {
+  return post(`/exercise/${exerciseId}/submit`, data, token);
 }
 
-export async function reportExerciseError(exerciseId: string): Promise<void> {
-  await post(`/exercise/${exerciseId}/report-error`);
+export async function reportExerciseError(exerciseId: string, token: string): Promise<void> {
+  await post(`/exercise/${exerciseId}/report-error`, undefined, token);
 }
 
 // === 反馈API ===
@@ -324,6 +338,11 @@ export async function submitFeedback(data: { content: string }): Promise<void> {
 
 export async function getKnowledgeGraph(token: string): Promise<any> {
   return get('/auth/knowledge-graph', token);
+}
+
+export async function getDiagnosticCards(token: string): Promise<any[]> {
+  const data = await get<{ cards?: any[] }>('/auth/diagnostic-cards?limit=20', token);
+  return data.cards || [];
 }
 
 // === 洞察API ===

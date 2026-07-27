@@ -9,8 +9,9 @@ POST  /api/exercise/{id}/report-error — 用户纠错
 
 import json
 import asyncio
+from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.services.qa.streaming_service import sse_format
@@ -19,8 +20,9 @@ from app.models.schemas import (
     ExerciseSubmitResponse, ExerciseHintResponse,
 )
 from app.db.exercise_bank_db import (
-    save_exercise, get_exercise, list_exercises, submit_answer,
-    record_result, update_hint_level, report_error,
+    attach_user_states, get_exercise, get_user_exercise_state,
+    increment_user_hint_level, list_user_exercises, report_user_exercise_error,
+    save_exercise, save_user_error_analysis, save_user_exercise_result,
 )
 from app.db.knowledge_stages_db import get_user_avg_stage
 from app.services.exercise_generator import (
@@ -30,14 +32,41 @@ from app.services.exercise_generator import (
 router = APIRouter(prefix="/api/exercise", tags=["exercise"])
 
 
+def _require_user_id(authorization: Optional[str]) -> str:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="未登录或 token 无效")
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="未登录或 token 无效")
+    try:
+        from app.auth.jwt_handler import decode_token
+
+        user_id = decode_token(parts[1]).get("user_id")
+    except Exception:
+        user_id = None
+    if not user_id:
+        raise HTTPException(status_code=401, detail="未登录或 token 无效")
+    return user_id
+
+
+def _validated_user_id(authorization: Optional[str], requested_user_id: str = "") -> str:
+    user_id = _require_user_id(authorization)
+    if requested_user_id and requested_user_id != user_id:
+        raise HTTPException(status_code=403, detail="不能访问其他用户的练习数据")
+    return user_id
+
+
 @router.post("/generate")
-async def generate_exercise(request: ExerciseGenerateRequest):
+async def generate_exercise(
+    request: ExerciseGenerateRequest,
+    authorization: Optional[str] = Header(None),
+):
     """LLM 流式出题：根据当前教材页上下文生成，验算通过才入库。"""
     from app.services.llm_service import llm_service
     from app.db.textbook_section_db import get_page_context
     from app.db.whitelist_db import get_whitelist
 
-    user_id = request.user_id
+    user_id = _validated_user_id(authorization, request.user_id)
 
     # 1. 获取页面上下文
     chapter_name = request.topic or ""
@@ -148,11 +177,17 @@ async def generate_exercise(request: ExerciseGenerateRequest):
 
 
 @router.get("/by-page")
-async def exercises_by_page(page_number: int, user_id: str, textbook_id: str = "高代上-丘维声"):
+async def exercises_by_page(
+    page_number: int,
+    user_id: str,
+    textbook_id: str = "高代上-丘维声",
+    authorization: Optional[str] = Header(None),
+):
     """按当前页取教材练习题（秒出，无 LLM）。"""
     from app.db.textbook_section_db import get_page_context
     from app.db.exercise_bank_db import list_by_sequence_id
 
+    authenticated_user_id = _validated_user_id(authorization, user_id)
     ctx = get_page_context(textbook_id, page_number)
     if textbook_id.startswith("高数"):
         return {"exercises": [], "chapter_name": ctx.get("chapter_name", "") if ctx and "error" not in ctx else ""}
@@ -174,31 +209,34 @@ async def exercises_by_page(page_number: int, user_id: str, textbook_id: str = "
         if not exercises:
             exercises = list_by_sequence_id(sequence_id.split("-S")[0], max_stage=5, limit=3)
 
-    return {"exercises": exercises, "chapter_name": ctx.get("chapter_name", "") if ctx else ""}
+    return {
+        "exercises": attach_user_states(exercises, authenticated_user_id),
+        "chapter_name": ctx.get("chapter_name", "") if ctx else "",
+    }
 
 
 @router.get("/list")
-async def list_user_exercises(user_id: str, topic: str = "", limit: int = 20):
-    return {"exercises": list_exercises(user_id, topic, limit)}
+async def list_user_exercise_history(
+    user_id: str,
+    topic: str = "",
+    limit: int = 20,
+    authorization: Optional[str] = Header(None),
+):
+    authenticated_user_id = _validated_user_id(authorization, user_id)
+    return {"exercises": list_user_exercises(authenticated_user_id, topic, limit)}
 
 
 @router.post("/{exercise_id}/submit")
 async def submit_exercise_answer(
-    exercise_id: str, request: ExerciseSubmitRequest, background_tasks: BackgroundTasks
+    exercise_id: str,
+    request: ExerciseSubmitRequest,
+    background_tasks: BackgroundTasks,
+    authorization: Optional[str] = Header(None),
 ):
+    user_id = _require_user_id(authorization)
     ex = get_exercise(exercise_id)
     if not ex:
         raise HTTPException(404, "Exercise not found")
-
-    # 原子 CAS 防重
-    affected = submit_answer(exercise_id, request.student_answer)
-    if affected == 0:
-        return ExerciseSubmitResponse(
-            is_correct=ex.get("is_correct") or False,
-            grading_feedback="该题已提交过答案",
-            already_submitted=True,
-            error_analysis=ex.get("error_analysis"),
-        )
 
     # 同步：LLM 批改
     from app.services.llm_service import llm_service
@@ -233,35 +271,50 @@ async def submit_exercise_answer(
         grading = json.loads(m.group())
         if not isinstance(grading.get("is_correct"), bool):
             raise ValueError("批改结果缺少布尔 is_correct")
-    except Exception:
+    except Exception as exc:
+        print(f"[exercise] grading failed for {exercise_id}: {exc}")
         grading_valid = False
         grading = {"is_correct": False, "grading_feedback": "批改异常，请重试"}
 
-    is_correct = grading.get("is_correct", False)
-    record_result(exercise_id, is_correct)
+    is_correct = grading.get("is_correct", False) if grading_valid else None
 
     from app.config import config
     from app.db.diagnosis_v2_db import save_exercise_attempt
 
+    state = get_user_exercise_state(user_id, exercise_id) or {}
+
     attempt_id = save_exercise_attempt(
         exercise=ex,
         student_answer=request.student_answer,
-        is_correct=is_correct,
+        is_correct=bool(is_correct),
         grading_feedback=grading.get("grading_feedback", ""),
         grader_version=config.PROFILE_LLM_MODEL,
         grading_valid=grading_valid,
+        user_id=user_id,
+        hint_level=int(state.get("hint_level") or 0),
+    )
+    grading_status = "completed" if grading_valid else "failed"
+    save_user_exercise_result(
+        user_id=user_id,
+        exercise_id=exercise_id,
+        student_answer=request.student_answer,
+        is_correct=is_correct,
+        grading_feedback=grading.get("grading_feedback", ""),
+        grading_status=grading_status,
+        attempt_id=attempt_id,
     )
 
     # 异步：错因分析（BackgroundTasks）
-    if not is_correct and grading_valid:
+    if is_correct is False and grading_valid:
         background_tasks.add_task(
             _async_error_analysis,
-            exercise_id, attempt_id, ex, request.student_answer, ex["user_id"],
+            exercise_id, attempt_id, ex, request.student_answer, user_id,
         )
 
     return ExerciseSubmitResponse(
-        is_correct=is_correct,
+        is_correct=bool(is_correct),
         grading_feedback=grading.get("grading_feedback", ""),
+        grading_status=grading_status,
     )
 
 
@@ -296,19 +349,23 @@ async def _async_error_analysis(
         weak_points=weak_points,
     )
     if result:
-        record_result(exercise_id, ex.get("is_correct") or False, result)
+        save_user_error_analysis(user_id, exercise_id, result)
     from app.db.diagnosis_v2_db import update_exercise_attempt_error
 
     update_exercise_attempt_error(attempt_id, result)
 
 
 @router.post("/{exercise_id}/hint")
-async def request_hint(exercise_id: str):
+async def request_hint(
+    exercise_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    user_id = _require_user_id(authorization)
     ex = get_exercise(exercise_id)
     if not ex:
         raise HTTPException(404, "Exercise not found")
 
-    new_level = update_hint_level(exercise_id)
+    new_level = increment_user_hint_level(user_id, exercise_id)
     hints = ex.get("hints", [])
     if new_level > 1 and new_level <= len(hints):
         hint_text = hints[new_level - 1]
@@ -325,9 +382,13 @@ async def request_hint(exercise_id: str):
 
 
 @router.post("/{exercise_id}/report-error")
-async def report_exercise_error(exercise_id: str):
+async def report_exercise_error(
+    exercise_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    user_id = _require_user_id(authorization)
     ex = get_exercise(exercise_id)
     if not ex:
         raise HTTPException(404, "Exercise not found")
-    report_error(exercise_id)
-    return {"status": "reported"}
+    created = report_user_exercise_error(user_id, exercise_id)
+    return {"status": "reported", "already_reported": not created}

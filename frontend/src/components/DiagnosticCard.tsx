@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface RuleCase {
   name: string;
   owner: string;
@@ -46,7 +44,6 @@ export function DiagnosticCard({
   evidenceCount,
   lastUpdated,
   sourceDisplay,
-  textbookName,
   evidenceSpan,
   ruleCases,
 }: DiagnosticCardProps) {

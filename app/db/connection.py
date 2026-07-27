@@ -359,6 +359,30 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_exercise_seq_stage ON exercise_bank(sequence_id, target_stage)
     """)
 
+    # Per-user mutable state. exercise_bank rows are immutable question templates.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS exercise_user_state (
+            user_id TEXT NOT NULL,
+            exercise_id TEXT NOT NULL,
+            hint_level INTEGER NOT NULL DEFAULT 0,
+            is_answered INTEGER NOT NULL DEFAULT 0,
+            student_answer TEXT,
+            is_correct INTEGER,
+            grading_feedback TEXT DEFAULT '',
+            grading_status TEXT NOT NULL DEFAULT 'not_submitted',
+            error_analysis TEXT DEFAULT '{}',
+            latest_attempt_id TEXT,
+            reported_error INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, exercise_id)
+        )
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_exercise_state_user_updated
+        ON exercise_user_state(user_id, updated_at)
+    """)
+
     # Phase 2: pending 更新队列
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS pending_stage_updates (

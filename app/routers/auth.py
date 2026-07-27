@@ -99,6 +99,16 @@ def anonymous_access(device_id: str):
     password_hash = get_password_hash("")
     success = save_user(user_id, username, password_hash, device_id)
     if not success:
+        # A repeated request may have created the same device account after
+        # the initial lookup. Return it instead of surfacing a transient 500.
+        existing = get_user_by_device_id(device_id)
+        if existing:
+            token = create_access_token({"user_id": existing["id"], "username": existing["username"]})
+            return TokenResponse(
+                access_token=token,
+                user_id=existing["id"],
+                username=existing["username"]
+            )
         raise HTTPException(status_code=500, detail="创建匿名账户失败")
 
     # 创建空画像
@@ -353,14 +363,18 @@ STAGE_LABELS = {0: "未接触", 1: "入门", 2: "理解", 3: "应用", 4: "分�
 
 @router.get("/diagnostic-cards")
 async def get_diagnostic_cards(
-    user_id: str = Query(...),
     limit: int = Query(default=20, le=50),
+    authorization: Optional[str] = Header(None),
 ):
     """获取用户的诊断卡片列表。
 
     从 knowledge_stages 取 stage ≤ 2 且有 evidence 的概念，
     按 last_updated 降序排列。附带教材出处信息。
     """
+    user_id = get_user_id_from_token(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="未登录或token无效")
+
     from app.db.connection import get_conn
     from app.db.textbook_section_db import parse_source_code
 

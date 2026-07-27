@@ -18,6 +18,8 @@ interface Props {
 }
 
 const LS_KEY = 'pdf_viewer_page_v2';
+const MOBILE_FIT_SCALE = 0.5;
+const VIEWER_HORIZONTAL_PADDING = 32;
 const PDF_LOADING_OPTIONS: DocumentProps['options'] = {
   disableRange: false,
   disableStream: true,
@@ -91,17 +93,18 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
   const [pdfError, setPdfError] = useState<string>('');
   const [pageImageError, setPageImageError] = useState<string>('');
   const [loadProgress, setLoadProgress] = useState<PdfLoadProgress | null>(null);
+  const zoomStorageKey = mobile ? 'pdf_zoom_mobile' : 'pdf_zoom';
   const [scale, _setScale] = useState<number>(() => {
-    const cached = localStorage.getItem('pdf_zoom');
-    return cached ? parseFloat(cached) : 0.4;
+    const cached = localStorage.getItem(zoomStorageKey);
+    return cached ? parseFloat(cached) : (mobile ? MOBILE_FIT_SCALE : 0.4);
   });
   const setScale = useCallback((v: number | ((prev: number) => number)) => {
     _setScale(prev => {
       const next = typeof v === 'function' ? v(prev) : v;
-      localStorage.setItem('pdf_zoom', String(next));
+      localStorage.setItem(zoomStorageKey, String(next));
       return next;
     });
-  }, []);
+  }, [zoomStorageKey]);
   const [pageInput, setPageInput] = useState<string>('');
   const prevTextbookId = useRef(textbookId);
   const [toolbarVisible, setToolbarVisible] = useState(true);
@@ -110,11 +113,38 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
   const [editingPage, setEditingPage] = useState(false);
   const [mobilePageInput, setMobilePageInput] = useState('');
   const [pageContainerHeight, setPageContainerHeight] = useState(0);
+  const [viewerContentWidth, setViewerContentWidth] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const localContainerRef = useRef<HTMLDivElement | null>(null);
   const pageImageConfig = PAGE_IMAGE_CONFIGS[textbookId];
   const pageImageUrl = pageImageConfig ? getPageImageUrl(pageImageConfig, currentPage) : '';
-  const pageImageWidth = pageImageConfig ? pageImageConfig.width * scale : 0;
-  const pageImageHeight = pageImageConfig ? pageImageConfig.height * scale : 0;
+  const mobilePageWidth = mobile && viewerContentWidth
+    ? Math.max(1, Math.round(viewerContentWidth * (scale / MOBILE_FIT_SCALE)))
+    : 0;
+  const pageImageWidth = pageImageConfig
+    ? (mobilePageWidth || pageImageConfig.width * scale)
+    : 0;
+  const pageImageHeight = pageImageConfig
+    ? pageImageWidth * (pageImageConfig.height / pageImageConfig.width)
+    : 0;
+  const pageWidthForAlignment = pageImageConfig ? pageImageWidth : mobilePageWidth;
+  const alignPageToStart = Boolean(
+    mobile && viewerContentWidth && pageWidthForAlignment > viewerContentWidth + 1
+  );
+
+  useEffect(() => {
+    if (!mobile) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      setViewerContentWidth(Math.max(0, el.clientWidth - VIEWER_HORIZONTAL_PADDING));
+    };
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mobile]);
 
   // Observe container height and forward to PageMarker
   useEffect(() => {
@@ -299,9 +329,10 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
       )}
 
       {/* PDF内容区域 */}
-      <div className="flex-1 overflow-auto bg-slate-200 dark:bg-slate-700 p-4 relative"
+      <div ref={scrollContainerRef} data-testid="pdf-scroll-container"
+        className="flex-1 overflow-auto bg-slate-200 dark:bg-slate-700 p-4 relative"
         onClick={mobile ? resetToolbarTimer : undefined}>
-        <div className="flex justify-center">
+        <div className={`flex ${alignPageToStart ? 'justify-start' : 'justify-center'}`}>
           <div className="relative inline-block" ref={setContainerRef}>
             {!pageImageConfig && (
               <Document
@@ -315,7 +346,8 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
               >
                 <Page
                   pageNumber={currentPage}
-                  scale={scale}
+                  width={mobile ? mobilePageWidth || undefined : undefined}
+                  scale={mobile ? undefined : scale}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                   className="shadow-lg"

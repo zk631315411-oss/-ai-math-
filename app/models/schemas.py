@@ -191,6 +191,7 @@ class ExerciseSubmitRequest(BaseModel):
 class ExerciseSubmitResponse(BaseModel):
     is_correct: bool
     grading_feedback: str
+    grading_status: str = "completed"
     already_submitted: bool = False
     error_analysis: Optional[dict] = None
 

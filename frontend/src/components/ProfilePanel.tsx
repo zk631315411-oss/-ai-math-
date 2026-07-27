@@ -5,17 +5,18 @@ import { WeakPointGraph } from './WeakPointGraph';
 import { KnowledgeGraph } from './KnowledgeGraph';
 import { BasicInfoEditor } from './BasicInfoEditor';
 import { DiagnosticCard } from './DiagnosticCard';
-import { getMathProfile, getKnowledgeStats, getDiagnosticHistory, updateMathProfile, getInsight, regenerateInsight, MathProfile } from '../services/api';
+import { getMathProfile, getKnowledgeStats, getDiagnosticHistory, updateMathProfile, getInsight, regenerateInsight, getDiagnosticCards, MathProfile } from '../services/api';
 
 interface ProfilePanelProps {
   token: string;
+  userId: string;
   username: string;
   onClose: () => void;
 }
 
 type Tab = 'radar' | 'trajectory' | 'weak' | 'graph' | 'insight' | 'diagnostic';
 
-export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onClose }) => {
+export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, userId, username, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('radar');
   const [mathProfile, setMathProfile] = useState<MathProfile | null>(null);
   const [knowledgeStats, setKnowledgeStats] = useState<any[]>([]);
@@ -116,12 +117,12 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
         </div>
 
         {/* Tab bar */}
-        <div className="flex border-b border-gray-100 px-6">
+        <div className="grid grid-cols-3 border-b border-gray-100 px-3">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-2 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === t.key
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -249,7 +250,7 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
                 )}
 
                 {activeTab === 'diagnostic' && (
-                  <DiagnosticCardsView userId={username} />
+                  <DiagnosticCardsView token={token} userId={userId} />
                 )}
               </div>
             </>
@@ -263,20 +264,17 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ token, username, onC
 export default ProfilePanel;
 
 /** 诊断卡片列表视图——从后端获取数据并渲染卡片列表 */
-function DiagnosticCardsView({ userId }: { userId: string }) {
+function DiagnosticCardsView({ token, userId }: { token: string; userId: string }) {
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`/api/auth/diagnostic-cards?user_id=${encodeURIComponent(userId)}&limit=20`, {
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(r => r.json())
-      .then(data => setCards(data.cards || []))
+    getDiagnosticCards(token)
+      .then(data => setCards(data))
       .catch(() => setCards([]))
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [token, userId]);
 
   if (loading) return <div className="p-4 text-gray-500">加载中...</div>;
   if (cards.length === 0) return <div className="p-4 text-gray-500">暂无诊断卡片</div>;

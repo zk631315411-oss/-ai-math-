@@ -310,7 +310,7 @@ export default function App() {
       )}
 
       {showProfileModal && user.token && (
-        <ProfilePanel token={user.token} username={user.username} onClose={() => setShowProfileModal(false)} />
+        <ProfilePanel token={user.token} userId={user.userId} username={user.username} onClose={() => setShowProfileModal(false)} />
       )}
 
       {exercise.showExercisePanel && (
