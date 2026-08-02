@@ -44,6 +44,19 @@ type CropBBoxPayload = {
   unit?: 'page_ratio';
 };
 
+export interface ChatTreeTurn {
+  turn_id: string;
+  created: boolean;
+  tree_id: string;
+  node_id: string;
+  parent_node_id: string | null;
+  fork_message_id: string | null;
+  title: string;
+  node_revision: number;
+  user_message: ChatTreeMessage;
+  assistant_message: ChatTreeMessage;
+}
+
 export async function fetchWithStage(
   userId: string,
   question: string,
@@ -62,7 +75,12 @@ export async function fetchWithStage(
   markerId?: string,
   cropBBox?: CropBBoxPayload | null,
   screenshotContextId?: string | null,
-): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null }> {
+  treeId?: string,
+  nodeId?: string,
+  forkMessageId?: string,
+  clientTurnId?: string,
+  onTreeTurnStarted?: (turn: ChatTreeTurn) => void,
+): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null; tree_turn?: ChatTreeTurn }> {
   const payload: any = {
     user_id: userId,
     question,
@@ -78,6 +96,10 @@ export async function fetchWithStage(
   if (markerId) payload.marker_id = markerId;
   if (cropBBox) payload.crop_bbox = cropBBox;
   if (screenshotContextId) payload.screenshot_context_id = screenshotContextId;
+  if (treeId) payload.tree_id = treeId;
+  if (nodeId) payload.node_id = nodeId;
+  if (forkMessageId) payload.fork_message_id = forkMessageId;
+  if (clientTurnId) payload.client_turn_id = clientTurnId;
 
   // SSE 流使用 rawResponse 模式，不自动解析响应
   const res = await request<Response>({
@@ -98,6 +120,7 @@ export async function fetchWithStage(
   let sources: any[] = [];
   let thinking = '';
   let screenshotContextIdResult: string | null = null;
+  let treeTurn: ChatTreeTurn | undefined;
   let currentEventType: string | null = null;
 
   while (true) {
@@ -140,8 +163,12 @@ export async function fetchWithStage(
           throw new Error(data.error);
         }
 
+        if (currentEventType === 'tree_turn_started' && data.turn_id) {
+          treeTurn = data as ChatTreeTurn;
+          onTreeTurnStarted?.(treeTurn);
+        }
         // stage事件
-        if (currentEventType === 'stage' && data.stage && data.text) {
+        else if (currentEventType === 'stage' && data.stage && data.text) {
           onStage(data.stage, data.text);
         }
         // thinking events are intentionally ignored in the user-facing UI.
@@ -170,12 +197,13 @@ export async function fetchWithStage(
           if (!fullContent && data.full_text) fullContent = data.full_text;
           if (data.sources) sources = data.sources;
           if (data.screenshot_context_id) screenshotContextIdResult = data.screenshot_context_id;
+          if (data.tree_turn) treeTurn = data.tree_turn as ChatTreeTurn;
         }
       }
     }
   }
 
-  return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult };
+  return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult, tree_turn: treeTurn };
 }
 
 function _getToolLabel(name: string): string {
@@ -285,6 +313,56 @@ export async function createChatHistory(data: {
 
 export async function updateChatHistory(chatId: string, data: Record<string, any>): Promise<void> {
   await patch(`/chat/history/${chatId}`, data);
+}
+
+// === 追问历史树 API ===
+export interface ChatTreeMessage {
+  id: string;
+  node_id: string;
+  sequence_no: number;
+  role: 'user' | 'assistant' | 'tool' | 'system_event';
+  content: string;
+  status: 'streaming' | 'completed' | 'interrupted' | 'failed';
+}
+export interface ChatTreeNode {
+  id: string;
+  tree_id: string;
+  parent_node_id: string | null;
+  fork_message_id: string | null;
+  title: string;
+  revision: number;
+  archived_at: string | null;
+  messages: ChatTreeMessage[];
+}
+export interface ChatTree {
+  id: string;
+  user_id: string;
+  root_chat_history_id: string | null;
+  last_active_node_id: string | null;
+  revision: number;
+  nodes: ChatTreeNode[];
+}
+export async function getChatTreeByHistory(historyId: string, userId: string, token?: string): Promise<ChatTree | null> {
+  const tree = await get<ChatTree | Record<string, never>>(`/chat/trees/by-history/${encodeURIComponent(historyId)}?user_id=${encodeURIComponent(userId)}`, token);
+  return 'id' in tree ? tree as ChatTree : null;
+}
+export async function ensureChatTreeByHistory(historyId: string, userId: string, token?: string): Promise<ChatTree> {
+  return post<ChatTree>(`/chat/trees/from-history/${encodeURIComponent(historyId)}`, { user_id: userId }, token);
+}
+export async function getChatNodeContext(nodeId: string, userId: string, token?: string): Promise<ChatTreeMessage[]> {
+  return get<ChatTreeMessage[]>(`/chat/nodes/${encodeURIComponent(nodeId)}/context?user_id=${encodeURIComponent(userId)}`, token);
+}
+export async function createChatTree(data: { user_id: string; root_chat_history_id?: string; question: string; answer?: string | null; title?: string }, token?: string): Promise<ChatTree> {
+  return post<ChatTree>('/chat/trees', data, token);
+}
+export async function createChatFork(nodeId: string, data: { user_id: string; fork_message_id: string; question: string; title?: string; expected_revision?: number }, token?: string): Promise<ChatTreeNode> {
+  return post<ChatTreeNode>(`/chat/nodes/${encodeURIComponent(nodeId)}/fork`, data, token);
+}
+export async function appendChatNodeMessage(nodeId: string, data: { user_id: string; role: 'user' | 'assistant' | 'tool' | 'system_event'; content: string; status?: 'streaming' | 'completed' | 'interrupted' | 'failed'; expected_revision?: number }, token?: string): Promise<ChatTreeMessage> {
+  return post<ChatTreeMessage>(`/chat/nodes/${encodeURIComponent(nodeId)}/messages`, data, token);
+}
+export async function activateChatNode(treeId: string, data: { user_id: string; node_id: string; expected_revision?: number }, token?: string): Promise<ChatTree> {
+  return patch<ChatTree>(`/chat/trees/${encodeURIComponent(treeId)}/active-node`, data, token);
 }
 
 // === 练习API ===

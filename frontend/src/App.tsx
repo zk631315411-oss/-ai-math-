@@ -228,6 +228,12 @@ export default function App() {
               thinkingStage={chat.thinkingStage}
               isThinking={chat.isThinking} thinkingExpanded={chat.thinkingExpanded}
               setThinkingExpanded={chat.setThinkingExpanded}
+              onForkMessage={chat.handleForkMessage}
+              branchAnchor={chat.branchAnchor}
+              onCancelFork={chat.cancelFork}
+              treeNodes={chat.treeNodes}
+              activeTreeNodeId={chat.activeTreeNodeId}
+              onSelectTreeNode={chat.selectTreeNode}
               onStartExercise={exercise.startExercise}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}
@@ -276,6 +282,9 @@ export default function App() {
               thinkingStage={chat.thinkingStage}
               isThinking={chat.isThinking} thinkingExpanded={chat.thinkingExpanded}
               setThinkingExpanded={chat.setThinkingExpanded}
+              onForkMessage={chat.handleForkMessage}
+              branchAnchor={chat.branchAnchor}
+              onCancelFork={chat.cancelFork}
               onStartExercise={exercise.startExercise}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}

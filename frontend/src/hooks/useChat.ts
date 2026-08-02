@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchWithStage, createChatHistory, updateChatHistory } from '../services/api';
+import {
+  fetchWithStage, createChatHistory, updateChatHistory,
+  getChatTreeByHistory, ensureChatTreeByHistory, getChatNodeContext,
+  createChatTree, activateChatNode,
+} from '../services/api';
 import type { Marker } from '../components/PageMarker';
 import type { Message, CropBBox, User } from '../types';
 
@@ -49,6 +53,10 @@ export function useChat({
   const [isThinking, setIsThinking] = useState<boolean>(false);
   const [thinkingExpanded, setThinkingExpanded] = useState<boolean>(true);
   const [pendingPageNumber, setPendingPageNumber] = useState<number | null>(null);
+  const [branchAnchor, setBranchAnchor] = useState<{ nodeId: string; messageId: string; title: string } | null>(null);
+  const [treeNodes, setTreeNodes] = useState<Array<{ id: string; parent_node_id: string | null; title: string; archived_at?: string | null }>>([]);
+  const [activeTreeNodeId, setActiveTreeNodeId] = useState<string | null>(null);
+  const treeStateRef = useRef<Record<string, { treeId: string; nodeId: string; revision: number }>>({});
 
   const [hasUnread, setHasUnread] = useState(false);
   const lastMsgCount = useRef(0);
@@ -67,7 +75,38 @@ export function useChat({
   }, [messages, isLoading]);
 
   // 从 marker 加载对话历史到聊天面板
-  const loadThreadToChat = (marker: Marker) => {
+  const loadThreadToChat = async (marker: Marker) => {
+    const uid = user.userId || user.deviceId;
+    try {
+      let tree = await getChatTreeByHistory(marker.id, uid, user.token || undefined);
+      if (!tree) {
+        tree = await ensureChatTreeByHistory(marker.id, uid, user.token || undefined);
+      }
+      if (tree) {
+        const node = tree.nodes.find(n => n.id === tree.last_active_node_id) || tree.nodes.find(n => !n.parent_node_id) || tree.nodes[0];
+        if (node) {
+          const context = await getChatNodeContext(node.id, uid, user.token || undefined);
+          setTreeNodes(tree.nodes.map(({ id, parent_node_id, title, archived_at }) => ({ id, parent_node_id, title, archived_at })));
+          setActiveTreeNodeId(node.id);
+          treeStateRef.current[marker.id] = { treeId: tree.id, nodeId: node.id, revision: node.revision };
+          setMessages(context.filter(m => (
+            m.role === 'user' || (m.role === 'assistant' && Boolean(m.content))
+          )).map((m, index) => ({
+            id: m.id,
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+            image: index === 0 && m.role === 'user' ? (marker.thumbnail || undefined) : undefined,
+            treeNodeId: node.id,
+            treeMessageId: m.id,
+            treeMessageStatus: m.status,
+          })));
+          setBranchAnchor(null);
+          return;
+        }
+      }
+    } catch {
+      // Legacy marker history remains the fallback while a tree is unavailable.
+    }
     const msgs: Message[] = [];
     const threadImage = marker.marker_type === 'screenshot' ? marker.thumbnail || undefined : undefined;
     msgs.push({ id: generateId(), role: 'user', content: marker.question, image: threadImage });
@@ -81,12 +120,54 @@ export function useChat({
       }
     });
     setMessages(msgs);
+    setTreeNodes([]);
+    setActiveTreeNodeId(null);
   };
+
+  const selectTreeNode = useCallback(async (nodeId: string) => {
+    const markerId = activeThreadId;
+    if (!markerId) return;
+    const uid = user.userId || user.deviceId;
+    try {
+      const tree = await getChatTreeByHistory(markerId, uid, user.token || undefined);
+      const node = tree?.nodes.find((candidate) => candidate.id === nodeId);
+      if (!tree || !node) return;
+      await activateChatNode(tree.id, { user_id: uid, node_id: nodeId }, user.token || undefined);
+      const context = await getChatNodeContext(nodeId, uid, user.token || undefined);
+      treeStateRef.current[markerId] = { treeId: tree.id, nodeId, revision: node.revision };
+      setTreeNodes(tree.nodes.map(({ id, parent_node_id, title, archived_at }) => ({ id, parent_node_id, title, archived_at })));
+      setActiveTreeNodeId(nodeId);
+      const marker = getMarkerById(markerId);
+      setMessages(context.filter((message) => (
+        message.role === 'user' || (message.role === 'assistant' && Boolean(message.content))
+      )).map((message, index) => ({
+        id: message.id,
+        role: message.role === 'assistant' ? 'assistant' : 'user',
+        content: message.content,
+        image: index === 0 && message.role === 'user' ? (marker?.thumbnail || undefined) : undefined,
+        treeNodeId: node.id,
+        treeMessageId: message.id,
+        treeMessageStatus: message.status,
+      })));
+      setBranchAnchor(null);
+    } catch {
+      setError('无法切换到该分支');
+    }
+  }, [activeThreadId, getMarkerById, user]);
+
+  const handleForkMessage = useCallback((message: Message) => {
+    if (message.treeNodeId && message.treeMessageId) {
+      setBranchAnchor({ nodeId: message.treeNodeId, messageId: message.treeMessageId, title: message.content.replace(/\s+/g, ' ').slice(0, 42) });
+    }
+  }, []);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
     setActiveThreadId(null);
     setActiveMarker(null);
+    setBranchAnchor(null);
+    setTreeNodes([]);
+    setActiveTreeNodeId(null);
   }, [setActiveThreadId, setActiveMarker]);
 
   const clearPendingImage = useCallback(() => {
@@ -127,7 +208,12 @@ export function useChat({
       ? activeThread.screenshot_context_id
       : null;
     let chatId: string | undefined;
+    let treeNodeId: string | undefined;
+    let treeState: { treeId: string; nodeId: string; revision: number } | undefined;
     let collectedAnswer = '';
+    let treeTurnStarted = false;
+    const requestedBranchAnchor = branchAnchor;
+    const clientTurnId = generateId();
 
     // 新线程：创建 marker
     if (isNewThread) {
@@ -161,10 +247,31 @@ export function useChat({
             crop_bbox: pendingCaptureRatio?.bbox || null, question: content,
             answer: null, thinking: null, follow_ups: [],
           });
+          try {
+            const tree = await createChatTree({ user_id: uid, root_chat_history_id: d.id, question: content, answer: null }, user.token || undefined);
+            const root = tree.nodes.find(n => !n.parent_node_id) || tree.nodes[0];
+            if (root) {
+              setTreeNodes(tree.nodes.map(({ id, parent_node_id, title, archived_at }) => ({ id, parent_node_id, title, archived_at })));
+              setActiveTreeNodeId(root.id);
+              treeStateRef.current[d.id] = { treeId: tree.id, nodeId: root.id, revision: root.revision };
+              const rootQuestion = root.messages.find(m => m.role === 'user');
+              if (rootQuestion) {
+                setMessages((prev) => prev.map((msg) => msg.id === userMessage.id ? { ...msg, treeNodeId: root.id, treeMessageId: rootQuestion.id } : msg));
+              }
+            }
+          } catch {
+            // The legacy marker flow must still work if tree storage is unavailable.
+          }
         }
       } catch {}
     } else {
       chatId = activeThreadId;
+    }
+
+    treeState = chatId ? treeStateRef.current[chatId] : undefined;
+    if (treeState) {
+      treeNodeId = requestedBranchAnchor?.nodeId || treeState.nodeId;
+      setBranchAnchor(null);
     }
 
     try {
@@ -194,8 +301,51 @@ export function useChat({
         chatId || activeThreadId || undefined,
         requestCropBBox,
         requestScreenshotContextId,
+        treeState?.treeId,
+        treeNodeId,
+        requestedBranchAnchor?.messageId,
+        treeState ? clientTurnId : undefined,
+        (turn) => {
+          treeTurnStarted = true;
+          treeNodeId = turn.node_id;
+          treeState = { treeId: turn.tree_id, nodeId: turn.node_id, revision: turn.node_revision };
+          if (chatId) treeStateRef.current[chatId] = treeState;
+          setActiveTreeNodeId(turn.node_id);
+          setTreeNodes((nodes) => nodes.some((node) => node.id === turn.node_id)
+            ? nodes
+            : [...nodes, {
+                id: turn.node_id,
+                parent_node_id: turn.parent_node_id,
+                title: turn.title,
+                archived_at: null,
+              }]);
+          setMessages((prev) => prev.map((msg) => {
+            if (msg.id === userMessage.id) {
+              return { ...msg, treeNodeId: turn.node_id, treeMessageId: turn.user_message.id };
+            }
+            if (msg.id === assistantMessageId) {
+              return { ...msg, treeNodeId: turn.node_id, treeMessageId: turn.assistant_message.id, treeMessageStatus: turn.assistant_message.status };
+            }
+            return msg;
+          }));
+        },
       );
-      setMessages((prev) => prev.map((msg) => msg.id === assistantMessageId ? { ...msg, content: answer.answer, sources: answer.sources || [] } : msg));
+      if (answer.tree_turn && chatId) {
+        treeState = {
+          treeId: answer.tree_turn.tree_id,
+          nodeId: answer.tree_turn.node_id,
+          revision: answer.tree_turn.node_revision,
+        };
+        treeStateRef.current[chatId] = treeState;
+      }
+      setMessages((prev) => prev.map((msg) => msg.id === assistantMessageId ? {
+        ...msg,
+        content: answer.answer,
+        sources: answer.sources || [],
+        treeNodeId: answer.tree_turn?.node_id || treeState?.nodeId,
+        treeMessageId: answer.tree_turn?.assistant_message.id || msg.treeMessageId,
+        treeMessageStatus: answer.tree_turn?.assistant_message.status || msg.treeMessageStatus,
+      } : msg));
 
       // 落库
       if (chatId) {
@@ -238,12 +388,17 @@ export function useChat({
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : '提问失败');
-      setMessages((prev) => prev.filter((msg) => msg.role !== 'assistant' || msg.content !== ''));
+      setMessages((prev) => prev.filter((msg) => {
+        if (msg.role === 'assistant' && msg.content === '') return false;
+        if (treeState && !treeTurnStarted && msg.id === userMessage.id) return false;
+        return true;
+      }));
     } finally {
       setIsLoading(false);
       setThinkingStage('');
       setPendingPageNumber(null);
       setPendingCaptureRatio(null);
+      setBranchAnchor(null);
       setTimeout(() => { setIsThinking(false); }, 200);
     }
   };
@@ -253,6 +408,8 @@ export function useChat({
     pendingImage, pendingCaptureRatio, pendingPageNumber,
     thinkingStage, isThinking, thinkingExpanded, setThinkingExpanded,
     hasUnread, setHasUnread,
+    branchAnchor, handleForkMessage, cancelFork: () => setBranchAnchor(null),
+    treeNodes, activeTreeNodeId, selectTreeNode,
     handleSendMessage, loadThreadToChat, clearMessages, clearPendingImage,
     handleCapture,
   };

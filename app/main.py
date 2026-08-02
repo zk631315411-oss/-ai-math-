@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import config
 from app.db import init_db
-from app.routers import chat, qa, auth, profile, exercise, feedback
+from app.routers import chat, chat_tree, qa, auth, profile, exercise, feedback
 from app.services.diagnostic_worker import diagnostic_worker_loop
 from app.services.pending_worker import pending_worker_loop
 
@@ -49,6 +49,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(chat.router)
+app.include_router(chat_tree.router)
 app.include_router(qa.router)
 app.include_router(auth.router)
 app.include_router(profile.router)

@@ -53,6 +53,12 @@ class QARequest(BaseModel):
     textbook_id: Optional[str] = "高代上-丘维声"  # 教材ID，默认上册
     page_number: Optional[int] = None  # PDF物理页码（用于获取章节上下文）
     history: Optional[List[dict]] = None  # 对话历史 [{"user": "...", "assistant": "..."}]
+    tree_id: Optional[str] = None
+    node_id: Optional[str] = None
+    fork_message_id: Optional[str] = None
+    referenced_node_ids: List[str] = Field(default_factory=list)
+    client_turn_id: Optional[str] = None
+    expected_node_revision: Optional[int] = Field(default=None, ge=0)
     crop_bbox: Optional[dict] = None  # 截图区域在 PDF 页面中的相对坐标
     screenshot_context_id: Optional[str] = None  # 已缓存的截图上下文 ID
 

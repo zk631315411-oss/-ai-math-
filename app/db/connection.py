@@ -550,5 +550,10 @@ def init_db():
     except Exception:
         pass
 
+    # Normalized conversation tree storage.  Kept separate from the legacy
+    # chat_history/follow_ups format so existing clients remain compatible.
+    from app.db.chat_tree_db import init_chat_tree_schema
+    init_chat_tree_schema(conn)
+
     conn.commit()
     conn.close()

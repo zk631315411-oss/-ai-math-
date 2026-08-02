@@ -30,6 +30,10 @@ class QATurnInput:
     crop_bbox: dict[str, Any] | None = None
     screenshot_context_id: str | None = None
     token: str | None = None
+    tree_id: str | None = None
+    node_id: str | None = None
+    fork_message_id: str | None = None
+    referenced_node_ids: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

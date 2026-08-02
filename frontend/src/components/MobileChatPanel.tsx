@@ -23,6 +23,9 @@ interface Props {
   markerBanner?: { id: string; page: number; question: string } | null;
   onCloseMarkerBanner?: () => void;
   onDeleteMarker?: (id: string) => void;
+  onForkMessage?: (message: Message) => void;
+  branchAnchor?: { title: string } | null;
+  onCancelFork?: () => void;
   onClose: () => void;
 }
 
@@ -31,7 +34,7 @@ function MobileChatPanelInner({
   pendingImage, onClearPendingImage,
   thinkingStage, isThinking, thinkingExpanded, setThinkingExpanded,
   onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker,
-  onClose,
+  onForkMessage, branchAnchor, onCancelFork, onClose,
 }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col animate-slide-up">
@@ -59,6 +62,9 @@ function MobileChatPanelInner({
           markerBanner={markerBanner}
           onCloseMarkerBanner={onCloseMarkerBanner}
           onDeleteMarker={onDeleteMarker}
+          onForkMessage={onForkMessage}
+          branchAnchor={branchAnchor}
+          onCancelFork={onCancelFork}
           compact
         />
       </div>

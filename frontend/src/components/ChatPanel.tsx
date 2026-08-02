@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
 import type { Message } from '../types';
+import CompactTreeRail, { type TreeRailNode } from './CompactTreeRail';
 
 interface Props {
   messages: Message[];
@@ -18,6 +19,12 @@ interface Props {
   markerBanner?: { id: string; page: number; question: string } | null;
   onCloseMarkerBanner?: () => void;
   onDeleteMarker?: (id: string) => void;
+  onForkMessage?: (message: Message) => void;
+  branchAnchor?: { title: string } | null;
+  onCancelFork?: () => void;
+  treeNodes?: TreeRailNode[];
+  activeTreeNodeId?: string | null;
+  onSelectTreeNode?: (nodeId: string) => void;
 }
 
 // 防止 KaTeX 长公式溢出：每个公式独立滚动，不强制整个气泡滚动
@@ -34,7 +41,7 @@ const katexOverflowCSS = `
   }
 `;
 
-function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker }: Props) {
+function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode }: Props) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -57,7 +64,7 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 transition-colors">
+    <div className="relative flex flex-col h-full bg-slate-50 dark:bg-slate-900 transition-colors">
       <style>{katexOverflowCSS}</style>
       {/* Header — hide in compact mode (AiBall has its own) */}
       {!compact && (
@@ -106,7 +113,7 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${treeNodes && treeNodes.length ? 'pr-14' : ''}`}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500">
             <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-3">
@@ -121,7 +128,8 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
 
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`chat-message max-w-[85%] rounded-2xl px-4 py-3 ${
+            <div className="flex flex-col items-start max-w-[85%]">
+            <div className={`chat-message w-full rounded-2xl px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm shadow-blue-200 dark:shadow-none rounded-br-md'
                 : 'bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-md'
@@ -163,6 +171,21 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
                 </div>
               )}
             </div>
+            {msg.role === 'assistant' && msg.content.trim() && msg.treeMessageStatus === 'completed' && msg.treeNodeId && msg.treeMessageId && onForkMessage && (
+              <button
+                type="button"
+                onClick={() => onForkMessage(msg)}
+                disabled={isLoading}
+                title="从这条回答创建独立分支"
+                aria-label="从这条回答创建独立分支"
+                className="mt-1.5 ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-slate-700 dark:hover:text-blue-400 transition-colors"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 3v12a3 3 0 0 0 3 3h9" /><path d="m15 14 3 4-3 4" /><path d="M6 9h6a3 3 0 0 0 3-3V3" /><path d="m12 6 3-3 3 3" />
+                </svg>
+              </button>
+            )}
+            </div>
           </div>
         ))}
 
@@ -187,6 +210,17 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {treeNodes && treeNodes.length > 0 && onSelectTreeNode && (
+        <CompactTreeRail nodes={treeNodes} activeNodeId={activeTreeNodeId} onSelect={onSelectTreeNode} disabled={isLoading} />
+      )}
+
+      {branchAnchor && (
+        <div className="flex items-center justify-between gap-3 border-t border-blue-200 bg-blue-50 px-4 py-2 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
+          <span className="truncate">正在从“{branchAnchor.title}”创建独立分支</span>
+          <button type="button" onClick={onCancelFork} className="shrink-0 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100">取消</button>
+        </div>
+      )}
 
       {/* Pending image preview */}
       {pendingImage && (

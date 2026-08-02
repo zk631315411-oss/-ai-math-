@@ -41,6 +41,9 @@ export interface Message {
   sources?: Source[];
   knowledge_points?: string[];
   thinking?: string; // AI 思考过程
+  treeNodeId?: string;
+  treeMessageId?: string;
+  treeMessageStatus?: 'streaming' | 'completed' | 'interrupted' | 'failed';
 }
 
 // === 截图裁剪框 ===
