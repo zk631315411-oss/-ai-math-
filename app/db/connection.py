@@ -485,6 +485,50 @@ def init_db():
     except Exception:
         pass
 
+    # Dialogue probability diagnosis V1.  This shadow state is deliberately
+    # separate from knowledge_stages so rollout cannot change teaching behavior.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS dialogue_knowledge_states (
+            user_id TEXT NOT NULL,
+            concept_id TEXT NOT NULL,
+            concept_name TEXT NOT NULL,
+            probabilities_json TEXT NOT NULL,
+            map_stage INTEGER NOT NULL,
+            expected_stage REAL NOT NULL,
+            confidence REAL NOT NULL,
+            evidence_count INTEGER NOT NULL DEFAULT 0,
+            last_evidence_id TEXT,
+            model_version TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, concept_id, model_version)
+        )
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_dialogue_state_user
+        ON dialogue_knowledge_states(user_id, updated_at)
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS dialogue_state_projection_log (
+            id TEXT PRIMARY KEY,
+            evidence_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            concept_id TEXT NOT NULL,
+            before_distribution TEXT NOT NULL,
+            likelihood TEXT NOT NULL,
+            after_distribution TEXT NOT NULL,
+            effective_weight REAL NOT NULL DEFAULT 0.0,
+            action TEXT NOT NULL,
+            model_version TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(evidence_id, model_version)
+        )
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_dialogue_projection_user
+        ON dialogue_state_projection_log(user_id, concept_id, created_at)
+    """)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS state_projection_log (
             id TEXT PRIMARY KEY,

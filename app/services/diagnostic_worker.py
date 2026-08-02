@@ -6,12 +6,15 @@ import asyncio
 
 from app.db.diagnosis_v2_db import list_pending_sources
 from app.services.diagnosis.projectors import close_ready_dimension_windows, project_pending_stage_evidence
+from app.services.diagnosis.dialogue_state import project_pending_dialogue_states
 from app.services.diagnosis.scorers import SCORER_VERSION
 from app.services.diagnosis.v2_service import process_exercise_attempt, process_qa_turn
 
 
 DIAGNOSTIC_BATCH_THRESHOLD = 5
 DIAGNOSTIC_CHECK_INTERVAL = 30
+DIALOGUE_STATE_BATCH_SIZE = 100
+DIALOGUE_STATE_MAX_BATCHES = 10
 
 # user_id 级别的诊断锁，防止事件触发与轮询并发处理同一用户
 _diagnosis_locks: dict[str, asyncio.Lock] = {}
@@ -77,7 +80,20 @@ async def run_diagnostic_batch(user_id: str | None = None) -> bool:
         results.append(await process_exercise_attempt(row))
     project_pending_stage_evidence()
     close_ready_dimension_windows()
-    return any(any(item.values()) for item in results)
+    dialogue_count = _drain_dialogue_state_backlog(user_id)
+    return any(any(item.values()) for item in results) or dialogue_count > 0
+
+
+def _drain_dialogue_state_backlog(user_id: str | None = None) -> int:
+    total = 0
+    for _ in range(DIALOGUE_STATE_MAX_BATCHES):
+        count = project_pending_dialogue_states(
+            DIALOGUE_STATE_BATCH_SIZE, user_id=user_id
+        )
+        total += count
+        if count < DIALOGUE_STATE_BATCH_SIZE:
+            break
+    return total
 
 
 def _merge_pending_rows(

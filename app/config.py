@@ -47,6 +47,12 @@ class Config:
     # 认知诊断 V2 发布档位：shadow（只记证据）/ stage_only / full
     DIAGNOSIS_V2_MODE: str = os.getenv("DIAGNOSIS_V2_MODE", "shadow").strip().lower()
 
+    # 对话概率状态 V1：仅 shadow 写入独立状态表，不影响现有画像。
+    DIALOGUE_STATE_MODE: str = os.getenv("DIALOGUE_STATE_MODE", "shadow").strip().lower()
+    DIALOGUE_STATE_MODEL_VERSION: str = os.getenv(
+        "DIALOGUE_STATE_MODEL_VERSION", "ordinal-bayes-v1"
+    ).strip()
+
 
     DB_PATH: str = os.getenv("AI_MATH_DB_PATH", str(DATA_DIR / "learning.db"))
 

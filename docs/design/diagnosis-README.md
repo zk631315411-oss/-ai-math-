@@ -6,7 +6,17 @@ V1 已归档，不再属于运行时诊断路径。它的模式是“聊天记�
 
 V2 是唯一允许生产画像更新的架构：QA 与练习分别评分，先写入证据账本，再由确定性投影器更新长期状态。旧导入路径保留薄兼容桥，但不得恢复 V1 的混合 Prompt 或直接写画像。
 
-当前发布档位为 `shadow`：V2 会保存运行记录和证据，但不会改 Stage 或15维画像。切换顺序固定为 `shadow -> stage_only -> full`：先人工抽查真实证据和 Stage 投影日志，再开启15维五事件聚合。
+当前发布档位为 `shadow`：V2 会保存运行记录和证据，但不会改 Stage 或15维画像。切换顺序固定为 `shadow -> stage_only -> full`：先通过自动化测试、重放和影子对比确认投影稳定，再开启15维五事件聚合。
+
+## 对话概率状态 V1
+
+对话概率状态是 V2 证据账本旁边的独立影子消费者，只处理已校验的 QA Stage 证据。它为每个“用户-知识点”维护 Stage 0-5 概率分布，写入 `dialogue_knowledge_states`，并在 `dialogue_state_projection_log` 中记录每次更新或弃权。它不读写 `knowledge_stages`，也不进入 QA Prompt、脚手架、画像 API 或前端。
+
+QA Stage 评分器在同一次模型调用中给出 `accepted|abstained`、语义原因和简短依据。模型结合服务端保存的当前分支最近三轮判断学生是否独立展示能力，包括同义改写、跨轮提示和复述 AI；程序不再通过关键词、文本长度或字符重合度模拟数学理解。`assistant_overlap` 只作为审计指标保存。supporting 证据由程序强制弃权，历史上缺少模型决策的证据记为 `abstained:legacy_missing_decision`。
+
+模型接受的证据才按确定性公式更新概率；`certain=1.0`、`probable=0.5`，脚手架等级只调整有效权重，帮助情况未知不会覆盖模型决定。非法结构记为 `rejected`。每条投影使用立即事务和“证据 + 模型版本”唯一约束；常驻 Worker 即使没有新评分来源也会分批清理积压。重放以用户为事务边界，异常时该用户的原状态完整回滚。
+
+通过 `DIALOGUE_STATE_MODE=off|shadow` 控制，默认 `shadow`。模型版本由 `DIALOGUE_STATE_MODEL_VERSION` 固定；在线更新与离线重放使用同一公式和版本，确保结果可复现。
 
 ## 定位
 
@@ -25,7 +35,7 @@ StageObservation -> Stage投影器 -> knowledge_stages
 DimensionObservation -> 同章节五事件窗口 -> math_profiles
 ```
 
-`answer` 是 AI 输出，只能作为帮助上下文，不能作为学生能力证据。QA 当前学生文本的帮助程度取同一 `chat_id` 的上一轮 `apprenticeship_level`。
+`answer` 是 AI 输出，只能作为帮助和独立性判断上下文，不能作为学生能力证据。新树对话优先使用 `context_snapshot.history` 中当前分支最近三轮；只有旧线性记录没有可用快照时，才按同一 chat/marker 回退上一轮记录。
 
 ## 分源评分
 
@@ -65,4 +75,5 @@ DimensionObservation -> 同章节五事件窗口 -> math_profiles
 - `scorers.py`：四个独立评分器及来源专属校验。
 - `v2_service.py`：评分编排与运行状态。
 - `projectors.py`：Stage 与 15 维确定性投影。
+- `dialogue_state.py`：对话 Stage 的六阶段概率影子状态与可重放投影。
 - `app/db/diagnosis_v2_db.py`：事件、运行、证据和审计存储。

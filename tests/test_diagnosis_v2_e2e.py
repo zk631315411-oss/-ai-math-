@@ -18,8 +18,12 @@ class DiagnosisV2SyntheticE2E(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.old_db = config.DB_PATH
         self.old_mode = config.DIAGNOSIS_V2_MODE
+        self.old_dialogue_mode = config.DIALOGUE_STATE_MODE
+        self.old_dialogue_version = config.DIALOGUE_STATE_MODEL_VERSION
         config.DB_PATH = os.path.join(self.temp_dir.name, "diagnosis-v2-e2e.db")
         config.DIAGNOSIS_V2_MODE = "full"
+        config.DIALOGUE_STATE_MODE = "shadow"
+        config.DIALOGUE_STATE_MODEL_VERSION = "ordinal-bayes-v1"
         from app.db.connection import init_db
 
         init_db()
@@ -27,6 +31,8 @@ class DiagnosisV2SyntheticE2E(unittest.TestCase):
     def tearDown(self):
         config.DB_PATH = self.old_db
         config.DIAGNOSIS_V2_MODE = self.old_mode
+        config.DIALOGUE_STATE_MODE = self.old_dialogue_mode
+        config.DIALOGUE_STATE_MODEL_VERSION = self.old_dialogue_version
         self.temp_dir.cleanup()
 
     def test_mixed_qa_and_exercise_events_update_long_term_profiles(self):
@@ -57,11 +63,19 @@ class DiagnosisV2SyntheticE2E(unittest.TestCase):
                 WHERE user_id='synthetic-user' AND concept_name='线性无关'
                 """
             ).fetchone()
+            dialogue_state = conn.execute(
+                """
+                SELECT map_stage, evidence_count, probabilities_json
+                FROM dialogue_knowledge_states
+                WHERE user_id='synthetic-user' AND concept_id='kg-linear-independent'
+                  AND model_version='ordinal-bayes-v1'
+                """
+            ).fetchone()
             profile = conn.execute(
                 "SELECT lr_technical, projection_version FROM math_profiles WHERE user_id='synthetic-user'"
             ).fetchone()
             runs = conn.execute(
-                "SELECT source_type, scorer_type, status FROM diagnosis_runs ORDER BY source_type, source_id, scorer_type"
+                "SELECT source_type, scorer_type, status, model_name FROM diagnosis_runs ORDER BY source_type, source_id, scorer_type"
             ).fetchall()
             evidence_count = conn.execute("SELECT COUNT(*) FROM diagnostic_evidence").fetchone()[0]
             source_count = conn.execute(
@@ -80,10 +94,14 @@ class DiagnosisV2SyntheticE2E(unittest.TestCase):
         self.assertEqual(stage["stage"], 4)
         self.assertGreaterEqual(stage["confidence"], 0.8)
         self.assertEqual(stage["projection_version"], "v2")
+        self.assertIsNotNone(dialogue_state)
+        self.assertEqual(dialogue_state["evidence_count"], 3)
+        self.assertAlmostEqual(sum(json.loads(dialogue_state["probabilities_json"])), 1.0, places=8)
         self.assertEqual(profile["lr_technical"], 1)
         self.assertEqual(profile["projection_version"], "v2")
         self.assertEqual(len(runs), 10)  # 5 events x independent Stage/dimension scorers
         self.assertTrue(all(row["status"] == "success" for row in runs))
+        self.assertTrue(all(row["model_name"] == config.PROFILE_LLM_MODEL for row in runs))
         self.assertEqual(evidence_count, 10)
         self.assertEqual(source_count, 5)
         self.assertEqual(window["event_count"], 5)
@@ -175,6 +193,9 @@ async def _fake_profile_llm(messages, **_):
                 "strength": strength,
                 "behavior": "proof",
                 "student_quote": student_text,
+                "dialogue_state_action": "accepted",
+                "dialogue_state_reason": "independent_evidence",
+                "dialogue_state_rationale": "学生独立完成了证明",
             }]
         }, ensure_ascii=False)
     if "只评价 QA 中学生原文" in prompt:

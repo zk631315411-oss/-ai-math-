@@ -14,6 +14,7 @@ from app.db.diagnosis_v2_db import (
 )
 from app.services.diagnosis.adapters import adapt_exercise_attempt, adapt_qa_turn, exercise_kg_context
 from app.services.diagnosis.projectors import close_ready_dimension_windows, project_pending_stage_evidence
+from app.services.diagnosis.dialogue_state import project_pending_dialogue_states
 from app.services.diagnosis.scorers import (
     PROMPT_VERSION,
     SCORER_VERSION,
@@ -95,3 +96,4 @@ async def _run_scorer(
 def _project_after_scoring() -> None:
     project_pending_stage_evidence()
     close_ready_dimension_windows()
+    project_pending_dialogue_states()

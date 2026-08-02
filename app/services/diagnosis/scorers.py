@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
 import json
 import re
 from dataclasses import asdict
@@ -20,7 +21,7 @@ from app.services.diagnosis.contracts import (
 
 
 SCORER_VERSION = "v2"
-PROMPT_VERSION = "v2.0"
+PROMPT_VERSION = "v2.1"
 DIMENSIONS = {"mt", "lr", "so", "mr", "ps"}
 FACETS = {"coverage", "radius", "technical"}
 BEHAVIORS = {
@@ -29,9 +30,6 @@ BEHAVIORS = {
 }
 ABSTRACTION_MARKERS = ("一般", "任意", "推广", "抽象", "结构", "本质", "n维", "对于所有", "归纳")
 REASONING_MARKERS = ("因为", "所以", "因此", "由", "可得", "故", "若", "则", "假设", "反证", "充分", "必要")
-STAGE_EXPLANATION_MARKERS = (
-    "因为", "所以", "因此", "这说明", "意味着", "对应", "等价", "条件", "若", "则", "充分", "必要",
-)
 REPRESENTATION_MARKERS = ("写成", "表示为", "转化为", "对应", "增广矩阵", "坐标", "图像", "几何", "语言描述")
 STRATEGY_MARKERS = ("先", "再", "设", "令", "转化", "构造", "分情况", "采用", "选择", "思路", "策略")
 TRANSFER_MARKERS = ("变式", "推广", "一般", "任意", "参数", "反例", "类似", "换成", "陌生", "跨", "建模")
@@ -89,6 +87,10 @@ async def score_qa_stage(event: QAEvidenceInput) -> tuple[list[StageObservation]
             concept_id=item["concept_id"], concept_type=item["concept_type"],
             projection_role=item["projection_role"],
             suppressed_reason=item["suppressed_reason"],
+            assistant_overlap=_assistant_overlap(_assistant_context(event), item["student_quote"]),
+            dialogue_state_action=item["dialogue_state_action"],
+            dialogue_state_reason=item["dialogue_state_reason"],
+            dialogue_state_rationale=item["dialogue_state_rationale"],
         )
         for item in data.get("observations", [])
     ]
@@ -193,6 +195,33 @@ def _parse_json(raw: str) -> dict[str, Any]:
     return value
 
 
+def _assistant_overlap(assistant_text: str, student_quote: str) -> float:
+    """Return a conservative lexical overlap ratio for obvious answer copying."""
+    assistant = "".join((assistant_text or "").split())
+    quote = "".join((student_quote or "").split())
+    if not assistant or not quote:
+        return 0.0
+    if quote in assistant:
+        return 1.0
+    if assistant in quote:
+        return min(1.0, len(assistant) / len(quote))
+    # Longest common contiguous span catches copied clauses without pretending
+    # to understand semantic equivalence.
+    match = difflib.SequenceMatcher(None, quote, assistant, autojunk=False).find_longest_match(
+        0, len(quote), 0, len(assistant)
+    )
+    return match.size / len(quote)
+
+
+def _assistant_context(event: QAEvidenceInput) -> str:
+    history_answers = [
+        item.get("assistant", "") for item in event.recent_history if item.get("assistant")
+    ]
+    if event.previous_ai_answer and event.previous_ai_answer not in history_answers:
+        history_answers.append(event.previous_ai_answer)
+    return "\n".join(history_answers)
+
+
 def _validate_qa_stage(value: dict[str, Any], event: QAEvidenceInput) -> dict[str, Any]:
     observations = _stage_items(
         value,
@@ -206,6 +235,7 @@ def _validate_qa_stage(value: dict[str, Any], event: QAEvidenceInput) -> dict[st
     for item in observations:
         behavior = item["behavior"]
         _validate_stage_behavior(item)
+        _validate_dialogue_state_decision(item)
         if item["observed_stage"] > caps.get(support, 5):
             raise ObservationValidationError("QA Stage 超过脚手架上限")
         if behavior in {"question_only", "self_report"} and item["strength"] != "hypothesis":
@@ -303,6 +333,9 @@ def _stage_items(
             "concept_type": node.node_type if node else "",
             "projection_role": "primary",
             "suppressed_reason": "",
+            "dialogue_state_action": item.get("dialogue_state_action"),
+            "dialogue_state_reason": item.get("dialogue_state_reason"),
+            "dialogue_state_rationale": item.get("dialogue_state_rationale"),
         })
     return _suppress_part_of_duplicates(
         result, student_text, list(kg_candidate_relations or [])
@@ -312,7 +345,6 @@ def _stage_items(
 def _validate_stage_behavior(item: dict[str, Any]) -> None:
     stage = item["observed_stage"]
     behavior = item["behavior"]
-    quote = item["student_quote"]
     behavior_cap = {
         "question_only": 0,
         "self_report": 1,
@@ -327,17 +359,27 @@ def _validate_stage_behavior(item: dict[str, Any]) -> None:
         raise ObservationValidationError("Stage 超过学生行为上限")
     if stage == 4 and behavior not in {"explanation", "proof", "counterexample", "transfer"}:
         raise ObservationValidationError("Stage 4 必须有概念解释、条件关系或证明")
-    if stage == 4 and not _contains_any(quote, STAGE_EXPLANATION_MARKERS):
-        raise ObservationValidationError("Stage 4 引文必须包含概念级解释或推理关系")
-    if stage == 5:
-        is_transfer = behavior in {"transfer", "counterexample"}
-        is_complete_explanation = (
-            behavior == "explanation"
-            and len(" ".join(quote.split())) >= 50
-            and sum(marker in quote for marker in REASONING_MARKERS) >= 2
-        )
-        if not (is_transfer or is_complete_explanation):
-            raise ObservationValidationError("Stage 5 必须有迁移、反例或完整讲解")
+
+
+def _validate_dialogue_state_decision(item: dict[str, Any]) -> None:
+    action = item.get("dialogue_state_action")
+    reason = item.get("dialogue_state_reason")
+    rationale = item.get("dialogue_state_rationale")
+    if action not in {"accepted", "abstained"}:
+        raise ObservationValidationError("dialogue_state_action 非法")
+    if reason not in {
+        "independent_evidence", "ai_dependent", "question_only",
+        "self_report", "insufficient_context",
+    }:
+        raise ObservationValidationError("dialogue_state_reason 非法")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise ObservationValidationError("dialogue_state_rationale 必须是非空字符串")
+    if action == "accepted" and reason != "independent_evidence":
+        raise ObservationValidationError("accepted 只能对应 independent_evidence")
+    if action == "abstained" and reason == "independent_evidence":
+        raise ObservationValidationError("abstained 不能对应 independent_evidence")
+    if action == "accepted" and item["strength"] == "hypothesis":
+        raise ObservationValidationError("accepted 与 hypothesis 结构矛盾")
 
 
 def _suppress_part_of_duplicates(
@@ -534,11 +576,12 @@ def _qa_stage_prompt(event: QAEvidenceInput) -> str:
         event.kg_candidate_nodes,
         event.kg_candidate_relations,
     )
-    return f"""评分 QA 中学生自己展示的概念掌握阶段。AI 回答只能判断学生可能接受过的帮助，禁止引用或评分 AI 文本。
+    return f"""评分 QA 中学生自己展示的概念掌握阶段。AI 回答只能用于判断帮助和证据独立性，禁止把 AI 文本本身当作学生能力证据。
 
 {kg_context}
 上一轮脚手架：{event.previous_apprenticeship_level or 'unknown'}
 上一轮AI回答（仅帮助上下文）：{event.previous_ai_answer[:1200]}
+当前分支最近三轮（仅用于判断任务、提示和语义依赖）：{json.dumps(event.recent_history, ensure_ascii=False)}
 学生当前原文：{event.student_text}
 行为提示：{json.dumps(event.behavior_hints, ensure_ascii=False)}
 
@@ -547,7 +590,9 @@ def _qa_stage_prompt(event: QAEvidenceInput) -> str:
 选择最小且不重复的概念集合，不限制概念数量。每个概念必须有各自直接证据；不能因为 A USES/GETS B 就推断学生掌握 B。
 若同一原文同时支持 A PART_OF B 两端，优先输出更具体的 A；不同原文展示不同行为时可分别输出。
 普通提问或自我报告只能 hypothesis。没有可评分表现时 observations 输出空数组。
-输出：{{"observations":[{{"concept_id":"KG节点ID","concept_name":"KG原名","observed_stage":0,"direction":"positive|negative","strength":"certain|probable|hypothesis","behavior":"question_only|self_report|definition_recall|solution_attempt|explanation|proof|counterexample|transfer","student_quote":"学生原文精确子串"}}]}}"""
+对每个观察同时判断学生是否独立展示能力：不能只看字符重合。即使换用同义表达，只要语义上是在复述 AI、沿用跨轮给出的关键推理或答案，也应 abstained/ai_dependent；即使字符重合较高，只要当前回答在任务语境中确实独立构造并展示了能力，也可 accepted/independent_evidence。纯提问、自我报告或上下文不足分别使用 question_only、self_report、insufficient_context。给出简短语义依据。
+accepted 必须对应 independent_evidence，且不能与 hypothesis 同时出现；其他情况使用 abstained。
+输出：{{"observations":[{{"concept_id":"KG节点ID","concept_name":"KG原名","observed_stage":0,"direction":"positive|negative","strength":"certain|probable|hypothesis","behavior":"question_only|self_report|definition_recall|solution_attempt|explanation|proof|counterexample|transfer","student_quote":"学生原文精确子串","dialogue_state_action":"accepted|abstained","dialogue_state_reason":"independent_evidence|ai_dependent|question_only|self_report|insufficient_context","dialogue_state_rationale":"简短语义依据"}}]}}"""
 
 
 def _qa_dimension_prompt(event: QAEvidenceInput) -> str:

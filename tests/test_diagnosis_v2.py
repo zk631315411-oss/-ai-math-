@@ -7,6 +7,7 @@ import json
 import tempfile
 import unittest
 import uuid
+from unittest.mock import patch
 
 from app.config import config
 from app.services.diagnosis.adapters import detect_qa_behavior_hints
@@ -25,7 +26,67 @@ from app.services.diagnosis.scorers import (
 )
 
 
+ACCEPTED_DIALOGUE_DECISION = {
+    "dialogue_state_action": "accepted",
+    "dialogue_state_reason": "independent_evidence",
+    "dialogue_state_rationale": "学生当前回答独立展示了该能力",
+}
+
+
 class ScorerRuleTests(unittest.TestCase):
+    def test_branch_history_uses_snapshot_last_three_and_excludes_references(self):
+        from app.services.diagnosis.adapters import adapt_qa_turn
+        from app.services.diagnosis.scorers import _qa_stage_prompt
+
+        history = [
+            {"user": "分支问题一", "assistant": "分支回答一"},
+            {"user": "分支问题二", "assistant": "分支回答二"},
+            {"user": "失败消息", "assistant": "不应出现", "status": "failed"},
+            {"user": "分支问题三", "assistant": "分支回答三"},
+            {"user": "分支问题四", "assistant": "分支回答四"},
+            {"user": "[用户显式引用的其他分支回答]", "assistant": "兄弟分支答案"},
+            {"role": "tool", "content": "工具消息"},
+        ]
+        row = {
+            "id": "branch-turn", "user_id": "u", "question": "当前回答",
+            "sequence_id": "", "textbook_id": "", "chat_id": "chat",
+            "context_snapshot": json.dumps({"history": history}, ensure_ascii=False),
+        }
+        with patch(
+            "app.services.diagnosis.adapters.get_previous_qa_turn"
+        ) as previous:
+            event = adapt_qa_turn(row)
+
+        previous.assert_not_called()
+        self.assertEqual(
+            [item["user"] for item in event.recent_history],
+            ["分支问题二", "分支问题三", "分支问题四"],
+        )
+        self.assertEqual(event.previous_ai_answer, "分支回答四")
+        prompt = _qa_stage_prompt(event)
+        self.assertNotIn("兄弟分支答案", prompt)
+        self.assertNotIn("分支问题一", prompt)
+
+    def test_empty_tree_history_does_not_fall_back_to_marker_lookup(self):
+        from app.services.diagnosis.adapters import adapt_qa_turn
+
+        row = {
+            "id": "first-tree-turn", "user_id": "u", "question": "当前回答",
+            "sequence_id": "", "textbook_id": "", "chat_id": "chat",
+            "context_snapshot": json.dumps({
+                "input_context": {"tree_id": "tree", "node_id": "node"},
+                "history": [],
+            }),
+        }
+        with patch(
+            "app.services.diagnosis.adapters.get_previous_qa_turn"
+        ) as previous:
+            event = adapt_qa_turn(row)
+
+        previous.assert_not_called()
+        self.assertEqual(event.recent_history, [])
+        self.assertEqual(event.previous_ai_answer, "")
+
     def test_kg_section_id_keeps_existing_v44_convention(self):
         from app.services.diagnosis.diagnosis_service import _v44_section_id
 
@@ -56,6 +117,7 @@ class ScorerRuleTests(unittest.TestCase):
                 "strength": "certain",
                 "behavior": "proof",
                 "student_quote": "线性无关",
+                **ACCEPTED_DIALOGUE_DECISION,
             }]
         }
         with self.assertRaises(ObservationValidationError):
@@ -81,11 +143,12 @@ class ScorerRuleTests(unittest.TestCase):
             "concept_name": "线性无关", "observed_stage": 4,
             "direction": "positive", "strength": "certain", "behavior": "proof",
             "student_quote": "由等式可得所有系数为零",
+            **ACCEPTED_DIALOGUE_DECISION,
         }]}
         with self.assertRaises(ObservationValidationError):
             _validate_qa_stage(value, event)
 
-    def test_solution_attempt_caps_at_stage_three_but_explanation_supports_four(self):
+    def test_stage_behavior_caps_do_not_use_keyword_markers(self):
         event = QAEvidenceInput(
             turn_id="turn-stage-boundary", user_id="u",
             student_text="由消元可得 x=2。因为初等行变换保持同解，所以解集不变。",
@@ -96,25 +159,50 @@ class ScorerRuleTests(unittest.TestCase):
             "concept_name": "同解方程组", "observed_stage": 4,
             "direction": "positive", "strength": "certain",
             "behavior": "solution_attempt", "student_quote": "由消元可得 x=2",
+            **ACCEPTED_DIALOGUE_DECISION,
         }]}
         with self.assertRaises(ObservationValidationError):
             _validate_qa_stage(solution_only, event)
 
-        mislabeled_explanation = {"observations": [{
+        marker_free_explanation = {"observations": [{
             **solution_only["observations"][0],
             "behavior": "explanation",
         }]}
-        with self.assertRaises(ObservationValidationError):
-            _validate_qa_stage(mislabeled_explanation, event)
+        result = _validate_qa_stage(marker_free_explanation, event)
+        self.assertEqual(result["observations"][0]["observed_stage"], 4)
 
         explanation = {"observations": [{
             "concept_name": "同解方程组", "observed_stage": 4,
             "direction": "positive", "strength": "certain",
             "behavior": "explanation",
             "student_quote": "因为初等行变换保持同解，所以解集不变",
+            **ACCEPTED_DIALOGUE_DECISION,
         }]}
         result = _validate_qa_stage(explanation, event)
         self.assertEqual(result["observations"][0]["observed_stage"], 4)
+
+        concise_stage_five = {"observations": [{
+            "concept_name": "同解方程组", "observed_stage": 5,
+            "direction": "positive", "strength": "certain",
+            "behavior": "explanation", "student_quote": "解集不变",
+            **ACCEPTED_DIALOGUE_DECISION,
+        }]}
+        result = _validate_qa_stage(concise_stage_five, event)
+        self.assertEqual(result["observations"][0]["observed_stage"], 5)
+
+        proof_stage_five = {"observations": [{
+            **concise_stage_five["observations"][0],
+            "behavior": "proof",
+        }]}
+        with self.assertRaises(ObservationValidationError):
+            _validate_qa_stage(proof_stage_five, event)
+
+        accepted_hypothesis = {"observations": [{
+            **explanation["observations"][0],
+            "strength": "hypothesis",
+        }]}
+        with self.assertRaises(ObservationValidationError):
+            _validate_qa_stage(accepted_hypothesis, event)
 
     def test_part_of_suppresses_only_overlapping_evidence(self):
         child = KGStageNode("solution", "线性方程组的解", "Concept")
@@ -135,11 +223,13 @@ class ScorerRuleTests(unittest.TestCase):
                 "concept_id": child.node_id, "concept_name": child.name,
                 "observed_stage": 4, "direction": "positive", "strength": "certain",
                 "behavior": "explanation", "student_quote": shared_quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
             {
                 "concept_id": parent.node_id, "concept_name": parent.name,
                 "observed_stage": 4, "direction": "positive", "strength": "certain",
                 "behavior": "explanation", "student_quote": shared_quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
         ]}
         result = _validate_qa_stage(shared, event)["observations"]
@@ -161,11 +251,13 @@ class ScorerRuleTests(unittest.TestCase):
                 "concept_id": child.node_id, "concept_name": child.name,
                 "observed_stage": 3, "direction": "positive", "strength": "certain",
                 "behavior": "solution_attempt", "student_quote": child_quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
             {
                 "concept_id": parent.node_id, "concept_name": parent.name,
                 "observed_stage": 4, "direction": "positive", "strength": "certain",
                 "behavior": "explanation", "student_quote": parent_quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
         ]}
         distinct_result = _validate_qa_stage(distinct, distinct_event)["observations"]
@@ -184,6 +276,7 @@ class ScorerRuleTests(unittest.TestCase):
             "concept_id": "wrong-id", "concept_name": node.name,
             "observed_stage": 4, "direction": "positive", "strength": "certain",
             "behavior": "explanation", "student_quote": quote,
+            **ACCEPTED_DIALOGUE_DECISION,
         }]}
         with self.assertRaises(ObservationValidationError):
             _validate_qa_stage(value, event)
@@ -207,11 +300,13 @@ class ScorerRuleTests(unittest.TestCase):
                 "concept_id": matrix.node_id, "concept_name": matrix.name,
                 "observed_stage": 4, "direction": "positive", "strength": "certain",
                 "behavior": "explanation", "student_quote": quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
             {
                 "concept_id": method.node_id, "concept_name": method.name,
                 "observed_stage": 4, "direction": "positive", "strength": "certain",
                 "behavior": "explanation", "student_quote": quote,
+                **ACCEPTED_DIALOGUE_DECISION,
             },
         ]}
         result = _validate_qa_stage(value, event)["observations"]

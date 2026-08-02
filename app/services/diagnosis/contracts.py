@@ -57,6 +57,7 @@ class QAEvidenceInput:
     behavior_hints: list[LearningBehavior] = field(default_factory=list)
     created_at: str | None = None
     context_snapshot: dict[str, Any] = field(default_factory=dict)
+    recent_history: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -99,6 +100,16 @@ class StageObservation:
     concept_type: str = ""
     projection_role: Literal["primary", "supporting"] = "primary"
     suppressed_reason: str = ""
+    assistant_overlap: float = 0.0
+    dialogue_state_action: Literal["accepted", "abstained"] | None = None
+    dialogue_state_reason: Literal[
+        "independent_evidence",
+        "ai_dependent",
+        "question_only",
+        "self_report",
+        "insufficient_context",
+    ] | None = None
+    dialogue_state_rationale: str = ""
 
 
 @dataclass(frozen=True)
