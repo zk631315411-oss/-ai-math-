@@ -137,7 +137,7 @@ test('exercise feedback and diagnostic cards use authenticated per-user APIs', a
   await page.getByRole('button', { name: '请求提示' }).click();
   await expect(page.getByText('先确定自由变量。', { exact: true })).toBeVisible();
 
-  await page.getByPlaceholder('输入你的答案（支持 LaTeX）...').fill('x_1=t+2');
+  await page.getByRole('textbox', { name: '输入你的答案…' }).fill('x_1=t+2');
   await page.getByRole('button', { name: '提交答案' }).click();
   await expect(page.getByText('批改失败', { exact: true })).toBeVisible();
   await expect(page.getByText('回答不正确', { exact: true })).toHaveCount(0);

@@ -221,6 +221,7 @@ export default function App() {
           </div>
           <div className="w-[420px] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden shrink-0 transition-colors">
             <ChatPanel
+              token={user.token || ''}
               messages={chat.messages}
               onSendMessage={chat.handleSendMessage}
               onClearMessages={chat.clearMessages} isLoading={chat.isLoading}
@@ -276,6 +277,7 @@ export default function App() {
           {/* 移动端临时全屏聊天面板 */}
           {showMobileChat && (
             <MobileChatPanel
+              token={user.token || ''}
               messages={chat.messages} onSendMessage={chat.handleSendMessage}
               onClearMessages={chat.clearMessages} isLoading={chat.isLoading}
               pendingImage={chat.pendingImage} onClearPendingImage={chat.clearPendingImage}
@@ -295,6 +297,7 @@ export default function App() {
 
           {selectedPdf && (
             <AiBall
+              token={user.token || ''}
               messages={chat.messages} onSendMessage={chat.handleSendMessage}
               onClearMessages={chat.clearMessages} isLoading={chat.isLoading}
               pendingImage={chat.pendingImage} onClearPendingImage={chat.clearPendingImage}

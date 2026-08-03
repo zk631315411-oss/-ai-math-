@@ -402,6 +402,24 @@ export async function submitExercise(exerciseId: string, data: { student_answer:
   return post(`/exercise/${exerciseId}/submit`, data, token);
 }
 
+export interface FormulaConversion {
+  latex: string;
+  display_mode: 'inline' | 'block';
+}
+
+export async function convertFormula(
+  description: string,
+  preferredDisplay: 'auto' | 'inline' | 'block',
+  token: string,
+): Promise<FormulaConversion> {
+  return post<FormulaConversion>(
+    '/formula/convert',
+    { description, preferred_display: preferredDisplay },
+    token,
+    { timeout: 8_000, maxRetries: 0 },
+  );
+}
+
 export async function reportExerciseError(exerciseId: string, token: string): Promise<void> {
   await post(`/exercise/${exerciseId}/report-error`, undefined, token);
 }

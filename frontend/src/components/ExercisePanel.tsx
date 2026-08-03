@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
-import LatexInput from './LatexInput';
-import MatrixEditor from './MatrixEditor';
+import FormulaComposer from './FormulaComposer';
 import { getExerciseHint, submitExercise, getExerciseList, reportExerciseError } from '../services/api';
 
 interface Exercise {
@@ -220,20 +219,12 @@ export default function ExercisePanel({ exercises, token, userId, onClose, isGen
 
           {/* Input area */}
           <div className="mb-4">
-            <LatexInput
+            <FormulaComposer
               value={studentAnswers[ex.id] || ''}
               onChange={(v) => setStudentAnswers((prev) => ({ ...prev, [ex.id]: v }))}
-              placeholder="输入你的答案（支持 LaTeX）..."
+              token={token}
+              placeholder="输入你的答案…"
             />
-            <p className="text-xs text-slate-400 mt-1">
-              输入矩阵也可以用矩阵编辑器：
-            </p>
-            <MatrixEditor onChange={(latex) => {
-              setStudentAnswers((prev) => ({
-                ...prev,
-                [ex.id]: (prev[ex.id] || '') + '\n' + latex,
-              }));
-            }} />
           </div>
 
           {/* Actions */}

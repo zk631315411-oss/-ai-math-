@@ -44,6 +44,29 @@ class Config:
     PROFILE_LLM_API_BASE: str = os.getenv("PROFILE_LLM_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     PROFILE_LLM_MODEL: str = os.getenv("PROFILE_LLM_MODEL", "qwen3.6-flash")
 
+    # Formula conversion providers, attempted in this fixed order: local,
+    # Cloudflare Workers AI, then the existing profile model.
+    FORMULA_LOCAL_API_BASE: str = os.getenv("FORMULA_LOCAL_API_BASE", "")
+    FORMULA_LOCAL_API_KEY: str = os.getenv("FORMULA_LOCAL_API_KEY", "local")
+    FORMULA_LOCAL_MODEL: str = os.getenv("FORMULA_LOCAL_MODEL", "")
+    FORMULA_CLOUDFLARE_ACCOUNT_ID: str = os.getenv("FORMULA_CLOUDFLARE_ACCOUNT_ID", "")
+    FORMULA_CLOUDFLARE_API_TOKEN: str = os.getenv("FORMULA_CLOUDFLARE_API_TOKEN", "")
+    FORMULA_CLOUDFLARE_MODEL: str = os.getenv(
+        "FORMULA_CLOUDFLARE_MODEL", "@cf/qwen/qwen3-30b-a3b-fp8"
+    )
+    FORMULA_EXISTING_API_BASE: str = (
+        os.getenv("FORMULA_EXISTING_API_BASE") or PROFILE_LLM_API_BASE
+    )
+    FORMULA_EXISTING_API_KEY: str = (
+        os.getenv("FORMULA_EXISTING_API_KEY") or PROFILE_LLM_API_KEY
+    )
+    FORMULA_EXISTING_MODEL: str = (
+        os.getenv("FORMULA_EXISTING_MODEL") or PROFILE_LLM_MODEL
+    )
+    FORMULA_CONVERSION_TIMEOUT_SECONDS: float = float(
+        os.getenv("FORMULA_CONVERSION_TIMEOUT_SECONDS", "8")
+    )
+
     # 认知诊断 V2 发布档位：shadow（只记证据）/ stage_only / full
     DIAGNOSIS_V2_MODE: str = os.getenv("DIAGNOSIS_V2_MODE", "shadow").strip().lower()
 

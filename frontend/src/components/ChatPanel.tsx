@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
+import FormulaComposer from './FormulaComposer';
 import type { Message } from '../types';
 import CompactTreeRail, { type TreeRailNode } from './CompactTreeRail';
 
@@ -25,6 +26,7 @@ interface Props {
   treeNodes?: TreeRailNode[];
   activeTreeNodeId?: string | null;
   onSelectTreeNode?: (nodeId: string) => void;
+  token?: string;
 }
 
 // 防止 KaTeX 长公式溢出：每个公式独立滚动，不强制整个气泡滚动
@@ -41,26 +43,20 @@ const katexOverflowCSS = `
   }
 `;
 
-function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode }: Props) {
+function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode, token = '' }: Props) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); };
 
   useEffect(() => { if (!isLoading) scrollToBottom(); }, [messages, isLoading]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if ((input.trim() || pendingImage) && !isLoading) {
       onSendMessage(input.trim() || '请解答这张图片中的题目', pendingImage || undefined);
       setInput('');
       onClearPendingImage?.();
     }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
 
   return (
@@ -138,11 +134,7 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
                 <img src={msg.image} alt="用户截图" className="mb-2 max-w-full rounded-lg" style={{ maxHeight: '200px' }} />
               )}
 
-              {msg.role === 'assistant' ? (
-                <MarkdownRenderer className="text-sm leading-relaxed markdown-body">{msg.content}</MarkdownRenderer>
-              ) : (
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</div>
-              )}
+              <MarkdownRenderer className="text-sm leading-relaxed markdown-body">{msg.content}</MarkdownRenderer>
 
               {msg.sources && msg.sources.length > 0 && (
                 <div className={`mt-3 pt-3 border-t ${msg.role === 'user' ? 'border-white/20' : 'border-slate-200 dark:border-slate-700'}`}>
@@ -239,12 +231,12 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
       )}
 
       {/* 输入区域：小屏输入框 1 行，发送按钮宽度自适应 */}
-      <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800">
+      <form onSubmit={(event) => { event.preventDefault(); handleSubmit(); }} className="p-3 sm:p-4 border-t border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-800">
         <div className="flex gap-2">
-          <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder="输入问题... (Enter 发送)"
-            className="flex-1 resize-none rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 sm:px-4 py-2 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition-colors"
-            rows={compact ? 1 : 2} disabled={isLoading} />
+          <div className="min-w-0 flex-1">
+            <FormulaComposer value={input} onChange={setInput} token={token}
+              placeholder="输入问题…" compact={compact} disabled={isLoading} onSubmit={handleSubmit} />
+          </div>
           <button type="submit" disabled={(!input.trim() && !pendingImage) || isLoading}
             className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shadow-blue-200 dark:shadow-none active:scale-95 whitespace-nowrap">
             发送

@@ -89,7 +89,7 @@ test('desktop creates a branch and restores its inherited path', async ({ page }
   await expect(fork).toBeVisible();
   await fork.click();
   await expect(page.getByText(/正在从.*创建独立分支/)).toBeVisible();
-  await page.getByPlaceholder('输入问题... (Enter 发送)').fill('零向量为什么会破坏线性无关？');
+  await page.getByRole('textbox', { name: '输入问题…' }).fill('零向量为什么会破坏线性无关？');
   await page.getByRole('button', { name: '发送' }).click();
 
   await expect(page.getByText('零向量会让表示不再唯一。')).toBeVisible();

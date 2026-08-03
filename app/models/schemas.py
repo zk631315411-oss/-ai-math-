@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Literal, Optional
 from datetime import datetime
 
 
@@ -206,3 +206,21 @@ class ExerciseHintResponse(BaseModel):
     hint: str
     hint_level: int
     exhausted: bool = False
+
+
+class FormulaConvertRequest(BaseModel):
+    description: str = Field(..., min_length=1, max_length=500)
+    preferred_display: Literal["auto", "inline", "block"] = "auto"
+
+    @field_validator("description")
+    @classmethod
+    def description_must_have_content(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("description cannot be blank")
+        return value
+
+
+class FormulaConvertResponse(BaseModel):
+    latex: str
+    display_mode: Literal["inline", "block"]

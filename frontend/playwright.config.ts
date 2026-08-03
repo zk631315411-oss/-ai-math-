@@ -31,7 +31,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: '.\\venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8010',
+      command: `${process.env.PLAYWRIGHT_PYTHON || '.\\venv\\Scripts\\python.exe'} -m uvicorn app.main:app --host 127.0.0.1 --port 8010`,
       cwd: '..',
       env: {
         AI_MATH_DB_PATH: 'data/playwright-learning.db',
@@ -48,7 +48,7 @@ export default defineConfig({
       },
       port: 5174,
       timeout: 30_000,
-      reuseExistingServer: false,
+      reuseExistingServer: !process.env.CI,
     },
   ],
 });
