@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 venv/
+.venv/
 .pytest_cache/
 
 # --- 密钥与配置 ---
@@ -58,3 +59,7 @@ frontend/public/*.pdf
 pipeline/.venv/
 pipeline/venv/
 pipeline/__pycache__/
+benchmark-results/
+benchmarks/formula/providers.local.json
+benchmarks/formula/candidates.server.json
+benchmarks/formula/reviews.jsonl

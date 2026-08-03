@@ -1,0 +1,23 @@
+[Unit]
+Description=AI Math local formula conversion model
+After=network.target
+
+[Service]
+Type=simple
+User=ai-math
+Group=ai-math
+EnvironmentFile=/etc/ai-math/formula-llama.env
+ExecStart=/opt/llama.cpp/bin/llama-server --host 127.0.0.1 --port 8080 --model ${FORMULA_GGUF_PATH} --alias formula-model --ctx-size ${FORMULA_CONTEXT_SIZE} --parallel 1 --threads ${FORMULA_THREADS} --no-webui
+Restart=on-failure
+RestartSec=3
+MemoryHigh=1100M
+MemoryMax=1300M
+OOMPolicy=stop
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ai-math
+
+[Install]
+WantedBy=multi-user.target

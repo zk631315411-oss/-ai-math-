@@ -1,0 +1,67 @@
+{
+  "server": {
+    "binary": "/opt/llama.cpp/bin/llama-server",
+    "host": "127.0.0.1",
+    "port": 8080,
+    "model_alias": "formula-model",
+    "ctx_size": 1024,
+    "threads": 2,
+    "api_key_env": "FORMULA_LOCAL_API_KEY"
+  },
+  "integration": {
+    "api_base_url": "http://127.0.0.1:8000/api",
+    "health_url": "http://127.0.0.1:8000/health",
+    "application_service": "ai-math.service",
+    "token_env": "FORMULA_BENCHMARK_TOKEN"
+  },
+  "candidates": [
+    {
+      "name": "qwen2.5-0.5b-instruct-q4_k_m",
+      "role": "primary",
+      "model_path": "/opt/ai-math/models/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "source_url": "REPLACE_WITH_VERIFIED_GGUF_SOURCE",
+      "revision": "REPLACE_WITH_SOURCE_REVISION",
+      "sha256": "REPLACE_WITH_SHA256",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "name": "qwen3-0.6b-q4_k_m",
+      "role": "primary",
+      "model_path": "/opt/ai-math/models/qwen3-0.6b-q4_k_m.gguf",
+      "source_url": "REPLACE_WITH_VERIFIED_GGUF_SOURCE",
+      "revision": "REPLACE_WITH_SOURCE_REVISION",
+      "sha256": "REPLACE_WITH_SHA256",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "name": "qwen3.5-0.8b-q4_k_m",
+      "role": "primary",
+      "model_path": "/opt/ai-math/models/qwen3.5-0.8b-q4_k_m.gguf",
+      "source_url": "REPLACE_WITH_VERIFIED_GGUF_SOURCE",
+      "revision": "REPLACE_WITH_SOURCE_REVISION",
+      "sha256": "REPLACE_WITH_SHA256",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "name": "qwen3.5-0.8b-q5_k_m",
+      "role": "quality_upgrade",
+      "run_if": "base_near_miss",
+      "base_candidate": "qwen3.5-0.8b-q4_k_m",
+      "model_path": "/opt/ai-math/models/qwen3.5-0.8b-q5_k_m.gguf",
+      "source_url": "REPLACE_WITH_VERIFIED_GGUF_SOURCE",
+      "revision": "REPLACE_WITH_SOURCE_REVISION",
+      "sha256": "REPLACE_WITH_SHA256",
+      "quantization": "Q5_K_M"
+    },
+    {
+      "name": "qwen2.5-math-1.5b-instruct-q4_k_m",
+      "role": "conditional",
+      "run_if": "all_primary_failed_and_mem_available_1400",
+      "model_path": "/opt/ai-math/models/qwen2.5-math-1.5b-instruct-q4_k_m.gguf",
+      "source_url": "REPLACE_WITH_VERIFIED_GGUF_SOURCE",
+      "revision": "REPLACE_WITH_SOURCE_REVISION",
+      "sha256": "REPLACE_WITH_SHA256",
+      "quantization": "Q4_K_M"
+    }
+  ]
+}
