@@ -56,6 +56,10 @@ def adapt_qa_turn(row: dict) -> QAEvidenceInput:
 
 def adapt_exercise_attempt(row: dict) -> ExerciseEvidenceInput:
     attempt = unpack_exercise_attempt(row)
+    verdict = attempt.get("verdict") or ("correct" if attempt.get("is_correct") else "incorrect")
+    concept_ids = attempt.get("concept_ids") or []
+    if not concept_ids and attempt.get("target_concept"):
+        concept_ids = [attempt["target_concept"]]
     return ExerciseEvidenceInput(
         attempt_id=attempt["id"],
         exercise_id=attempt["exercise_id"],
@@ -63,11 +67,14 @@ def adapt_exercise_attempt(row: dict) -> ExerciseEvidenceInput:
         sequence_id=attempt.get("sequence_id") or "",
         target_concept=attempt.get("target_concept") or "",
         target_stage=attempt.get("target_stage"),
+        diagnostic_goal=attempt.get("diagnostic_goal") or "application",
         difficulty=attempt.get("difficulty") or "",
         question=attempt.get("question") or "",
         student_answer=attempt.get("student_answer") or "",
         correct_answer=attempt.get("correct_answer") or "",
         is_correct=bool(attempt.get("is_correct")),
+        verdict=verdict if verdict in {"correct", "partial", "incorrect", "ungradable"} else "incorrect",
+        concept_ids=concept_ids,
         hint_level=int(attempt.get("hint_level") or 0),
         grading_feedback=attempt.get("grading_feedback") or "",
         error_analysis=attempt.get("error_analysis") or {},

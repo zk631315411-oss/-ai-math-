@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { getExercisesByPage, generateExercise, getExerciseList } from '../services/api';
 import type { User } from '../types';
+import type { TextbookId } from '../textbooks';
 
-export function useExercise(user: User, currentPage: number, textbookId: string) {
+export function useExercise(user: User, currentPage: number, textbookId: TextbookId) {
   const [showExercisePanel, setShowExercisePanel] = useState(false);
   const [exerciseList, setExerciseList] = useState<any[]>([]);
   const [generationStatus, setGenerationStatus] = useState('');
@@ -18,7 +19,7 @@ export function useExercise(user: User, currentPage: number, textbookId: string)
       setGenerationStatus('登录状态尚未就绪，请稍后重试');
       return;
     }
-    const exercises = await getExercisesByPage(currentPage, uid, textbookId || '高代上-丘维声', user.token);
+    const exercises = await getExercisesByPage(currentPage, uid, textbookId, user.token);
 
     if (exercises.length > 0) {
       setExerciseKey(k => k + 1);

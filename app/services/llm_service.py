@@ -48,6 +48,16 @@ class LLMService:
             )
             print(f"[OK] Profile Async LLM client initialized (model: {config.PROFILE_LLM_MODEL})")
 
+        # Practice workers run independently from profile diagnosis.  Keeping a
+        # separate async client prevents a background exercise call from
+        # changing the diagnosis model or blocking the QA event loop.
+        self.qa_async = None
+        if config.QA_LLM_API_KEY:
+            self.qa_async = AsyncOpenAI(
+                api_key=config.QA_LLM_API_KEY,
+                base_url=config.QA_LLM_API_BASE,
+            )
+
     def is_qa_available(self) -> bool:
         return self.qa_client is not None
 
@@ -194,6 +204,22 @@ class LLMService:
             kwargs["response_format"] = response_format
 
         response = await self.profile_async.chat.completions.create(**kwargs)
+        return response.choices[0].message.content or ""
+
+    async def chat_qa_async(self, messages: list, model: str = None, temperature: float = 0.2,
+                            response_format: dict = None) -> str:
+        """Async QA-model call for isolated practice planning/grading workers."""
+        if not self.qa_async:
+            raise RuntimeError("QA LLM 服务未初始化")
+        kwargs = {
+            "model": model or config.QA_LLM_MODEL,
+            "messages": messages,
+            "stream": False,
+            "temperature": temperature,
+        }
+        if response_format:
+            kwargs["response_format"] = response_format
+        response = await self.qa_async.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
 
 

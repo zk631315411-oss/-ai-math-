@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ChatPanel from './ChatPanel';
-import type { Message } from '../types';
+import type { Message, PracticeDraft } from '../types';
 
 interface Props {
   messages: Message[];
@@ -18,6 +18,11 @@ interface Props {
   onRead: () => void;
   token?: string;
   onGenerateAnimation?: (visualizationId: string) => Promise<void>;
+  onOpenPractice?: (draft: PracticeDraft) => void;
+  onRegeneratePractice?: (draft: PracticeDraft) => void;
+  onRequestPractice?: (turnId: string, nodeId?: string) => void;
+  autoPreparePractice?: boolean;
+  onAutoPreparePracticeChange?: (value: boolean) => void;
 }
 
 export default function AiBall({
@@ -25,6 +30,7 @@ export default function AiBall({
   pendingImage, onClearPendingImage,
   thinkingStage, thinkingContent: _thinkingContent, isThinking, thinkingExpanded, setThinkingExpanded,
   hasUnread, onRead, token, onGenerateAnimation,
+  onOpenPractice, onRegeneratePractice, onRequestPractice, autoPreparePractice, onAutoPreparePracticeChange,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -147,6 +153,11 @@ export default function AiBall({
                 isThinking={isThinking} thinkingExpanded={thinkingExpanded}
                 setThinkingExpanded={setThinkingExpanded}
                 onGenerateAnimation={onGenerateAnimation}
+                onOpenPractice={onOpenPractice}
+                onRegeneratePractice={onRegeneratePractice}
+                onRequestPractice={onRequestPractice}
+                autoPreparePractice={autoPreparePractice}
+                onAutoPreparePracticeChange={onAutoPreparePracticeChange}
                 compact
                 token={token}
               />

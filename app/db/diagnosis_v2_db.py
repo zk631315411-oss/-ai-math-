@@ -8,7 +8,7 @@ from dataclasses import asdict
 from typing import Any
 
 from app.db.connection import get_conn
-from app.services.diagnosis.contracts import DimensionObservation, StageObservation
+from app.services.diagnosis.contracts import DiagnosticSignal, DimensionObservation, StageObservation
 
 
 def _id() -> str:
@@ -115,7 +115,45 @@ def list_pending_sources(
             f"SELECT * FROM {table} WHERE {' AND '.join(where)} ORDER BY created_at ASC LIMIT ?",
             params,
         ).fetchall()
-        return [dict(row) for row in rows]
+        result = [dict(row) for row in rows]
+        if source_type == "exercise_attempt":
+            practice_where = [
+                "NOT EXISTS (SELECT 1 FROM diagnosis_runs r WHERE r.source_type=? AND r.source_id=p.id "
+                "AND r.scorer_type=? AND r.scorer_version=? AND (r.status IN ('success','rejected') OR r.attempts >= 3))",
+            ]
+            practice_params: list[Any] = [source_type, scorer_type, scorer_version]
+            if user_id:
+                practice_where.append("p.user_id=?")
+                practice_params.append(user_id)
+            practice_where.append("p.verdict <> 'ungradable'")
+            practice_params.append(limit)
+            practice_rows = conn.execute(
+                f"""SELECT p.id,p.user_id,p.item_id AS exercise_id,p.draft_id,
+                    i.sequence_id,i.diagnostic_goal,i.difficulty,i.question,i.answer_spec,
+                    i.concept_ids,p.student_answer,p.verdict,p.feedback,p.error_analysis,
+                    p.hint_level,p.created_at
+                    FROM practice_attempts p JOIN exercise_items i ON i.id=p.item_id
+                    WHERE {' AND '.join(practice_where)} ORDER BY p.created_at ASC LIMIT ?""",
+                practice_params,
+            ).fetchall()
+            for row in practice_rows:
+                item = dict(row)
+                answer_spec = _loads(item.get("answer_spec"), {})
+                concepts = _loads(item.get("concept_ids"), [])
+                item.update({
+                    "target_concept": concepts[0] if concepts else "",
+                    "concept_ids": concepts,
+                    "question": item.get("question") or "",
+                    "student_answer": item.get("student_answer") or "",
+                    "correct_answer": answer_spec.get("reference", "") if isinstance(answer_spec, dict) else "",
+                    "is_correct": item.get("verdict") == "correct",
+                    "grading_feedback": item.get("feedback") or "",
+                    "grading_status": "valid",
+                    "analysis_status": "ready",
+                    "error_analysis": _loads(item.get("error_analysis"), {}),
+                })
+                result.append(item)
+        return result
     finally:
         conn.close()
 
@@ -155,6 +193,7 @@ def unpack_exercise_attempt(row: dict) -> dict:
     result = dict(row)
     result["is_correct"] = bool(result.get("is_correct"))
     result["error_analysis"] = _loads(result.get("error_analysis"), {})
+    result["concept_ids"] = _loads(result.get("concept_ids"), [])
     return result
 
 
@@ -295,6 +334,35 @@ def save_observations(
                 row = conn.execute("SELECT id FROM diagnostic_evidence WHERE id=?", (evidence_id,)).fetchone()
                 if row:
                     ids.append(row["id"])
+        return ids
+    finally:
+        conn.close()
+
+
+def save_signals(signals: list[DiagnosticSignal]) -> list[str]:
+    ids: list[str] = []
+    conn = get_conn()
+    try:
+        with conn:
+            for signal in signals:
+                identity = "|".join((
+                    signal.source_type, signal.source_id, signal.signal_type,
+                    signal.student_quote, signal.scorer_version,
+                ))
+                signal_id = str(uuid.uuid5(uuid.NAMESPACE_URL, identity))
+                conn.execute(
+                    """INSERT OR IGNORE INTO diagnostic_signals
+                       (id,source_type,source_id,user_id,sequence_id,signal_type,concept_ids,
+                        student_quote,confidence,strength,rationale,scorer_version)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        signal_id, signal.source_type, signal.source_id, signal.user_id,
+                        signal.sequence_id, signal.signal_type,
+                        json.dumps(signal.concept_ids, ensure_ascii=False), signal.student_quote,
+                        signal.confidence, signal.strength, signal.rationale, signal.scorer_version,
+                    ),
+                )
+                ids.append(signal_id)
         return ids
     finally:
         conn.close()

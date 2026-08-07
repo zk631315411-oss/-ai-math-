@@ -258,7 +258,7 @@ def get_textbook_preference(user_id: str) -> Optional[dict]:
     conn.close()
     if row:
         return {
-            "textbook_id": row["last_textbook_id"] or "高代上-丘维声",
+            "textbook_id": row["last_textbook_id"] or "gaodai_shang",
             "page_number": row["last_page_number"] if row["last_page_number"] else 1
         }
     return None

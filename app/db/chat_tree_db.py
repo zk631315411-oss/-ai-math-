@@ -530,7 +530,14 @@ def set_active_node(tree_id: str, user_id: str, node_id: str, expected_revision:
             raise RevisionConflict(f"tree revision {tree['revision']} != {expected_revision}")
         conn.execute("UPDATE chat_trees SET last_active_node_id=?,revision=revision+1,updated_at=CURRENT_TIMESTAMP WHERE id=?", (node_id, tree_id))
         conn.commit()
-        return _tree_dict(conn, tree_id)
+        result = _tree_dict(conn, tree_id)
+        try:
+            from app.services.practice.repository import mark_stale_for_context
+            mark_stale_for_context(user_id=user_id, tree_id=tree_id, node_id=node_id, concept_ids=[])
+        except Exception:
+            # Branch navigation must remain available if practice storage is unavailable.
+            pass
+        return result
     except Exception:
         conn.rollback(); raise
     finally:

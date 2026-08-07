@@ -35,6 +35,15 @@ class Config:
     QA_LLM_API_KEY: str = os.getenv("QA_LLM_API_KEY", "")
     QA_LLM_API_BASE: str = os.getenv("QA_LLM_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     QA_LLM_MODEL: str = os.getenv("QA_LLM_MODEL", "qwen3.6-plus")
+    EXERCISE_AUTHOR_MODEL: str = os.getenv("EXERCISE_AUTHOR_MODEL", QA_LLM_MODEL)
+    EXERCISE_REVIEWER_MODEL: str = os.getenv("EXERCISE_REVIEWER_MODEL", QA_LLM_MODEL)
+    EXERCISE_GRADER_MODEL: str = os.getenv("EXERCISE_GRADER_MODEL", QA_LLM_MODEL)
+    EXERCISE_MAX_CONCURRENCY: int = int(os.getenv("EXERCISE_MAX_CONCURRENCY", "3"))
+    INTERVENTION_PLANNER_MODEL: str = os.getenv("INTERVENTION_PLANNER_MODEL", QA_LLM_MODEL)
+    INTERVENTION_MAX_CONCURRENCY: int = int(os.getenv("INTERVENTION_MAX_CONCURRENCY", "1"))
+    TEACHING_CONTROLLER_MODE: str = os.getenv(
+        "TEACHING_CONTROLLER_MODE", "shadow"
+    ).strip().lower()
 
     TOOL_MAX_MODEL_ROUNDS: int = max(1, int(os.getenv("TOOL_MAX_MODEL_ROUNDS", "5")))
     TOOL_MAX_TOTAL_CALLS: int = max(1, int(os.getenv("TOOL_MAX_TOTAL_CALLS", "8")))

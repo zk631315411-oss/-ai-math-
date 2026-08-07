@@ -1,0 +1,89 @@
+[
+  {
+    "source_locator": "page:117; section:习题3.5; item:6; markdown_line:6090",
+    "annotation_status": "draft_subject_review",
+    "kg_mapping_status": "pending_production_kg",
+    "primary_concept_name": "矩阵的秩",
+    "concept_names": ["矩阵的秩", "子矩阵", "非零子式"],
+    "target_stage": 4,
+    "stage_rationale": "要求学生独立组织证明，把子矩阵中的非零子式与原矩阵的秩定义连接起来。",
+    "literacy_tags": [
+      {"dimension": "lr", "facet": "technical", "role": "primary"},
+      {"dimension": "so", "facet": "technical", "role": "secondary"}
+    ],
+    "answer_spec": {
+      "reference": "设 B 是 A 的任意子矩阵，r=rank(B)。若 r=0，结论显然成立；若 r>0，则 B 中存在一个非零的 r 阶子式。这个子式同时也是 A 的一个 r 阶子式，因此 rank(A)≥r=rank(B)。故 A 的任意子矩阵的秩不超过 A 的秩。"
+    },
+    "hints": [
+      "回忆用非零子式刻画矩阵秩的定义。",
+      "若子矩阵 B 的秩为 r，B 中必然存在怎样的 r 阶子式？",
+      "B 的这个非零 r 阶子式也是 A 的子式，因此比较 rank(A) 与 r。"
+    ],
+    "rubric": [
+      {"criterion": "设定对象", "required": true, "description": "令 B 为 A 的任意子矩阵并记 r=rank(B)。"},
+      {"criterion": "调用秩的判据", "required": true, "description": "指出 B 存在非零 r 阶子式。"},
+      {"criterion": "建立包含关系", "required": true, "description": "说明该子式也是 A 的 r 阶子式。"},
+      {"criterion": "完成结论", "required": true, "description": "推出 rank(A)≥rank(B)，并覆盖 r=0 的情形。"}
+    ],
+    "solution_source": "system_supplemented_pending_subject_review",
+    "solution_review_status": "unreviewed"
+  },
+  {
+    "source_locator": "page:96; section:习题3.2; item:1; markdown_line:4917; subitem:1",
+    "annotation_status": "draft_subject_review",
+    "kg_mapping_status": "pending_production_kg",
+    "primary_concept_name": "线性无关",
+    "concept_names": ["线性无关", "线性组合", "平凡线性组合"],
+    "target_stage": 2,
+    "stage_rationale": "要求辨析线性无关定义中的全称条件，并识别平凡线性组合不能作为判定依据。",
+    "literacy_tags": [
+      {"dimension": "mt", "facet": "coverage", "role": "primary"},
+      {"dimension": "lr", "facet": "coverage", "role": "secondary"}
+    ],
+    "answer_spec": {
+      "reference": "说法不对。任意向量组都可以取 k1=...=ks=0，使线性组合等于零，所以题设条件没有区分作用。线性无关要求：当 k1α1+...+ksαs=0 时，系数只能全部为零。反例可取 α1=α2≠0；该向量组线性相关，但仍满足存在全为零的系数使线性组合为零。"
+    },
+    "hints": [
+      "全取零系数时，这个等式对哪些向量组成立？",
+      "比较“存在一组全零系数”和“所有使组合为零的系数都只能全零”。",
+      "尝试取两个相同的非零向量作为反例。"
+    ],
+    "rubric": [
+      {"criterion": "判断", "required": true, "description": "明确指出该说法错误。"},
+      {"criterion": "定义辨析", "required": true, "description": "说明全零系数组合对任意向量组都成立。"},
+      {"criterion": "正确条件", "required": true, "description": "准确陈述线性无关的系数唯一性条件。"},
+      {"criterion": "反例或等价说明", "required": false, "description": "给出线性相关向量组仍满足题设条件的例子。"}
+    ],
+    "solution_source": "system_supplemented_pending_subject_review",
+    "solution_review_status": "unreviewed"
+  },
+  {
+    "source_locator": "page:43; section:习题1-5; item:1; markdown_line:2640",
+    "annotation_status": "draft_subject_review",
+    "kg_mapping_status": "pending_production_kg",
+    "primary_concept_name": "极限运算法则的适用条件",
+    "concept_names": ["函数极限", "极限运算法则", "反例"],
+    "target_stage": 5,
+    "stage_rationale": "要求突破对极限运算法则逆命题的误用，并构造反例验证两个不存在的极限经组合后仍可存在。",
+    "literacy_tags": [
+      {"dimension": "mt", "facet": "radius", "role": "primary"},
+      {"dimension": "lr", "facet": "technical", "role": "secondary"}
+    ],
+    "answer_spec": {
+      "reference": "不一定。以 x→0 为例，令 f(x)=sin(1/x)，它没有极限。对和式取 g(x)=-sin(1/x)，则 g(x)也没有极限，但 f(x)+g(x)=0，极限为0；对差式取 g(x)=sin(1/x)，则 f(x)-g(x)=0，极限也为0。因此不能从 f、g 各自极限不存在推出它们的和或差的极限一定不存在。"
+    },
+    "hints": [
+      "需要否定的是“两个极限都不存在就必然导致和或差的极限不存在”。",
+      "选择一个在 x→0 时振荡且无极限的函数，例如 sin(1/x)。",
+      "让另一个函数与它互为相反数或与它相同，使和或差恒等于零。"
+    ],
+    "rubric": [
+      {"criterion": "结论", "required": true, "description": "明确回答不一定。"},
+      {"criterion": "个体极限", "required": true, "description": "说明构造的 f、g 各自极限均不存在。"},
+      {"criterion": "组合极限", "required": true, "description": "计算和式或差式并证明其极限存在。"},
+      {"criterion": "规则边界", "required": true, "description": "指出极限运算法则不能反向使用。"}
+    ],
+    "solution_source": "system_supplemented_pending_subject_review",
+    "solution_review_status": "unreviewed"
+  }
+]

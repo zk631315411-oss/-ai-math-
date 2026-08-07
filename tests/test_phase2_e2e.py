@@ -38,7 +38,7 @@ async def main():
                 "question": "什么是矩阵的秩？" if submode == "unclassified" else f"测试{submode}模式",
                 "teaching_mode": "socratic",
                 "socratic_submode": submode,
-                "textbook_id": "高代上-丘维声",
+                "textbook_id": "gaodai_shang",
                 "page_number": 30,
             }) as response:
                 assert response.status_code == 200, f"QA {submode} failed: {response.status_code}"
@@ -60,7 +60,7 @@ async def main():
             "question": "行列式和特征值有什么关系？",
             "teaching_mode": "socratic",
             "socratic_submode": "connected_review",
-            "textbook_id": "高代上-丘维声",
+            "textbook_id": "gaodai_shang",
             "page_number": 35,
         }) as response:
             stages = []

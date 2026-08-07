@@ -7,6 +7,7 @@ from typing import Iterable
 from urllib.parse import urlparse
 
 from app.config import config
+from app.textbooks import canonical_textbook_id
 
 
 CORE_LABELS = {"Concept", "Theorem", "Formula", "Method", "ProblemClass"}
@@ -331,6 +332,70 @@ def nodes_up_to_chapter(textbook_ids: list[str], chapter_num: int, limit: int = 
             limit=limit,
         )
         return [_node_map(row) for row in rows]
+
+
+def nodes_by_ids_in_scope(
+    textbook_id: str,
+    chapter_prefix: str,
+    node_ids: list[str],
+) -> list[dict]:
+    """Resolve exact KG IDs inside one canonical textbook chapter."""
+
+    canonical = canonical_textbook_id(textbook_id)
+    ids = list(dict.fromkeys(node_id for node_id in node_ids if node_id))
+    if not ids:
+        return []
+    expected_prefix = chapter_prefix or f"{canonical}:"
+    if not expected_prefix.startswith(f"{canonical}:"):
+        raise ValueError("chapter prefix is outside the requested textbook")
+    with _session() as session:
+        rows = session.run(
+            """
+            MATCH (n:KGNode)
+            WHERE n.node_id IN $node_ids
+              AND coalesce(n.section_node_id, n.source_code, '') STARTS WITH $scope_prefix
+              AND ($batch = '' OR n.import_batch = $batch)
+            RETURN DISTINCT n.node_id AS node_id, n.name AS name, n.type AS type,
+                   n.section_node_id AS section_node_id, n.source_code AS source_code
+            ORDER BY n.node_id
+            """,
+            node_ids=ids,
+            scope_prefix=expected_prefix,
+            batch=_import_batch(),
+        )
+        return [dict(row) for row in rows]
+
+
+def one_hop_relations_in_book(
+    textbook_id: str,
+    source_ids: list[str],
+    target_ids: list[str],
+) -> list[dict]:
+    """Return direct KG relations between two bounded node sets."""
+
+    canonical = canonical_textbook_id(textbook_id)
+    sources = list(dict.fromkeys(node_id for node_id in source_ids if node_id))
+    targets = list(dict.fromkeys(node_id for node_id in target_ids if node_id))
+    if not sources or not targets:
+        return []
+    with _session() as session:
+        rows = session.run(
+            """
+            MATCH (a:KGNode)-[r]-(b:KGNode)
+            WHERE a.node_id IN $source_ids AND b.node_id IN $target_ids
+              AND coalesce(a.section_node_id, a.source_code, '') STARTS WITH $book_prefix
+              AND coalesce(b.section_node_id, b.source_code, '') STARTS WITH $book_prefix
+              AND ($batch = '' OR (a.import_batch = $batch AND b.import_batch = $batch))
+            RETURN DISTINCT a.node_id AS source_node_id, type(r) AS rel_type,
+                   b.node_id AS target_node_id
+            ORDER BY source_node_id, rel_type, target_node_id
+            """,
+            source_ids=sources,
+            target_ids=targets,
+            book_prefix=f"{canonical}:",
+            batch=_import_batch(),
+        )
+        return [dict(row) for row in rows]
 
 
 def related_nodes(name: str, limit: int = 5) -> tuple[list[dict], list[dict]]:

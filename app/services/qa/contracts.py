@@ -34,6 +34,7 @@ class QATurnInput:
     node_id: str | None = None
     fork_message_id: str | None = None
     referenced_node_ids: list[str] = field(default_factory=list)
+    auto_prepare_practice: bool = True
     client_turn_id: str | None = None
 
 
@@ -85,7 +86,7 @@ class QAStreamEvent:
         "stage", "content", "thinking", "thinking_chunk",
         "done", "error", "heartbeat",
         "wait_for_input", "progress",
-        "tool_call", "tool_result", "visualization",
+        "tool_call", "tool_result", "visualization", "practice_draft",
     ]
     data: dict[str, Any] = field(default_factory=dict)
 
@@ -101,6 +102,7 @@ class QATurnRecord:
     question: str
     marker_id: str | None = None
     apprenticeship_level: str | None = None  # 脚手架层级（MODELING/COACHING/SCAFFOLDING/FADING）
+    applied_directive_id: str | None = None
     answer: str = ""
     textbook_id: str | None = None
     page_number: int | None = None

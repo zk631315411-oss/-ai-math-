@@ -1,3 +1,5 @@
+import type { TextbookId } from '../textbooks';
+
 // === 通用 API 响应类型 ===
 
 // 标准响应包装 —— 所有 API 返回统一格式
@@ -18,7 +20,7 @@ export interface PaginatedResponse<T> {
 // === 知识源引用 ===
 
 export interface Source {
-  textbook_id: string;
+  textbook_id: TextbookId;
   textbook_name: string;
   chapter: string;
   snippet: string;
@@ -72,6 +74,58 @@ export interface Message {
   treeMessageStatus?: 'streaming' | 'completed' | 'interrupted' | 'failed';
   visualizations?: MathVisualizationArtifact[];
   degraded?: boolean;
+  practiceDraft?: PracticeDraft;
+  qaTurnId?: string;
+  practiceOffered?: boolean;
+}
+
+export interface PracticeDraft {
+  id: string;
+  turn_id?: string;
+  node_id?: string;
+  textbook_id?: TextbookId;
+  sequence_id?: string;
+  concept_ids?: string[];
+  concept_names?: string[];
+  trigger_kind?: string;
+  intervention_goal?: string;
+  evidence_quote?: string;
+  selection_reason?: string;
+  status: 'queued' | 'running' | 'ready' | 'partial' | 'failed' | 'stale' | 'cancelled';
+  auto_prepared?: boolean;
+  version?: number;
+  error?: string | null;
+  items?: PracticeItem[];
+}
+
+export interface PracticeItem {
+  id: string;
+  question: string;
+  question_type: 'calculation' | 'concept' | 'proof';
+  diagnostic_goal: 'definition' | 'application' | 'proof' | 'counterexample' | 'transfer';
+  difficulty: string;
+  item_kind?: 'exercise_item' | 'worked_example' | string;
+  textbook_id?: TextbookId;
+  source_locator?: string;
+  sequence_id?: string;
+  concept_ids?: string[];
+  concept_names?: string[];
+  primary_concept_id?: string;
+  primary_concept_name?: string;
+  prerequisite_concept_ids?: string[];
+  prerequisite_concept_names?: string[];
+  kg_mapping_status?: string;
+  source_page?: number;
+  source_problem_no?: string;
+  source_subitem_no?: string | null;
+  stem_source?: string;
+  solution_source?: string;
+  solution_review_status?: string;
+  hints?: string[];
+  source?: string;
+  trust_status?: string;
+  branch_role?: string;
+  reason?: string;
 }
 
 // === 截图裁剪框 ===
@@ -133,7 +187,7 @@ export interface RegisterRequest {
 
 // 教材偏好更新请求
 export interface TextbookPreferenceRequest {
-  textbook_id: string;
+  textbook_id: TextbookId;
   page_number: number;
 }
 
@@ -158,7 +212,7 @@ export interface ChatHistoryCreateRequest {
 export interface ExerciseGenerateRequest {
   user_id: string;
   token?: string;
-  textbook_id?: string;
+  textbook_id?: TextbookId;
   page_number: number;
 }
 
@@ -177,7 +231,7 @@ export interface QASolveStreamRequest {
   chat_id?: string;
   history?: Array<{ user: string; assistant: string }>;
   token?: string;
-  textbook_id?: string;
+  textbook_id?: TextbookId;
   page_number?: number;
   marker_id?: string;
   crop_bbox?: CropBBox;

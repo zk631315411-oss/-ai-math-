@@ -223,6 +223,7 @@ async def solve_question_stream(request: QARequest, authorization: str | None = 
                 node_id=effective_node_id,
                 fork_message_id=request.fork_message_id,
                 referenced_node_ids=request.referenced_node_ids,
+                auto_prepare_practice=request.auto_prepare_practice,
                 client_turn_id=request.client_turn_id,
             )
             if not has_screenshot_context(visual_input):
@@ -242,6 +243,7 @@ async def solve_question_stream(request: QARequest, authorization: str | None = 
                     node_id=effective_node_id,
                     fork_message_id=request.fork_message_id,
                     referenced_node_ids=request.referenced_node_ids,
+                    auto_prepare_practice=request.auto_prepare_practice,
                     client_turn_id=request.client_turn_id,
                 )
                 visual_input = qa_input

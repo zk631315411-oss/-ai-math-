@@ -17,7 +17,7 @@
   python scripts/build_page_map.py
 
 验证：
-  python -c "from app.db.textbook_section_db import get_section_by_page; print(get_section_by_page('高代上-丘维声', 50))"
+  python -c "from app.db.textbook_section_db import get_section_by_page; print(get_section_by_page('gaodai_shang', 50))"
 """
 import io
 import re
@@ -40,7 +40,7 @@ from tqdm import tqdm
 # 上册配置
 # ============================================================
 VOLUME_1 = {
-    "textbook_id": "高代上-丘维声",
+    "textbook_id": "gaodai_shang",
     "pdf_path": "d:/ai math/高等代数创新教材 上 丘维声_outlined.pdf",
     "md_path": "d:/ai math/structured_高代上.md",
     # 书签页码区间映射：(章节号, 书签页, 结束页)
@@ -68,7 +68,7 @@ VOLUME_1 = {
 # 下册配置
 # ============================================================
 VOLUME_2 = {
-    "textbook_id": "高代下-丘维声",
+    "textbook_id": "gaodai_xia",
     "pdf_path": "d:/ai math/高等代数创新教材 下 丘维声_outlined.pdf",
     "md_path": "d:/ai math/structured_高代下.md",
     # 从PDF书签提取的节级页码
@@ -280,7 +280,7 @@ def verify_volume(textbook_id: str, version_prefix: str = "V1"):
 
     # 随机测试几个页码
     test_cases = {
-        "高代上-丘维声": [
+        "gaodai_shang": [
             (15, "V1-C01-S01", "第1章第1节"),
             (50, "V1-C01-S03", "第1章第3节"),
             (100, "V1-C02-S06", "第2章第6节"),
@@ -288,7 +288,7 @@ def verify_volume(textbook_id: str, version_prefix: str = "V1"):
             (300, "V1-C05-S05", "第5章第5节"),
             (388, "V1-C00-S00", "答案区"),
         ],
-        "高代下-丘维声": [
+        "gaodai_xia": [
             (15, "V1-C07-S01", "第7章第1节"),
             (100, "V1-C07-S09", "第7章第9节"),
             (200, "V1-C08-S01", "第8章第1节"),
@@ -328,14 +328,14 @@ if __name__ == "__main__":
 
     if args.volume == 1:
         build_page_map_for_volume(VOLUME_1, "V1")
-        verify_volume("高代上-丘维声", "V1")
+        verify_volume("gaodai_shang", "V1")
     elif args.volume == 2:
         build_page_map_for_volume(VOLUME_2, "V2")
-        verify_volume("高代下-丘维声", "V2")
+        verify_volume("gaodai_xia", "V2")
     else:
         # 入库两册
         build_page_map_for_volume(VOLUME_1, "V1")
-        verify_volume("高代上-丘维声", "V1")
+        verify_volume("gaodai_shang", "V1")
         print()
         build_page_map_for_volume(VOLUME_2, "V2")
-        verify_volume("高代下-丘维声", "V2")
+        verify_volume("gaodai_xia", "V2")

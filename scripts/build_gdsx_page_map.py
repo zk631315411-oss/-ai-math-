@@ -21,7 +21,7 @@ CN_NUM = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':
 NUM_CN = {v: k for k, v in CN_NUM.items()}
 
 VOLUME_1 = {
-    "textbook_id": "高数上-黄立宏",
+    "textbook_id": "gaoshu_shang",
     "pdf_path": "d:/ai-math/frontend/public/高等数学第二版上册黄立宏主编.pdf",
     "md_path": "D:/ai-math/比赛相关文件与文件夹/揭榜挂帅/教材库/高等数学/高等数学上册_structured.md",
     "total_pages": 284,
@@ -29,7 +29,7 @@ VOLUME_1 = {
 }
 
 VOLUME_2 = {
-    "textbook_id": "高数下-黄立宏",
+    "textbook_id": "gaoshu_xia",
     "pdf_path": "d:/ai-math/frontend/public/高等数学第二版下册黄立宏主编.pdf",
     "md_path": "D:/ai-math/比赛相关文件与文件夹/揭榜挂帅/教材库/高等数学/高等数学下册_structured.md",
     "total_pages": 274,

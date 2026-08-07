@@ -7,10 +7,18 @@ if __name__ != "__main__":
     pytest.skip("manual live diagnostic script", allow_module_level=True)
 
 import sys, os, json, asyncio, time, sqlite3
-os.chdir('/opt/ai-math')
-sys.path.insert(0, '/opt/ai-math')
+from pathlib import Path
 
-DB = '/opt/ai-math/data/learning.db'
+import pytest
+
+if os.getenv("RUN_CLOUD_TESTS", "").lower() not in {"1", "true", "yes"}:
+    pytest.skip("cloud diagnostic test; set RUN_CLOUD_TESTS=1 to run", allow_module_level=True)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+os.chdir(PROJECT_ROOT)
+sys.path.insert(0, str(PROJECT_ROOT))
+
+DB = os.getenv("AI_MATH_DB_PATH", str(PROJECT_ROOT / "data" / "learning.db"))
 
 def header(s):
     sep = '=' * 50

@@ -6,6 +6,7 @@ from dataclasses import asdict
 from functools import lru_cache
 import re
 
+from app.textbooks import TextbookId, canonical_textbook_id, section_node_id
 from app.services.diagnosis.contracts import (
     EvidenceSpan,
     KGContext,
@@ -31,7 +32,7 @@ def ground_text_turn(
     只读：不更新学生状态、不写诊断数据。
     """
 
-    textbook_id = textbook_id or "高代上-丘维声"
+    textbook_id = canonical_textbook_id(textbook_id or TextbookId.GAODAI_SHANG)
     if not page_number:
         return TurnGrounding(
             textbook_id=textbook_id,
@@ -58,7 +59,7 @@ def ground_text_turn(
     sequence_id = page_context.get("sequence_id") or DEFAULT_SEQUENCE_ID
     section_node_id = _section_node_id(textbook_id, sequence_id)
     current_lookup_page = int(page_context.get("section_lookup_page") or page_number or 0)
-    book_id = _v44_textbook_id(textbook_id)
+    book_id = textbook_id
     content = page_context.get("content") or ""
     current_node_rows = _safe_node_rows_for_section(section_node_id)
     question_match_rows = _safe_question_node_rows(book_id, question, section_node_id)
@@ -262,21 +263,12 @@ def _as_list(value) -> list[str]:
 
 
 def _section_node_id(textbook_id: str, sequence_id: str) -> str:
-    tid = _v44_textbook_id(textbook_id)
-    parts = (sequence_id or "").split("-")
-    chapter = next((part for part in parts if part.startswith("C")), "C00")
-    section = next((part for part in parts if part.startswith("S")), "S00")
-    return f"{tid}:{chapter}:{section}"
-
-
-def _v44_textbook_id(textbook_id: str) -> str:
-    value = textbook_id or ""
-    lowered = value.lower()
-    is_gaoshu = "高数" in value or "高等数学" in value or "gaoshu" in lowered
-    is_volume_2 = "下" in value or "xia" in lowered or "vol2" in lowered
-    if is_gaoshu:
-        return "gaoshu_xia" if is_volume_2 else "gaoshu_shang"
-    return "gaodai_xia" if is_volume_2 else "gaodai_shang"
+    return section_node_id(
+        textbook_id,
+        sequence_id,
+        default_chapter="C00",
+        default_section="S00",
+    )
 
 
 def _merge_node_refs(*groups: list[KGNodeRef], limit: int) -> list[KGNodeRef]:

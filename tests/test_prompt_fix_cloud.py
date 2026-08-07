@@ -4,8 +4,17 @@ if __name__ != "__main__":
     pytest.skip("manual cloud diagnostic script", allow_module_level=True)
 
 import sys, sqlite3, asyncio, time
-sys.path.insert(0, "/opt/ai-math")
-DB = "/opt/ai-math/data/learning.db"
+import os
+from pathlib import Path
+
+import pytest
+
+if os.getenv("RUN_CLOUD_TESTS", "").lower() not in {"1", "true", "yes"}:
+    pytest.skip("cloud diagnostic test; set RUN_CLOUD_TESTS=1 to run", allow_module_level=True)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+DB = os.getenv("AI_MATH_DB_PATH", str(PROJECT_ROOT / "data" / "learning.db"))
 
 conn = sqlite3.connect(DB)
 c = conn.cursor()

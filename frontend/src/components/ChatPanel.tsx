@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
 import FormulaComposer from './FormulaComposer';
-import type { Message } from '../types';
+import PracticeRecommendation from './PracticeRecommendation';
+import type { Message, PracticeDraft } from '../types';
 import CompactTreeRail, { type TreeRailNode } from './CompactTreeRail';
 import MathVisualization from './MathVisualization';
 
@@ -17,7 +18,11 @@ interface Props {
   thinkingExpanded?: boolean;
   setThinkingExpanded?: (v: boolean) => void;
   compact?: boolean;
-  onStartExercise?: () => void;
+  onOpenPractice?: (draft: PracticeDraft) => void;
+  onRegeneratePractice?: (draft: PracticeDraft) => void;
+  onRequestPractice?: (turnId: string, nodeId?: string) => void;
+  autoPreparePractice?: boolean;
+  onAutoPreparePracticeChange?: (value: boolean) => void;
   markerBanner?: { id: string; page: number; question: string } | null;
   onCloseMarkerBanner?: () => void;
   onDeleteMarker?: (id: string) => void;
@@ -29,6 +34,29 @@ interface Props {
   onSelectTreeNode?: (nodeId: string) => void;
   token?: string;
   onGenerateAnimation?: (visualizationId: string) => Promise<void>;
+}
+
+interface AutoPracticeToggleProps {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}
+
+function AutoPracticeToggle({ checked, onChange }: AutoPracticeToggleProps) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <span>自动准备练习</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label="自动准备针对性练习"
+        onClick={() => onChange(!checked)}
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}
+      >
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      </button>
+    </label>
+  );
 }
 
 // 防止 KaTeX 长公式溢出：每个公式独立滚动，不强制整个气泡滚动
@@ -45,7 +73,7 @@ const katexOverflowCSS = `
   }
 `;
 
-function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode, token = '', onGenerateAnimation }: Props) {
+function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onOpenPractice, onRegeneratePractice, onRequestPractice, autoPreparePractice = true, onAutoPreparePracticeChange, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode, token = '', onGenerateAnimation }: Props) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -71,17 +99,23 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
           <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-300" />
           <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">智能问答</h3>
         </div>
-        {onStartExercise && (
-          <button onClick={onStartExercise} className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            智能出题
-          </button>
-        )}
-        {messages.length > 0 && (
-          <button onClick={onClearMessages} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-            清除对话
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {onAutoPreparePracticeChange && (
+            <AutoPracticeToggle checked={autoPreparePractice} onChange={onAutoPreparePracticeChange} />
+          )}
+          {messages.length > 0 && (
+            <button onClick={onClearMessages} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              清除对话
+            </button>
+          )}
+        </div>
       </div>
+      )}
+
+      {compact && onAutoPreparePracticeChange && (
+        <div className="flex shrink-0 justify-end border-b border-slate-200/60 bg-white px-4 py-2 dark:border-slate-700/60 dark:bg-slate-800">
+          <AutoPracticeToggle checked={autoPreparePractice} onChange={onAutoPreparePracticeChange} />
+        </div>
       )}
 
       {/* Phase 2: 标记上下文横幅 */}
@@ -175,6 +209,23 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
             {msg.role === 'assistant' && msg.visualizations?.map((artifact) => (
               <MathVisualization key={artifact.id} artifact={artifact} onGenerateAnimation={onGenerateAnimation} />
             ))}
+            {msg.role === 'assistant' && msg.practiceDraft && onOpenPractice && (
+              <PracticeRecommendation
+                draft={msg.practiceDraft}
+                onStart={onOpenPractice}
+                onRegenerate={onRegeneratePractice}
+              />
+            )}
+            {msg.role === 'assistant' && msg.qaTurnId && !msg.practiceDraft && onRequestPractice && (
+              <button
+                type="button"
+                onClick={() => onRequestPractice(msg.qaTurnId!, msg.treeNodeId)}
+                disabled={isLoading}
+                className={`mt-2 ml-1 rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${msg.practiceOffered ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
+              >
+                {msg.practiceOffered ? '开始练习' : '针对性练习'}
+              </button>
+            )}
             {msg.role === 'assistant' && msg.content.trim() && msg.treeMessageStatus === 'completed' && msg.treeNodeId && msg.treeMessageId && onForkMessage && (
               <button
                 type="button"

@@ -7,7 +7,7 @@ import PDFViewer from './components/PDFViewer';
 import ProfilePanel from './components/ProfilePanel';
 import AuthModal from './components/AuthModal';
 import AiBall from './components/AiBall';
-import ExercisePanel from './components/ExercisePanel';
+import PracticePanel from './components/PracticePanel';
 import MobileChatPanel from './components/MobileChatPanel';
 import { type Marker } from './components/PageMarker';
 import MarkerPopover from './components/MarkerPopover';
@@ -15,7 +15,7 @@ import ToastErrorHandler from './components/ToastErrorHandler';
 import { useAuth } from './hooks/useAuth';
 import { useTextbookPreference, PRESET_PDFS } from './hooks/useTextbookPreference';
 import { useFeedback } from './hooks/useFeedback';
-import { useExercise } from './hooks/useExercise';
+import { usePractice } from './hooks/usePractice';
 import { useMarkers } from './hooks/useMarkers';
 import { useChat } from './hooks/useChat';
 import type { CropBBox } from './types';
@@ -53,14 +53,15 @@ export default function App() {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
 
-  const exercise = useExercise(user, currentPage, textbookId || '');
+  const practice = usePractice(user);
   const feedback = useFeedback();
 
   const markers = useMarkers(user, currentPage);
   const chat = useChat({
-    user, currentPage, textbookId: textbookId || '',
+    user, currentPage, textbookId,
     teachingMode, socraticSubmode,
     markersState: markers,
+    autoPreparePractice: practice.autoPrepare,
   });
 
   const handleMarkerClick = (marker: Marker) => {
@@ -209,7 +210,7 @@ export default function App() {
         {/* Desktop: PDF + Chat side by side */}
         {isDesktop && <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden transition-colors">
-            {selectedPdf ? (
+            {selectedPdf && textbookId ? (
               <PDFViewer pdfUrl={selectedPdf} textbookId={textbookId} onPageChange={setCurrentPage}
                 markers={markers.markers} pdfContainerRef={pdfContainerRef} onMarkerClick={handleMarkerClick} viewerPage={currentPage} />
             ) : (
@@ -241,7 +242,11 @@ export default function App() {
               activeTreeNodeId={chat.activeTreeNodeId}
               onSelectTreeNode={chat.selectTreeNode}
               onGenerateAnimation={chat.generateVisualizationAnimation}
-              onStartExercise={exercise.startExercise}
+              onOpenPractice={practice.openDraft}
+              onRegeneratePractice={practice.regenerate}
+              onRequestPractice={practice.requestFromTurn}
+              autoPreparePractice={practice.autoPrepare}
+              onAutoPreparePracticeChange={practice.setAuto}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}
               onDeleteMarker={markers.handleDeleteMarker}
@@ -252,7 +257,7 @@ export default function App() {
         {/* 移动端：PDF 全屏，AiBall 浮动球 + 临时聊天面板 */}
         {!isDesktop && <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden">
-            {selectedPdf ? (
+            {selectedPdf && textbookId ? (
               <PDFViewer pdfUrl={selectedPdf} textbookId={textbookId} onPageChange={setCurrentPage} mobile
                 markers={markers.markers} pdfContainerRef={pdfContainerRef} onMarkerClick={handleMarkerClick} viewerPage={currentPage} />
             ) : (
@@ -294,7 +299,11 @@ export default function App() {
               branchAnchor={chat.branchAnchor}
               onCancelFork={chat.cancelFork}
               onGenerateAnimation={chat.generateVisualizationAnimation}
-              onStartExercise={exercise.startExercise}
+              onOpenPractice={practice.openDraft}
+              onRegeneratePractice={practice.regenerate}
+              onRequestPractice={practice.requestFromTurn}
+              autoPreparePractice={practice.autoPrepare}
+              onAutoPreparePracticeChange={practice.setAuto}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}
               onDeleteMarker={markers.handleDeleteMarker}
@@ -314,6 +323,11 @@ export default function App() {
               hasUnread={chat.hasUnread}
               onRead={() => chat.setHasUnread(false)}
               onGenerateAnimation={chat.generateVisualizationAnimation}
+              onOpenPractice={practice.openDraft}
+              onRegeneratePractice={practice.regenerate}
+              onRequestPractice={practice.requestFromTurn}
+              autoPreparePractice={practice.autoPrepare}
+              onAutoPreparePracticeChange={practice.setAuto}
             />
           )}
         </div>}
@@ -333,15 +347,18 @@ export default function App() {
         <ProfilePanel token={user.token} userId={user.userId} username={user.username} onClose={() => setShowProfileModal(false)} />
       )}
 
-      {exercise.showExercisePanel && (
-        <ExercisePanel
-          key={exercise.exerciseKey}
-          exercises={exercise.exerciseList}
-          token={user.token || ''}
-          userId={user.userId || user.deviceId}
-          onClose={exercise.closeExercise}
-          isGenerating={!!exercise.generationStatus}
-          generationStatus={exercise.generationStatus}
+      {practice.showPanel && practice.draft && (
+        <PracticePanel
+          draft={practice.draft}
+          item={practice.item}
+          session={practice.session}
+          result={practice.result}
+          hint={practice.hint}
+          busy={practice.busy}
+          onStart={() => practice.start(practice.draft!)}
+          onSubmit={practice.submit}
+          onHint={practice.requestHint}
+          onClose={practice.close}
         />
       )}
 

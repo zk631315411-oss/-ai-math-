@@ -59,6 +59,10 @@ def ensure_qa_turn_records_table() -> None:
             conn.execute("ALTER TABLE qa_turn_records ADD COLUMN apprenticeship_level TEXT")
         except Exception:
             pass
+        try:
+            conn.execute("ALTER TABLE qa_turn_records ADD COLUMN applied_directive_id TEXT")
+        except Exception:
+            pass
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_qa_turn_records_marker
             ON qa_turn_records(marker_id)
@@ -132,12 +136,12 @@ def _save_qa_turn_record(record: QATurnRecord) -> bool:
         conn.execute(
             """
             INSERT OR REPLACE INTO qa_turn_records (
-                id, user_id, chat_id, marker_id, apprenticeship_level, input_type, question, answer,
+                id, user_id, chat_id, marker_id, apprenticeship_level, applied_directive_id, input_type, question, answer,
                 textbook_id, page_number, sequence_id, section_node_id, chapter_name,
                 sources, context_snapshot, messages_snapshot, model_name, prompt_preview,
                 image_hash, crop_bbox, screenshot_context_id, latency_ms, error, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.turn_id,
@@ -145,6 +149,7 @@ def _save_qa_turn_record(record: QATurnRecord) -> bool:
                 record.chat_id,
                 record.marker_id,
                 record.apprenticeship_level,
+                record.applied_directive_id,
                 record.input_type,
                 record.question,
                 record.answer,

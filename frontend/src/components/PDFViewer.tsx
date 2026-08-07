@@ -5,10 +5,12 @@ import { Document, Page, pdfjs, type DocumentProps } from 'react-pdf';
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 import PageMarker, { type Marker } from './PageMarker';
+import { TEXTBOOKS } from '../textbooks';
+import type { TextbookId } from '../textbooks';
 
 interface Props {
   pdfUrl: string;
-  textbookId: string;
+  textbookId: TextbookId;
   onPageChange?: (page: number) => void;
   mobile?: boolean;
   markers?: Marker[];
@@ -39,20 +41,9 @@ type PageImageConfig = {
   height: number;
 };
 
-const PAGE_IMAGE_CONFIGS: Record<string, PageImageConfig> = {
-  '高数上-黄立宏': {
-    basePath: '/textbook-pages/gaoshu-shang',
-    pageCount: 284,
-    width: 992,
-    height: 1402,
-  },
-  '高数下-黄立宏': {
-    basePath: '/textbook-pages/gaoshu-xia',
-    pageCount: 274,
-    width: 992,
-    height: 1402,
-  },
-};
+const PAGE_IMAGE_CONFIGS: Record<string, PageImageConfig> = Object.fromEntries(
+  TEXTBOOKS.filter((item) => item.pageImage).map((item) => [item.id, item.pageImage!]),
+);
 
 function getSavedPage(textbookId: string): number {
   try {

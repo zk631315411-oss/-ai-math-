@@ -142,7 +142,7 @@ class DiagnosisV2SyntheticE2E(unittest.TestCase):
                 question=student_text,
                 answer=f"AI对第{index + 1}次学生推导的反馈",
                 apprenticeship_level="fading",
-                textbook_id="高代上-丘维声",
+                textbook_id="gaodai_shang",
                 sequence_id="V1-C01-S01",
                 context_snapshot={"history": []},
                 created_at=f"2026-07-14T10:00:0{index}",

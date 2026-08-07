@@ -6,7 +6,7 @@
  */
 import { memo } from 'react';
 import ChatPanel from './ChatPanel';
-import type { Message } from '../types';
+import type { Message, PracticeDraft } from '../types';
 
 interface Props {
   messages: Message[];
@@ -19,7 +19,11 @@ interface Props {
   isThinking: boolean;
   thinkingExpanded: boolean;
   setThinkingExpanded: (v: boolean) => void;
-  onStartExercise?: () => void;
+  onOpenPractice?: (draft: PracticeDraft) => void;
+  onRegeneratePractice?: (draft: PracticeDraft) => void;
+  onRequestPractice?: (turnId: string, nodeId?: string) => void;
+  autoPreparePractice?: boolean;
+  onAutoPreparePracticeChange?: (value: boolean) => void;
   markerBanner?: { id: string; page: number; question: string } | null;
   onCloseMarkerBanner?: () => void;
   onDeleteMarker?: (id: string) => void;
@@ -35,7 +39,8 @@ function MobileChatPanelInner({
   messages, onSendMessage, onClearMessages, isLoading,
   pendingImage, onClearPendingImage,
   thinkingStage, isThinking, thinkingExpanded, setThinkingExpanded,
-  onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker,
+  onOpenPractice, onRegeneratePractice, onRequestPractice, autoPreparePractice, onAutoPreparePracticeChange,
+  markerBanner, onCloseMarkerBanner, onDeleteMarker,
   onForkMessage, branchAnchor, onCancelFork, onClose, token, onGenerateAnimation,
 }: Props) {
   return (
@@ -60,7 +65,11 @@ function MobileChatPanelInner({
           thinkingStage={thinkingStage}
           isThinking={isThinking} thinkingExpanded={thinkingExpanded}
           setThinkingExpanded={setThinkingExpanded}
-          onStartExercise={onStartExercise}
+          onOpenPractice={onOpenPractice}
+          onRegeneratePractice={onRegeneratePractice}
+          onRequestPractice={onRequestPractice}
+          autoPreparePractice={autoPreparePractice}
+          onAutoPreparePracticeChange={onAutoPreparePracticeChange}
           markerBanner={markerBanner}
           onCloseMarkerBanner={onCloseMarkerBanner}
           onDeleteMarker={onDeleteMarker}

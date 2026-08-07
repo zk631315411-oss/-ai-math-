@@ -28,6 +28,7 @@ from app.db.knowledge_stages_db import get_user_avg_stage
 from app.services.exercise_generator import (
     build_exercise_prompt, parse_markdown_sections, get_stage_config,
 )
+from app.textbooks import TextbookId
 
 router = APIRouter(prefix="/api/exercise", tags=["exercise"])
 
@@ -72,7 +73,7 @@ async def generate_exercise(
     chapter_name = request.topic or ""
     page_summary = ""
     sequence_id = ""
-    textbook_id = request.textbook_id or "高代上-丘维声"
+    textbook_id = (request.textbook_id or TextbookId.GAODAI_SHANG).value
 
     if request.page_number:
         try:
@@ -180,7 +181,7 @@ async def generate_exercise(
 async def exercises_by_page(
     page_number: int,
     user_id: str,
-    textbook_id: str = "高代上-丘维声",
+    textbook_id: TextbookId = TextbookId.GAODAI_SHANG,
     authorization: Optional[str] = Header(None),
 ):
     """按当前页取教材练习题（秒出，无 LLM）。"""
@@ -188,8 +189,9 @@ async def exercises_by_page(
     from app.db.exercise_bank_db import list_by_sequence_id
 
     authenticated_user_id = _validated_user_id(authorization, user_id)
-    ctx = get_page_context(textbook_id, page_number)
-    if textbook_id.startswith("高数"):
+    canonical_id = textbook_id.value
+    ctx = get_page_context(canonical_id, page_number)
+    if canonical_id.startswith("gaoshu_"):
         return {"exercises": [], "chapter_name": ctx.get("chapter_name", "") if ctx and "error" not in ctx else ""}
 
     sequence_id = ""

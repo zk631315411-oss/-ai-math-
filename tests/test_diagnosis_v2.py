@@ -19,6 +19,7 @@ from app.services.diagnosis.contracts import (
 )
 from app.services.diagnosis.scorers import (
     ObservationValidationError,
+    _diagnostic_signals,
     _validate_exercise_stage,
     _validate_qa_stage,
     validate_exercise_dimensions,
@@ -34,6 +35,37 @@ ACCEPTED_DIALOGUE_DECISION = {
 
 
 class ScorerRuleTests(unittest.TestCase):
+    def test_invalid_signal_does_not_discard_valid_stage_observation(self):
+        text = "因为初等行变换保持同解，所以解集不变。"
+        event = QAEvidenceInput(
+            turn_id="signal-isolation", user_id="u", student_text=text,
+            previous_apprenticeship_level="fading",
+            kg_candidates=["同解方程组"], behavior_hints=["explanation"],
+        )
+        value = {
+            "observations": [{
+                "concept_name": "同解方程组", "observed_stage": 4,
+                "direction": "positive", "strength": "certain",
+                "behavior": "explanation", "student_quote": text[:-1],
+                **ACCEPTED_DIALOGUE_DECISION,
+            }],
+            "signals": [{
+                "signal_type": "invented_action", "concept_ids": ["同解方程组"],
+                "student_quote": text[:-1], "confidence": 0.95,
+                "strength": "certain", "rationale": "invalid type",
+            }],
+        }
+
+        validated = _validate_qa_stage(value, event)
+        signals = _diagnostic_signals(
+            validated, source_type="qa_turn", source_id=event.turn_id,
+            user_id=event.user_id, sequence_id=event.sequence_id,
+            student_text=event.student_text, allowed_concepts=event.kg_candidates,
+        )
+
+        self.assertEqual(len(validated["observations"]), 1)
+        self.assertEqual(signals, [])
+
     def test_branch_history_uses_snapshot_last_three_and_excludes_references(self):
         from app.services.diagnosis.adapters import adapt_qa_turn
         from app.services.diagnosis.scorers import _qa_stage_prompt
@@ -88,14 +120,14 @@ class ScorerRuleTests(unittest.TestCase):
         self.assertEqual(event.previous_ai_answer, "")
 
     def test_kg_section_id_keeps_existing_v44_convention(self):
-        from app.services.diagnosis.diagnosis_service import _v44_section_id
+        from app.textbooks import section_node_id
 
         self.assertEqual(
-            _v44_section_id("高代上-丘维声", "V1-C03-S02"),
+            section_node_id("gaodai_shang", "V1-C03-S02"),
             "gaodai_shang:C03:S02",
         )
         self.assertEqual(
-            _v44_section_id("高数下", "V2-C01-S04-U02"),
+            section_node_id("gaoshu_xia", "V2-C01-S04-U02"),
             "gaoshu_xia:C01:S04:U02",
         )
 

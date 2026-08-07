@@ -4,9 +4,11 @@ import {
   getChatTreeByHistory, ensureChatTreeByHistory, getChatNodeContext,
   createChatTree, activateChatNode, createVisualizationAnimation,
   getVisualizationAnimation, getVisualization,
+  getPracticeDraft, getTurnInterventions,
 } from '../services/api';
 import type { Marker } from '../components/PageMarker';
-import type { AnimationJob, MathVisualizationArtifact, Message, CropBBox, User } from '../types';
+import type { AnimationJob, MathVisualizationArtifact, Message, CropBBox, User, PracticeDraft } from '../types';
+import type { TextbookId } from '../textbooks';
 
 function generateId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -15,7 +17,7 @@ function generateId() {
 export interface UseChatParams {
   user: User;
   currentPage: number;
-  textbookId: string;
+  textbookId: TextbookId | '';
   teachingMode: string;
   socraticSubmode: string;
   markersState: {
@@ -28,11 +30,12 @@ export interface UseChatParams {
     setActiveMarker: (marker: Marker | null | ((prev: Marker | null) => Marker | null)) => void;
     refreshMarkers: () => Promise<void>;
   };
+  autoPreparePractice?: boolean;
 }
 
 export function useChat({
   user, currentPage, textbookId, teachingMode, socraticSubmode,
-  markersState,
+  markersState, autoPreparePractice = true,
 }: UseChatParams) {
   const {
     markers,
@@ -102,6 +105,40 @@ export function useChat({
     }
   }, [updateVisualization, user]);
 
+  const pollPracticeDraft = useCallback((draft: PracticeDraft, messageId: string, attempt = 0) => {
+    setMessages((prev) => prev.map((msg) => msg.id === messageId ? { ...msg, practiceDraft: draft } : msg));
+    if (!user.token || ['ready', 'partial', 'failed', 'stale', 'cancelled'].includes(draft.status) || attempt >= 20) return;
+    window.setTimeout(async () => {
+      try {
+        const next = await getPracticeDraft(draft.id, user.token || '');
+        pollPracticeDraft(next as PracticeDraft, messageId, attempt + 1);
+      } catch {
+        // A temporary polling failure should not remove the recommendation.
+      }
+    }, 1500);
+  }, [user.token]);
+
+  const pollInterventions = useCallback((turnId: string, messageId: string, attempt = 0): void => {
+    if (!user.token || attempt >= 30) return;
+    window.setTimeout(async () => {
+      try {
+        const result = await getTurnInterventions(turnId, user.token || '');
+        const actions = Array.isArray(result.actions) ? result.actions : [];
+        const draft = actions.find((action: any) => action.draft)?.draft as PracticeDraft | undefined;
+        const offered = actions.some((action: any) => action.action_type === 'offer_practice_entry' && action.status === 'ready');
+        setMessages((prev) => prev.map((msg) => msg.id === messageId ? {
+          ...msg,
+          practiceOffered: offered || msg.practiceOffered,
+          practiceDraft: draft || msg.practiceDraft,
+        } : msg));
+        if (draft) pollPracticeDraft(draft, messageId);
+        if (!result.terminal) pollInterventions(turnId, messageId, attempt + 1);
+      } catch {
+        pollInterventions(turnId, messageId, attempt + 1);
+      }
+    }, 1500);
+  }, [pollPracticeDraft, user.token]);
+
   useEffect(() => {
     // 刚收到 assistant 回复时（isLoading true→false），标记未读
     if (wasLoading.current && !isLoading) {
@@ -142,6 +179,7 @@ export function useChat({
             treeMessageId: m.id,
             treeMessageStatus: m.status,
             visualizations: hydrated[index],
+            qaTurnId: m.turn_id || undefined,
           })));
           setBranchAnchor(null);
           return;
@@ -194,6 +232,7 @@ export function useChat({
         treeMessageId: message.id,
         treeMessageStatus: message.status,
         visualizations: hydrated[index],
+        qaTurnId: message.turn_id || undefined,
       })));
       setBranchAnchor(null);
     } catch {
@@ -380,6 +419,8 @@ export function useChat({
             ? { ...msg, visualizations: [...(msg.visualizations || []).filter((item) => item.id !== artifact.id), artifact] }
             : msg));
         },
+        (draft) => pollPracticeDraft(draft as PracticeDraft, assistantMessageId),
+        autoPreparePractice,
       );
       if (answer.tree_turn && chatId) {
         treeState = {
@@ -398,7 +439,10 @@ export function useChat({
         treeMessageStatus: answer.tree_turn?.assistant_message.status || msg.treeMessageStatus,
         visualizations: answer.visualizations || msg.visualizations || [],
         degraded: answer.degraded,
+        practiceDraft: answer.practice_draft || msg.practiceDraft,
+        qaTurnId: answer.qa_turn_id,
       } : msg));
+      if (answer.qa_turn_id) pollInterventions(answer.qa_turn_id, assistantMessageId);
 
       // 落库
       if (chatId) {

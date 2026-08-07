@@ -196,7 +196,7 @@ async def test_qa_boundaries():
             "user_id": uid, "token": headers["Authorization"].split(" ")[1],
             "question": "行列式", "teaching_mode": "direct", "textbook_id": "不存在的教材",
         })
-        record(r.status_code in (200, 400, 422), "2.8 不存在教材ID有响应（不崩溃）", f"status={r.status_code}")
+        record(r.status_code == 422, "2.8 不存在教材ID严格返回422", f"status={r.status_code}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

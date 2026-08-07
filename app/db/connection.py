@@ -3,8 +3,9 @@ from app.config import config
 
 
 def get_conn():
-    conn = sqlite3.connect(config.DB_PATH)
+    conn = sqlite3.connect(config.DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=10000")
     return conn
 
 
@@ -283,6 +284,10 @@ def init_db():
         cursor.execute("ALTER TABLE qa_turn_records ADD COLUMN apprenticeship_level TEXT")
     except Exception:
         pass
+    try:
+        cursor.execute("ALTER TABLE qa_turn_records ADD COLUMN applied_directive_id TEXT")
+    except Exception:
+        pass
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_qa_turn_records_user_time
         ON qa_turn_records(user_id, created_at)
@@ -447,6 +452,367 @@ def init_db():
             cursor.execute(f"ALTER TABLE exercise_attempts ADD COLUMN {col} {definition}")
         except Exception:
             pass
+
+    # Exercise v2: conversation-driven practice drafts and immutable item/attempt records.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS exercise_items (
+            id TEXT PRIMARY KEY,
+            textbook_id TEXT NOT NULL DEFAULT '',
+            source_locator TEXT NOT NULL DEFAULT '',
+            sequence_id TEXT NOT NULL DEFAULT '',
+            concept_ids TEXT NOT NULL DEFAULT '[]',
+            question_type TEXT NOT NULL CHECK(question_type IN ('calculation','concept','proof')),
+            target_stage INTEGER NOT NULL DEFAULT 1 CHECK(target_stage BETWEEN 0 AND 5),
+            difficulty TEXT NOT NULL DEFAULT 'basic',
+            question TEXT NOT NULL,
+            answer_spec TEXT NOT NULL DEFAULT '{}',
+            hints TEXT NOT NULL DEFAULT '[]',
+            rubric TEXT NOT NULL DEFAULT '[]',
+            source TEXT NOT NULL DEFAULT 'textbook',
+            trust_status TEXT NOT NULL DEFAULT 'teacher_approved'
+                CHECK(trust_status IN ('teacher_approved','machine_verified','machine_reviewed')),
+            owner_user_id TEXT,
+            generation_model TEXT NOT NULL DEFAULT '',
+            reviewer_model TEXT NOT NULL DEFAULT '',
+            prompt_version TEXT NOT NULL DEFAULT '',
+            context_hash TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_items_scope ON exercise_items(textbook_id, sequence_id, target_stage)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_items_concepts ON exercise_items(concept_ids)")
+    # Textbook-first item metadata.  These additive columns keep existing
+    # databases readable while separating item provenance from runtime use.
+    existing_item_columns = {row[1] for row in cursor.execute("PRAGMA table_info(exercise_items)").fetchall()}
+    for col, definition in {
+        "item_kind": "TEXT NOT NULL DEFAULT 'exercise_item'",
+        "concept_names": "TEXT NOT NULL DEFAULT '[]'",
+        "prerequisite_concept_ids": "TEXT NOT NULL DEFAULT '[]'",
+        "prerequisite_concept_names": "TEXT NOT NULL DEFAULT '[]'",
+        "primary_concept_id": "TEXT NOT NULL DEFAULT ''",
+        "primary_concept_name": "TEXT NOT NULL DEFAULT ''",
+        "secondary_concept_ids": "TEXT NOT NULL DEFAULT '[]'",
+        "stage_rationale": "TEXT NOT NULL DEFAULT ''",
+        "literacy_tags": "TEXT NOT NULL DEFAULT '[]'",
+        "stem_source": "TEXT NOT NULL DEFAULT 'textbook'",
+        "solution_source": "TEXT NOT NULL DEFAULT 'textbook'",
+        "solution_review_status": "TEXT NOT NULL DEFAULT 'unreviewed'",
+        "source_hash": "TEXT NOT NULL DEFAULT ''",
+        "parent_item_id": "TEXT",
+        "source_asset_id": "TEXT NOT NULL DEFAULT ''",
+        "original_textbook_name": "TEXT NOT NULL DEFAULT ''",
+        "source_page": "INTEGER",
+        "source_problem_no": "TEXT NOT NULL DEFAULT ''",
+        "source_subitem_no": "TEXT",
+        "stem_review_status": "TEXT NOT NULL DEFAULT 'unreviewed'",
+        "review_status": "TEXT NOT NULL DEFAULT 'draft_subject_review'",
+        "diagnostic_goal": "TEXT NOT NULL DEFAULT 'application'",
+        "kg_mapping_status": "TEXT NOT NULL DEFAULT 'unverified'",
+    }.items():
+        if col not in existing_item_columns:
+            cursor.execute(f"ALTER TABLE exercise_items ADD COLUMN {col} {definition}")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_items_primary_concept ON exercise_items(primary_concept_id, target_stage)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_items_kind ON exercise_items(item_kind, trust_status)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_items_mvp_goal ON exercise_items(textbook_id, diagnostic_goal, trust_status)")
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_exercise_items_source_asset ON exercise_items(source_asset_id) WHERE source_asset_id<>''")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS practice_drafts (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            turn_id TEXT NOT NULL,
+            tree_id TEXT DEFAULT '',
+            node_id TEXT DEFAULT '',
+            textbook_id TEXT NOT NULL DEFAULT '',
+            sequence_id TEXT NOT NULL DEFAULT '',
+            concept_ids TEXT NOT NULL DEFAULT '[]',
+            trigger_kind TEXT NOT NULL DEFAULT 'agent_recommended',
+            intervention_goal TEXT NOT NULL DEFAULT '',
+            evidence_quote TEXT NOT NULL DEFAULT '',
+            selection_reason TEXT NOT NULL DEFAULT '',
+            context_snapshot TEXT NOT NULL DEFAULT '{}',
+            context_hash TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'queued'
+                CHECK(status IN ('queued','running','ready','partial','failed','stale','cancelled')),
+            auto_prepared INTEGER NOT NULL DEFAULT 1,
+            version INTEGER NOT NULL DEFAULT 1,
+            parent_draft_id TEXT,
+            error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # Only an active draft is idempotent. Failed/stale drafts may be retried as
+    # a new immutable version without overwriting their audit trail.
+    cursor.execute("DROP INDEX IF EXISTS uq_practice_draft_active")
+    cursor.execute("""CREATE UNIQUE INDEX IF NOT EXISTS uq_practice_draft_active
+                      ON practice_drafts(user_id, turn_id, context_hash)
+                      WHERE status IN ('queued','running','ready','partial')""")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_practice_drafts_user_status ON practice_drafts(user_id, status, updated_at)")
+    try:
+        cursor.execute("ALTER TABLE practice_drafts ADD COLUMN intervention_action_id TEXT")
+    except Exception:
+        pass
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_practice_drafts_intervention "
+        "ON practice_drafts(intervention_action_id)"
+    )
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS practice_draft_items (
+            draft_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            branch_role TEXT NOT NULL CHECK(branch_role IN ('diagnostic','remedial','verify','advance')),
+            rank INTEGER NOT NULL DEFAULT 0,
+            reason TEXT NOT NULL DEFAULT '',
+            PRIMARY KEY (draft_id, item_id),
+            FOREIGN KEY (draft_id) REFERENCES practice_drafts(id),
+            FOREIGN KEY (item_id) REFERENCES exercise_items(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS practice_sessions (
+            id TEXT PRIMARY KEY,
+            draft_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            current_item_id TEXT,
+            item_count INTEGER NOT NULL DEFAULT 0,
+            completed_count INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','completed','inconclusive','abandoned')),
+            summary TEXT NOT NULL DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (draft_id) REFERENCES practice_drafts(id)
+        )
+    """)
+    session_sql = cursor.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='practice_sessions'"
+    ).fetchone()
+    if session_sql and "inconclusive" not in str(session_sql[0]):
+        # SQLite cannot alter a CHECK constraint in place. Preserve all
+        # existing rows while rebuilding this small state table.
+        cursor.execute("PRAGMA foreign_keys=OFF")
+        cursor.execute("""
+            CREATE TABLE practice_sessions_v2 (
+                id TEXT PRIMARY KEY,
+                draft_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                current_item_id TEXT,
+                item_count INTEGER NOT NULL DEFAULT 0,
+                completed_count INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'active'
+                    CHECK(status IN ('active','completed','inconclusive','abandoned')),
+                summary TEXT NOT NULL DEFAULT '{}',
+                outcome_status TEXT NOT NULL DEFAULT 'undetermined',
+                mastery_verified INTEGER NOT NULL DEFAULT 0,
+                selection_decision TEXT NOT NULL DEFAULT '{}',
+                ungradable_retries INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (draft_id) REFERENCES practice_drafts(id)
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO practice_sessions_v2
+            (id,draft_id,user_id,current_item_id,item_count,completed_count,status,summary,created_at,updated_at)
+            SELECT id,draft_id,user_id,current_item_id,item_count,completed_count,status,summary,created_at,updated_at
+            FROM practice_sessions
+        """)
+        cursor.execute("DROP TABLE practice_sessions")
+        cursor.execute("ALTER TABLE practice_sessions_v2 RENAME TO practice_sessions")
+        cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_practice_sessions_user ON practice_sessions(user_id, updated_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS practice_attempts (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            draft_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            student_answer TEXT NOT NULL,
+            verdict TEXT NOT NULL CHECK(verdict IN ('correct','partial','incorrect','ungradable')),
+            evidence_quotes TEXT NOT NULL DEFAULT '[]',
+            rubric_findings TEXT NOT NULL DEFAULT '[]',
+            feedback TEXT NOT NULL DEFAULT '',
+            error_analysis TEXT NOT NULL DEFAULT '{}',
+            hint_level INTEGER NOT NULL DEFAULT 0,
+            next_item_id TEXT,
+            next_reason TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES practice_sessions(id),
+            FOREIGN KEY (draft_id) REFERENCES practice_drafts(id),
+            FOREIGN KEY (item_id) REFERENCES exercise_items(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_practice_attempts_user ON practice_attempts(user_id, created_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS practice_hint_events (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            hint_level INTEGER NOT NULL CHECK(hint_level BETWEEN 1 AND 3),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES practice_sessions(id),
+            FOREIGN KEY (item_id) REFERENCES exercise_items(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_practice_hints_session ON practice_hint_events(session_id, item_id, created_at)")
+    existing_session_columns = {row[1] for row in cursor.execute("PRAGMA table_info(practice_sessions)").fetchall()}
+    for col, definition in {
+        "outcome_status": "TEXT NOT NULL DEFAULT 'undetermined'",
+        "mastery_verified": "INTEGER NOT NULL DEFAULT 0",
+        "selection_decision": "TEXT NOT NULL DEFAULT '{}'",
+        "ungradable_retries": "INTEGER NOT NULL DEFAULT 0",
+    }.items():
+        if col not in existing_session_columns:
+            cursor.execute(f"ALTER TABLE practice_sessions ADD COLUMN {col} {definition}")
+    existing_attempt_columns = {row[1] for row in cursor.execute("PRAGMA table_info(practice_attempts)").fetchall()}
+    for col, definition in {
+        "counts_toward_limit": "INTEGER NOT NULL DEFAULT 1",
+        "selection_decision": "TEXT NOT NULL DEFAULT '{}'",
+    }.items():
+        if col not in existing_attempt_columns:
+            cursor.execute(f"ALTER TABLE practice_attempts ADD COLUMN {col} {definition}")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS exercise_agent_jobs (
+            id TEXT PRIMARY KEY,
+            draft_id TEXT NOT NULL,
+            task_kind TEXT NOT NULL CHECK(task_kind IN ('plan','author','review')),
+            branch_role TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'queued'
+                CHECK(status IN ('queued','running','ready','failed','cancelled')),
+            payload TEXT NOT NULL DEFAULT '{}',
+            result TEXT NOT NULL DEFAULT '{}',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            worker_id TEXT,
+            lease_until TIMESTAMP,
+            error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (draft_id) REFERENCES practice_drafts(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_exercise_agent_jobs_status ON exercise_agent_jobs(status, created_at)")
+    existing_job_columns = {row[1] for row in cursor.execute("PRAGMA table_info(exercise_agent_jobs)").fetchall()}
+    for col, definition in {
+        "worker_id": "TEXT",
+        "lease_until": "TIMESTAMP",
+    }.items():
+        if col not in existing_job_columns:
+            cursor.execute(f"ALTER TABLE exercise_agent_jobs ADD COLUMN {col} {definition}")
+
+    # Diagnosis snapshots and the bounded teaching-controller control plane.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS diagnostic_signals (
+            id TEXT PRIMARY KEY,
+            source_type TEXT NOT NULL CHECK(source_type IN ('qa_turn','exercise_attempt')),
+            source_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            sequence_id TEXT NOT NULL DEFAULT '',
+            signal_type TEXT NOT NULL,
+            concept_ids TEXT NOT NULL DEFAULT '[]',
+            student_quote TEXT NOT NULL,
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            strength TEXT NOT NULL CHECK(strength IN ('certain','probable','hypothesis')),
+            rationale TEXT NOT NULL DEFAULT '',
+            scorer_version TEXT NOT NULL DEFAULT 'v2',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source_type, source_id, signal_type, student_quote, scorer_version)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnostic_signals_user ON diagnostic_signals(user_id, created_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS diagnosis_snapshots (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            tree_id TEXT NOT NULL DEFAULT '',
+            node_id TEXT NOT NULL DEFAULT '',
+            textbook_id TEXT NOT NULL DEFAULT '',
+            sequence_id TEXT NOT NULL DEFAULT '',
+            concept_ids TEXT NOT NULL DEFAULT '[]',
+            state_payload TEXT NOT NULL DEFAULT '{}',
+            signal_ids TEXT NOT NULL DEFAULT '[]',
+            version INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source_type, source_id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnosis_snapshots_scope ON diagnosis_snapshots(user_id, tree_id, node_id, created_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tutor_directives (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            snapshot_id TEXT,
+            source_turn_id TEXT NOT NULL DEFAULT '',
+            tree_id TEXT NOT NULL DEFAULT '',
+            node_id TEXT NOT NULL DEFAULT '',
+            sequence_id TEXT NOT NULL DEFAULT '',
+            concept_ids TEXT NOT NULL DEFAULT '[]',
+            teaching_goal TEXT NOT NULL DEFAULT '',
+            qa_policy TEXT NOT NULL DEFAULT '{}',
+            action TEXT NOT NULL CHECK(action IN ('no_action','adjust_qa','offer_practice_entry','prepare_practice')),
+            evidence_refs TEXT NOT NULL DEFAULT '[]',
+            confidence REAL NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('shadow','active','applied','expired','stale')),
+            context_version TEXT NOT NULL DEFAULT '',
+            model_name TEXT NOT NULL DEFAULT '',
+            prompt_version TEXT NOT NULL DEFAULT '',
+            applied_turn_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(snapshot_id) REFERENCES diagnosis_snapshots(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tutor_directives_scope ON tutor_directives(user_id, tree_id, node_id, status, created_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS intervention_actions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            directive_id TEXT,
+            turn_id TEXT NOT NULL,
+            node_id TEXT NOT NULL DEFAULT '',
+            action_type TEXT NOT NULL CHECK(action_type IN ('offer_practice_entry','prepare_practice')),
+            trigger_kind TEXT NOT NULL CHECK(trigger_kind IN ('explicit_button','agent_recommended','text_request')),
+            payload TEXT NOT NULL DEFAULT '{}',
+            status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','ready','failed','stale','cancelled')),
+            draft_id TEXT,
+            error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(directive_id) REFERENCES tutor_directives(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_intervention_actions_turn ON intervention_actions(user_id, turn_id, created_at)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS intervention_agent_jobs (
+            id TEXT PRIMARY KEY,
+            snapshot_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','ready','failed','cancelled')),
+            payload TEXT NOT NULL DEFAULT '{}',
+            result TEXT NOT NULL DEFAULT '{}',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            worker_id TEXT,
+            lease_until TIMESTAMP,
+            error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(snapshot_id),
+            FOREIGN KEY(snapshot_id) REFERENCES diagnosis_snapshots(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_intervention_jobs_status ON intervention_agent_jobs(status, created_at)")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS diagnosis_runs (

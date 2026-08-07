@@ -10,6 +10,7 @@ from app.db.diagnosis_v2_db import (
     finish_run,
     run_is_terminal,
     save_observations,
+    save_signals,
     start_run,
 )
 from app.services.diagnosis.adapters import adapt_exercise_attempt, adapt_qa_turn, exercise_kg_context
@@ -44,6 +45,7 @@ async def process_qa_turn(row: dict) -> dict[str, bool]:
     )
     stage_ok, dimension_ok = await asyncio.gather(stage_task, dimension_task)
     _project_after_scoring()
+    _publish_snapshot("qa_turn", event.turn_id)
     return {"stage": stage_ok, "dimension": dimension_ok}
 
 
@@ -60,6 +62,7 @@ async def process_exercise_attempt(row: dict) -> dict[str, bool]:
     )
     stage_ok, dimension_ok = await asyncio.gather(stage_task, dimension_task)
     _project_after_scoring()
+    _publish_snapshot("exercise_attempt", event.attempt_id)
     return {"stage": stage_ok, "dimension": dimension_ok}
 
 
@@ -68,7 +71,7 @@ async def _run_scorer(
     source_type: str,
     source_id: str,
     scorer_type: str,
-    scorer: Callable[[], Awaitable[tuple[list, str]]],
+    scorer: Callable[[], Awaitable[tuple]],
 ) -> bool:
     if run_is_terminal(source_type, source_id, scorer_type, SCORER_VERSION):
         return True
@@ -81,8 +84,14 @@ async def _run_scorer(
         prompt_version=PROMPT_VERSION,
     )
     try:
-        observations, raw = await scorer()
+        scored = await scorer()
+        if len(scored) == 3:
+            observations, signals, raw = scored
+        else:
+            observations, raw = scored
+            signals = []
         save_observations(run_id, observations)
+        save_signals(signals)
         finish_run(run_id, "success", raw_output=raw)
         return True
     except ObservationValidationError as exc:
@@ -97,3 +106,12 @@ def _project_after_scoring() -> None:
     project_pending_stage_evidence()
     close_ready_dimension_windows()
     project_pending_dialogue_states()
+
+
+def _publish_snapshot(source_type: str, source_id: str) -> None:
+    try:
+        from app.services.intervention.state import publish_snapshot
+        publish_snapshot(source_type, source_id)
+    except Exception as exc:
+        # Diagnosis evidence remains authoritative even when policy planning is unavailable.
+        print(f"[intervention] snapshot publish failed: {exc}")

@@ -5,7 +5,7 @@
 跨进程边界只传 dict/list/float，不传 SymPy 对象（避免 pickle 崩溃）。
 """
 
-import concurrent.futures
+import multiprocessing as mp
 
 
 # 每个操作类型的 SymPy 调用 + 尺寸限制
@@ -34,7 +34,8 @@ def _validate_size(comp_type: str, data: dict):
                 return False
 
     if comp_type in ("system_solve", "polynomial_roots", "polynomial_factor"):
-        if data.get("degree", 10) > max_size:
+        default_degree = len(data.get("matrix", [])) if comp_type == "system_solve" else 0
+        if data.get("degree", default_degree) > max_size:
             return False
 
     return True
@@ -78,8 +79,8 @@ def _run_sympy_worker(comp_type: str, data: dict):
     elif comp_type == "system_solve":
         A = sympy.Matrix(data["matrix"])
         b = sympy.Matrix(data.get("vector", [[0]]))
-        sol = A.gauss_jordan_solve(b)
-        normalized = [[round(float(x.evalf()), 6) for x in v] for v in sol]
+        solution = A.gauss_jordan_solve(b)[0]
+        normalized = [[round(float(x.evalf()), 6) for x in row] for row in solution.tolist()]
 
     elif comp_type == "polynomial_roots":
         x = sympy.Symbol("x")
@@ -97,6 +98,15 @@ def _run_sympy_worker(comp_type: str, data: dict):
         return {"success": False, "error": f"Unknown type: {comp_type}"}
 
     return {"success": True, "data": normalized}
+
+
+def _sympy_process_entry(conn, comp_type: str, data: dict) -> None:
+    try:
+        conn.send(_run_sympy_worker(comp_type, data))
+    except Exception as exc:
+        conn.send({"success": False, "error": str(exc)})
+    finally:
+        conn.close()
 
 
 def verify_computable(comp_type: str, data: dict, expected) -> dict:
@@ -117,14 +127,25 @@ def verify_computable(comp_type: str, data: dict, expected) -> dict:
         if forbidden in raw:
             return {"success": False, "error": f"Forbidden token: {forbidden}"}
 
+    parent_conn, child_conn = mp.get_context("spawn").Pipe(duplex=False)
+    process = mp.get_context("spawn").Process(
+        target=_sympy_process_entry, args=(child_conn, comp_type, data), daemon=True,
+    )
+    process.start()
+    child_conn.close()
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_run_sympy_worker, comp_type, data)
-            result = future.result(timeout=10)
-    except concurrent.futures.TimeoutError:
-        return {"success": False, "error": "Timeout (5s)"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+        if not parent_conn.poll(10):
+            process.terminate()
+            process.join(timeout=1)
+            return {"success": False, "error": "Timeout (10s)"}
+        result = parent_conn.recv()
+    except (EOFError, OSError) as exc:
+        return {"success": False, "error": str(exc)}
+    finally:
+        parent_conn.close()
+        if process.is_alive():
+            process.terminate()
+        process.join(timeout=1)
 
     if not result.get("success"):
         return result
@@ -152,6 +173,29 @@ def verify_computable(comp_type: str, data: dict, expected) -> dict:
     elif comp_type == "matrix_rank":
         if sympy_data != int(expected):
             return {"success": False, "error": "Rank mismatch",
+                    "sympy": sympy_data, "expected": expected}
+
+    elif comp_type == "matrix_inverse":
+        try:
+            expected_matrix = [[round(float(value), 6) for value in row] for row in expected]
+        except (TypeError, ValueError):
+            return {"success": False, "error": "Expected must be a matrix"}
+        if sympy_data != expected_matrix:
+            return {"success": False, "error": "Inverse mismatch",
+                    "sympy": sympy_data, "expected": expected_matrix}
+
+    elif comp_type == "system_solve":
+        try:
+            expected_solution = [[round(float(value), 6) for value in row] for row in expected]
+        except (TypeError, ValueError):
+            return {"success": False, "error": "Expected must be a solution matrix"}
+        if sympy_data != expected_solution:
+            return {"success": False, "error": "Solution mismatch",
+                    "sympy": sympy_data, "expected": expected_solution}
+
+    elif comp_type == "polynomial_factor":
+        if str(sympy_data) != str(expected):
+            return {"success": False, "error": "Factor mismatch",
                     "sympy": sympy_data, "expected": expected}
 
     return {"success": True, "sympy_result": sympy_data}

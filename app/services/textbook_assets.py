@@ -2,37 +2,21 @@ from pathlib import Path
 from typing import Optional
 
 from app.config import config
-
-
-TEXTBOOK_ASSETS = {
-    "高代上-丘维声": {
-        "pdf": "frontend/public/gaodai_vol1.pdf",
-        "page_offset": 0,
-    },
-    "高代下-丘维声": {
-        "pdf": "frontend/public/高等代数下册_丘维声.pdf",
-        "page_offset": 0,
-    },
-    "高数上-黄立宏": {
-        "pdf": "frontend/public/高等数学第二版上册黄立宏主编.pdf",
-        "page_offset": 0,
-    },
-    "高数下-黄立宏": {
-        "pdf": "frontend/public/高等数学第二版下册黄立宏主编.pdf",
-        "page_offset": 0,
-    },
-}
+from app.textbooks import textbook_spec
 
 
 def get_textbook_pdf_path(textbook_id: str) -> Optional[Path]:
-    asset = TEXTBOOK_ASSETS.get(textbook_id)
-    if not asset:
+    try:
+        asset = textbook_spec(textbook_id)
+    except ValueError:
         return None
-    path = config.BASE_DIR / asset["pdf"]
+    path = config.BASE_DIR / asset.pdf_path
     return path if path.exists() else None
 
 
 def get_pdf_page_index(textbook_id: str, page_number: int) -> int:
-    asset = TEXTBOOK_ASSETS.get(textbook_id, {})
-    offset = int(asset.get("page_offset", 0))
+    try:
+        offset = textbook_spec(textbook_id).page_offset
+    except ValueError:
+        offset = 0
     return max(0, page_number - 1 + offset)

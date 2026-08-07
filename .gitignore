@@ -7,6 +7,7 @@ venv/
 
 # --- 密钥与配置 ---
 .env
+frontend/.env.*.local
 
 # --- 前端构建产物 ---
 node_modules/
@@ -29,6 +30,9 @@ data/*.db-wal
 data/*.db-shm
 data/*.log
 data/recovery-backups/
+data/backups/
+data/practice/*-report.json
+data/practice/textbook-id-migration-dry-run.json
 
 # --- 截图裁剪缓存 ---
 data/screenshot_crops/*

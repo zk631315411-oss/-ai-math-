@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.auth.jwt_handler import decode_token
 from app.db.math_profile_db import save_textbook_preference as db_save_pref, get_textbook_preference as db_get_pref
+from app.textbooks import TextbookId
 
 router = APIRouter(prefix="/api/profile", tags=["用户偏好"])
 
@@ -22,7 +23,7 @@ def get_user_id_from_token(authorization: Optional[str]) -> Optional[str]:
 
 
 class TextbookPreferenceRequest(BaseModel):
-    textbook_id: str
+    textbook_id: TextbookId
     page_number: int
 
 

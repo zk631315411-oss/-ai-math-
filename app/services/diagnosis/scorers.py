@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 from app.config import config
 from app.services.diagnosis.contracts import (
+    DiagnosticSignal,
     DimensionObservation,
     ExerciseEvidenceInput,
     KGStageNode,
@@ -28,6 +29,18 @@ BEHAVIORS = {
     "question_only", "self_report", "definition_recall", "solution_attempt",
     "explanation", "proof", "counterexample", "transfer",
 }
+SIGNAL_TYPES = {
+    "concept_confusion", "prerequisite_gap", "procedural_error",
+    "hint_dependency", "practice_request", "insufficient_evidence",
+}
+SIGNAL_PROMPT = """
+Optionally include a top-level signals array. A signal describes a learning
+issue, never a teaching action. Each signal must contain signal_type
+(concept_confusion|prerequisite_gap|procedural_error|hint_dependency|
+practice_request|insufficient_evidence), concept_ids, an exact student_quote,
+confidence from 0 to 1, strength (certain|probable|hypothesis), and rationale.
+Do not invent a signal when the student's own text is insufficient.
+"""
 ABSTRACTION_MARKERS = ("一般", "任意", "推广", "抽象", "结构", "本质", "n维", "对于所有", "归纳")
 REASONING_MARKERS = ("因为", "所以", "因此", "由", "可得", "故", "若", "则", "假设", "反证", "充分", "必要")
 REPRESENTATION_MARKERS = ("写成", "表示为", "转化为", "对应", "增广矩阵", "坐标", "图像", "几何", "语言描述")
@@ -73,8 +86,8 @@ def _normalize_stage_candidates(
     return [str(candidate) for candidate in candidates], []
 
 
-async def score_qa_stage(event: QAEvidenceInput) -> tuple[list[StageObservation], str]:
-    prompt = _qa_stage_prompt(event)
+async def score_qa_stage(event: QAEvidenceInput) -> tuple[list[StageObservation], list[DiagnosticSignal], str]:
+    prompt = _qa_stage_prompt(event) + SIGNAL_PROMPT
     data, raw = await _call_and_validate(prompt, lambda value: _validate_qa_stage(value, event))
     observations = [
         StageObservation(
@@ -94,7 +107,13 @@ async def score_qa_stage(event: QAEvidenceInput) -> tuple[list[StageObservation]
         )
         for item in data.get("observations", [])
     ]
-    return observations, raw
+    signals = _diagnostic_signals(
+        data, source_type="qa_turn", source_id=event.turn_id,
+        user_id=event.user_id, sequence_id=event.sequence_id,
+        student_text=event.student_text,
+        allowed_concepts=event.kg_candidates,
+    )
+    return observations, signals, raw
 
 
 async def score_qa_dimensions(event: QAEvidenceInput) -> tuple[list[DimensionObservation], str]:
@@ -107,10 +126,10 @@ async def score_exercise_stage(
     event: ExerciseEvidenceInput,
     kg_candidates: list[str] | list[KGStageNode],
     kg_relations: list[KGStageRelation] | None = None,
-) -> tuple[list[StageObservation], str]:
+) -> tuple[list[StageObservation], list[DiagnosticSignal], str]:
     candidate_names, candidate_nodes = _normalize_stage_candidates(kg_candidates)
     relations = list(kg_relations or [])
-    prompt = _exercise_stage_prompt(event, candidate_names, candidate_nodes, relations)
+    prompt = _exercise_stage_prompt(event, candidate_names, candidate_nodes, relations) + SIGNAL_PROMPT
     data, raw = await _call_and_validate(
         prompt,
         lambda value: _validate_exercise_stage(
@@ -131,7 +150,59 @@ async def score_exercise_stage(
         )
         for item in data.get("observations", [])
     ]
-    return observations, raw
+    signals = _diagnostic_signals(
+        data, source_type="exercise_attempt", source_id=event.attempt_id,
+        user_id=event.user_id, sequence_id=event.sequence_id,
+        student_text=event.student_answer,
+        allowed_concepts=[*candidate_names, *event.concept_ids],
+    )
+    return observations, signals, raw
+
+
+def _diagnostic_signals(
+    value: dict[str, Any], *, source_type: str, source_id: str, user_id: str,
+    sequence_id: str, student_text: str, allowed_concepts: list[str],
+) -> list[DiagnosticSignal]:
+    """Validate optional signals independently from Stage observations."""
+    raw_signals = value.get("signals", [])
+    if not isinstance(raw_signals, list):
+        return []
+    allowed = set(allowed_concepts)
+    signals: list[DiagnosticSignal] = []
+    for raw in raw_signals:
+        if not isinstance(raw, dict):
+            continue
+        signal_type = raw.get("signal_type")
+        quote = raw.get("student_quote")
+        concepts = raw.get("concept_ids") or []
+        strength = raw.get("strength")
+        confidence = raw.get("confidence")
+        if signal_type not in SIGNAL_TYPES:
+            continue
+        if not isinstance(quote, str) or not quote or quote not in student_text:
+            continue
+        if not isinstance(concepts, list) or not all(isinstance(item, str) for item in concepts):
+            continue
+        if allowed and concepts and not set(concepts).issubset(allowed):
+            continue
+        if strength not in {"certain", "probable", "hypothesis"}:
+            continue
+        if not isinstance(confidence, (int, float)) or not 0 <= float(confidence) <= 1:
+            continue
+        signals.append(DiagnosticSignal(
+            source_type=source_type,
+            source_id=source_id,
+            user_id=user_id,
+            sequence_id=sequence_id,
+            signal_type=signal_type,
+            concept_ids=concepts,
+            student_quote=quote,
+            confidence=float(confidence),
+            strength=strength,
+            rationale=str(raw.get("rationale") or ""),
+            scorer_version=SCORER_VERSION,
+        ))
+    return signals
 
 
 async def score_exercise_dimensions(event: ExerciseEvidenceInput) -> tuple[list[DimensionObservation], str]:
@@ -246,7 +317,7 @@ def _validate_qa_stage(value: dict[str, Any], event: QAEvidenceInput) -> dict[st
             "question_only", "self_report"
         }:
             raise ObservationValidationError("学生原文只有提问或自我报告，不能改判为能力表现")
-    return {"observations": observations}
+    return {"observations": observations, "signals": value.get("signals", [])}
 
 
 def _validate_exercise_stage(
@@ -266,15 +337,11 @@ def _validate_exercise_stage(
     for item in observations:
         stage = item["observed_stage"]
         _validate_stage_behavior(item)
-        if event.target_stage is None:
-            raise ObservationValidationError("练习缺少 target_stage，不能形成 Stage 观察")
-        if stage > event.target_stage:
-            raise ObservationValidationError("观察 Stage 超过题目目标 Stage")
         if event.hint_level > 0 and stage > 3:
             raise ObservationValidationError("使用提示后的练习最高支持 Stage 3")
         if _looks_like_final_answer_only(event.student_answer) and item["strength"] == "certain":
             raise ObservationValidationError("只有最终答案时证据最高为 probable")
-    return {"observations": observations}
+    return {"observations": observations, "signals": value.get("signals", [])}
 
 
 def _stage_items(
@@ -617,11 +684,11 @@ def _exercise_stage_prompt(
     return f"""只评价这次练习中学生答案展示的概念掌握阶段。
 {kg_context}
 题目：{event.question}
-目标Stage：{event.target_stage}；难度：{event.difficulty}；使用提示次数：{event.hint_level}
+诊断目标：{event.diagnostic_goal}；难度：{event.difficulty}；使用提示次数：{event.hint_level}
 学生答案：{event.student_answer}
 标准答案（仅供核对）：{event.correct_answer}
 批改：is_correct={event.is_correct}；feedback={event.grading_feedback}
-题目目标Stage是上限；用过提示最高Stage 3；只有最终答案最高 probable。普通解题步骤 solution_attempt 最高 Stage 3；Stage 4 必须有概念解释、条件关系或证明；Stage 5 仅限迁移、反例或完整解释。
+题目不预设学生Stage。只按学生原文实际展示的行为判断；用过提示最高Stage 3；只有最终答案最高 probable。普通解题步骤 solution_attempt 最高 Stage 3；Stage 4 必须有概念解释、条件关系或证明；Stage 5 仅限迁移、反例或跨情境应用。
 选择最小且不重复的概念集合，不限制概念数量。每个概念必须有各自直接证据；不能因为 A USES/GETS B 就推断学生掌握 B。同一原文同时支持 A PART_OF B 两端时优先更具体的 A。
 输出：{{"observations":[{{"concept_id":"KG节点ID","concept_name":"KG原名","observed_stage":0,"direction":"positive|negative","strength":"certain|probable|hypothesis","behavior":"definition_recall|solution_attempt|explanation|proof|counterexample|transfer","student_quote":"学生答案精确子串"}}]}}"""
 

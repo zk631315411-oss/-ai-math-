@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from app.db.connection import get_conn
+from app.textbooks import textbook_spec
 
 
 GAOSHU_SECTION_PAGE_OFFSET = 11
@@ -56,9 +57,7 @@ def parse_source_code(source_code: str) -> dict:
 
 
 def _is_gaoshu_textbook(textbook_id: str) -> bool:
-    value = textbook_id or ""
-    lowered = value.lower()
-    return "gaoshu" in lowered or "高数" in value or "高等数学" in value
+    return textbook_spec(textbook_id).subject == "gaoshu"
 
 
 def get_section_lookup_page(textbook_id: str, page: int) -> int:

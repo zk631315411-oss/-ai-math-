@@ -1,6 +1,7 @@
 ﻿import type { TokenResponse, UserProfileUpdate, UserProfile } from '../types';
 import { request, get, post, put, patch, del } from './request';
 import type { AnimationJob, MathVisualizationArtifact } from '../types';
+import type { TextbookId } from '../textbooks';
 
 // === 用户认证相关API ===
 
@@ -65,7 +66,7 @@ export async function fetchWithStage(
   imageData?: string,
   teachingMode: string = 'socratic',
   _onThinking?: (text: string) => void,
-  textbookId?: string,
+  textbookId?: TextbookId,
   history?: Array<{user: string, assistant: string}>,
   _onIsThinkingChange?: (v: boolean) => void,
   onContent?: (text: string) => void,
@@ -82,7 +83,9 @@ export async function fetchWithStage(
   clientTurnId?: string,
   onTreeTurnStarted?: (turn: ChatTreeTurn) => void,
   onVisualization?: (artifact: MathVisualizationArtifact) => void,
-): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null; tree_turn?: ChatTreeTurn; visualizations: MathVisualizationArtifact[]; degraded: boolean; degradation_code?: string }> {
+  onPracticeDraft?: (draft: any) => void,
+  autoPreparePractice: boolean = true,
+): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null; tree_turn?: ChatTreeTurn; visualizations: MathVisualizationArtifact[]; degraded: boolean; degradation_code?: string; practice_draft?: any; qa_turn_id?: string }> {
   const payload: any = {
     user_id: userId,
     question,
@@ -102,6 +105,7 @@ export async function fetchWithStage(
   if (nodeId) payload.node_id = nodeId;
   if (forkMessageId) payload.fork_message_id = forkMessageId;
   if (clientTurnId) payload.client_turn_id = clientTurnId;
+  payload.auto_prepare_practice = autoPreparePractice;
 
   // SSE 流使用 rawResponse 模式，不自动解析响应
   const res = await request<Response>({
@@ -126,6 +130,8 @@ export async function fetchWithStage(
   let visualizations: MathVisualizationArtifact[] = [];
   let degraded = false;
   let degradationCode: string | undefined;
+  let practiceDraft: any;
+  let qaTurnId: string | undefined;
   let currentEventType: string | null = null;
 
   while (true) {
@@ -201,6 +207,10 @@ export async function fetchWithStage(
           visualizations = [...visualizations.filter((item) => item.id !== artifact.id), artifact];
           onVisualization?.(artifact);
         }
+        else if (currentEventType === 'practice_draft' && data.id) {
+          practiceDraft = data;
+          onPracticeDraft?.(data);
+        }
         // done事件 - 提取sources和thinking
         else if (currentEventType === 'done') {
           if (!fullContent && data.full_text) fullContent = data.full_text;
@@ -210,12 +220,24 @@ export async function fetchWithStage(
           if (Array.isArray(data.visualizations)) visualizations = data.visualizations;
           degraded = Boolean(data.degraded);
           if (data.degradation_code) degradationCode = String(data.degradation_code);
+          if (data.qa_turn_id) qaTurnId = data.qa_turn_id;
         }
       }
     }
   }
 
-  return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult, tree_turn: treeTurn, visualizations, degraded, degradation_code: degradationCode };
+  return {
+    answer: fullContent,
+    sources,
+    thinking,
+    screenshot_context_id: screenshotContextIdResult,
+    tree_turn: treeTurn,
+    visualizations,
+    degraded,
+    degradation_code: degradationCode,
+    practice_draft: practiceDraft,
+    qa_turn_id: qaTurnId,
+  };
 }
 
 function _getToolLabel(name: string): string {
@@ -231,9 +253,9 @@ function _getToolLabel(name: string): string {
 
 // === 教材偏好API ===
 
-export async function getTextbookPreference(token: string): Promise<{textbook_id: string | null, page_number: number | null}> {
+export async function getTextbookPreference(token: string): Promise<{textbook_id: TextbookId | null, page_number: number | null}> {
   try {
-    return await get<{textbook_id: string | null, page_number: number | null}>('/profile/textbook-preference', token);
+    return await get<{textbook_id: TextbookId | null, page_number: number | null}>('/profile/textbook-preference', token);
   } catch {
     // 获取失败返回默认值，不阻断流程
     return { textbook_id: null, page_number: null };
@@ -242,7 +264,7 @@ export async function getTextbookPreference(token: string): Promise<{textbook_id
 
 export async function saveTextbookPreference(
   token: string,
-  textbookId: string,
+  textbookId: TextbookId,
   pageNumber: number
 ): Promise<void> {
   await post('/profile/textbook-preference', { textbook_id: textbookId, page_number: pageNumber }, token);
@@ -331,6 +353,7 @@ export async function updateChatHistory(chatId: string, data: Record<string, any
 // === 追问历史树 API ===
 export interface ChatTreeMessage {
   id: string;
+  turn_id?: string | null;
   node_id: string;
   sequence_no: number;
   role: 'user' | 'assistant' | 'tool' | 'system_event';
@@ -405,7 +428,7 @@ export async function activateChatNode(treeId: string, data: { user_id: string; 
 
 // === 练习API ===
 
-export async function getExercisesByPage(pageNumber: number, userId: string, textbookId: string, token: string): Promise<any[]> {
+export async function getExercisesByPage(pageNumber: number, userId: string, textbookId: TextbookId, token: string): Promise<any[]> {
   const data = await get<{ exercises?: any[] }>(`/exercise/by-page?page_number=${pageNumber}&user_id=${encodeURIComponent(userId)}&textbook_id=${encodeURIComponent(textbookId)}`, token);
   return data.exercises || [];
 }
@@ -413,7 +436,7 @@ export async function getExercisesByPage(pageNumber: number, userId: string, tex
 export async function generateExercise(data: {
   user_id: string;
   token?: string;
-  textbook_id?: string;
+  textbook_id?: TextbookId;
   page_number: number;
 }): Promise<Response> {
   // 练习生成是 SSE 流，需要 rawResponse
@@ -460,6 +483,46 @@ export async function convertFormula(
 
 export async function reportExerciseError(exerciseId: string, token: string): Promise<void> {
   await post(`/exercise/${exerciseId}/report-error`, undefined, token);
+}
+
+// === 对话驱动的自适应练习 v2 ===
+export async function getPracticeDraft(draftId: string, token: string): Promise<any> {
+  return get(`/practice/drafts/${encodeURIComponent(draftId)}`, token);
+}
+
+export async function createPracticeDraft(data: {
+  turn_id: string; node_id?: string; target_concept?: string;
+  intervention_goal?: string; evidence_quote?: string;
+}, token: string): Promise<any> {
+  return post('/practice/drafts', data, token);
+}
+
+export async function startPracticeDraft(draftId: string, token: string): Promise<any> {
+  return post(`/practice/drafts/${encodeURIComponent(draftId)}/start`, undefined, token);
+}
+
+export async function regeneratePracticeDraft(draftId: string, token: string): Promise<any> {
+  return post(`/practice/drafts/${encodeURIComponent(draftId)}/regenerate`, undefined, token);
+}
+
+export async function submitPracticeAttempt(sessionId: string, data: { item_id: string; student_answer: string }, token: string): Promise<any> {
+  return post(`/practice/sessions/${encodeURIComponent(sessionId)}/attempts`, data, token);
+}
+
+export async function getPracticeHint(sessionId: string, token: string): Promise<any> {
+  return post(`/practice/sessions/${encodeURIComponent(sessionId)}/hints`, undefined, token);
+}
+
+export async function getTurnInterventions(turnId: string, token: string): Promise<any> {
+  return get(`/interventions/turns/${encodeURIComponent(turnId)}`, token);
+}
+
+export async function getLearningPreferences(token: string): Promise<{ auto_prepare_practice: boolean }> {
+  return get('/interventions/preferences', token);
+}
+
+export async function updateLearningPreferences(autoPreparePractice: boolean, token: string): Promise<{ auto_prepare_practice: boolean }> {
+  return patch('/interventions/preferences', { auto_prepare_practice: autoPreparePractice }, token);
 }
 
 // === 反馈API ===

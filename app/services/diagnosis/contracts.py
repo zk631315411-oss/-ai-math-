@@ -71,15 +71,42 @@ class ExerciseEvidenceInput:
     student_answer: str
     correct_answer: str
     is_correct: bool
+    verdict: Literal["correct", "partial", "incorrect", "ungradable"] = "incorrect"
+    concept_ids: list[str] = field(default_factory=list)
     sequence_id: str = ""
     target_concept: str = ""
     target_stage: int | None = None
+    diagnostic_goal: str = "application"
     difficulty: str = ""
     hint_level: int = 0
     grading_feedback: str = ""
     error_analysis: dict[str, Any] = field(default_factory=dict)
     grader_version: str = ""
     created_at: str | None = None
+
+
+@dataclass(frozen=True)
+class DiagnosticSignal:
+    """An evidence-backed learning signal. It never contains an action."""
+
+    source_type: Literal["qa_turn", "exercise_attempt"]
+    source_id: str
+    user_id: str
+    sequence_id: str
+    signal_type: Literal[
+        "concept_confusion",
+        "prerequisite_gap",
+        "procedural_error",
+        "hint_dependency",
+        "practice_request",
+        "insufficient_evidence",
+    ]
+    concept_ids: list[str]
+    student_quote: str
+    confidence: float
+    strength: EvidenceStrength
+    rationale: str = ""
+    scorer_version: str = "v2"
 
 
 @dataclass(frozen=True)

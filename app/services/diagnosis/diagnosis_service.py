@@ -6,6 +6,7 @@ import json
 import re
 from typing import Any
 
+from app.textbooks import canonical_textbook_id, section_node_id
 from app.services.diagnosis.contracts import (
     CognitiveEvidence,
     DiagnosticCard,
@@ -23,15 +24,13 @@ def get_stage_candidates_by_sequence_id(
     sequence_id: str,
     textbook_id: str = "",
 ) -> tuple[list[KGStageNode], list[KGStageRelation]]:
+    if not textbook_id:
+        return [], []
+    canonical = canonical_textbook_id(textbook_id)
     try:
         from app.db.kg_v44 import nodes_for_section, relations_between_nodes
 
-        candidate_textbooks = [_v44_textbook_id(textbook_id)] if textbook_id else _candidate_textbook_ids(sequence_id)
-        node_rows = []
-        for candidate in candidate_textbooks:
-            node_rows = nodes_for_section(_v44_section_id(candidate, sequence_id), limit=60)
-            if node_rows:
-                break
+        node_rows = nodes_for_section(section_node_id(canonical, sequence_id), limit=60)
         nodes: list[KGStageNode] = []
         seen_names: set[str] = set()
         for row in node_rows:
@@ -185,35 +184,6 @@ def build_minimal_diagnostic_card(evidence: CognitiveEvidence, stage: int | None
         evidence_span=evidence.evidence_span,
         recommended_action="结合后续独立作答继续验证长期状态。",
     )
-
-
-def _v44_textbook_id(textbook_id: str) -> str:
-    value = textbook_id or ""
-    lowered = value.lower()
-    if value in {"gaodai_shang", "gaodai_xia", "gaoshu_shang", "gaoshu_xia"}:
-        return value
-    is_gaoshu = "高数" in value or "高等数学" in value or "gaoshu" in lowered
-    is_volume_2 = "下" in value or "xia" in lowered or "vol2" in lowered
-    if is_gaoshu:
-        return "gaoshu_xia" if is_volume_2 else "gaoshu_shang"
-    return "gaodai_xia" if is_volume_2 else "gaodai_shang"
-
-
-def _candidate_textbook_ids(sequence_id: str) -> list[str]:
-    volume = next((part for part in (sequence_id or "").split("-") if part.startswith("V")), "")
-    if volume == "V2":
-        return ["gaodai_xia", "gaoshu_xia", "gaodai_shang", "gaoshu_shang"]
-    return ["gaodai_shang", "gaoshu_shang", "gaodai_xia", "gaoshu_xia"]
-
-
-def _v44_section_id(textbook_id: str, sequence_id: str) -> str:
-    tid = _v44_textbook_id(textbook_id)
-    parts = (sequence_id or "").split("-")
-    chapter = next((part for part in parts if part.startswith("C")), "C01")
-    section = next((part for part in parts if part.startswith("S")), "S01")
-    unit = next((part for part in parts if part.startswith("U")), "")
-    base = f"{tid}:{chapter}:{section}"
-    return f"{base}:{unit}" if unit else base
 
 
 def _unique_names(nodes: list[Any], limit: int) -> list[str]:

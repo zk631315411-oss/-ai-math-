@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass, replace
 import asyncio
+import json
 import re
 import time
 import uuid
@@ -25,6 +26,7 @@ from app.services.qa.vision_context_service import (
     prepare_screenshot_context,
 )
 from app.services.diagnosis.contracts import KGContext, StudentStateSummary, WeakPrerequisite
+from app.textbooks import TextbookId, canonical_textbook_id
 
 
 async def answer_turn(
@@ -56,11 +58,12 @@ async def _answer_text_turn(
         yield sse_error("未能识别题目内容")
         return
 
-    turn_id = str(uuid.uuid4())
+    turn_id = turn_input.client_turn_id or str(uuid.uuid4())
     started_at = time.perf_counter()
     full_response = ""
     record: QATurnRecord | None = None
     apprenticeship_level: str | None = None  # 异常时兜底默认值
+    applied_directive_id: str | None = None
 
     try:
         yield sse_stage("searching", "正在匹配教材与知识图谱...")
@@ -73,12 +76,21 @@ async def _answer_text_turn(
         sources = _build_sources(grounding, kg_concepts)
 
         yield sse_stage("planning", "正在组织本轮讲解策略...")
-        student_state = _coerce_student_state(turn_input.user_id, student_state_summary)
-        policy = decide_tutor_policy(
-            student_state,
-            turn_input.teaching_mode,
-            turn_input.socratic_submode,
-        )
+        try:
+            from app.services.intervention.service import intervention_service
+            student_state, policy, directive = intervention_service.compose_for_turn(
+                user_id=turn_input.user_id, grounding=grounding,
+                tree_id=turn_input.tree_id or "", node_id=turn_input.node_id or "",
+                teaching_mode=turn_input.teaching_mode,
+                socratic_submode=turn_input.socratic_submode,
+            )
+            applied_directive_id = directive["id"] if directive else None
+        except Exception as exc:
+            print(f"[intervention] directive load failed: {exc}")
+            student_state = _coerce_student_state(turn_input.user_id, student_state_summary)
+            policy = decide_tutor_policy(
+                student_state, turn_input.teaching_mode, turn_input.socratic_submode,
+            )
         # 计算脚手架层级，供 QATurnRecord 持久化
         from app.services.scaffolding_controller import scaffolding_controller
         apprenticeship_level = scaffolding_controller.determine_level(
@@ -115,6 +127,7 @@ async def _answer_text_turn(
             question=turn_input.question,
             marker_id=turn_input.marker_id or turn_input.chat_id,
             apprenticeship_level=apprenticeship_level,
+            applied_directive_id=applied_directive_id,
             answer=full_response,
             textbook_id=grounding.textbook_id,
             page_number=grounding.page_number,
@@ -166,6 +179,8 @@ async def _answer_text_turn(
         await asyncio.sleep(0)
         bus.emit({"type": "done"})
         bus.close()
+        if applied_directive_id:
+            intervention_service.mark_applied(applied_directive_id, turn_id)
 
         yield sse_done(
             full_text=full_response,
@@ -298,11 +313,12 @@ async def _answer_vision_turn(turn_input: QATurnInput) -> AsyncIterator[dict]:
 
 
 async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
-    turn_id = str(uuid.uuid4())
+    turn_id = turn_input.client_turn_id or str(uuid.uuid4())
     started_at = time.perf_counter()
     full_answer = ""
     record: QATurnRecord | None = None
     student_state_payload: dict = {}  # 异常时兜底默认值
+    applied_directive_id: str | None = None
 
     try:
         textbook_id, page_context, sequence_id, whitelist, user_profile = await _load_vision_page_context(turn_input)
@@ -336,6 +352,20 @@ async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
             sequence_id,
             user_profile,
         )
+        tutor_policy = None
+        try:
+            from app.services.intervention.service import intervention_service
+            stable_state, tutor_policy, directive = intervention_service.compose_for_turn(
+                user_id=turn_input.user_id, grounding=grounding,
+                tree_id=turn_input.tree_id or "", node_id=turn_input.node_id or "",
+                teaching_mode=turn_input.teaching_mode,
+                socratic_submode=turn_input.socratic_submode,
+            )
+            applied_directive_id = directive["id"] if directive else None
+            student_state_payload["student_stage"] = stable_state.current_section_stage
+            student_state_payload["prereq_gaps"] = [gap.__dict__ for gap in stable_state.weak_prerequisites]
+        except Exception as exc:
+            print(f"[intervention] vision directive load failed: {exc}")
         prompt_text = _build_vision_prompt(
             turn_input=turn_input,
             prompt_question=prompt_question,
@@ -345,6 +375,14 @@ async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
             student_state_payload=student_state_payload,
             kg_context=grounding.kg_context,
         )
+        if tutor_policy is not None:
+            prompt_text += "\n\n[Background teaching directive]\n" + json.dumps({
+                "review_prerequisites": tutor_policy.should_review_prerequisites,
+                "ask_guiding_question": tutor_policy.should_ask_guiding_question,
+                "explain_rule_conditions": tutor_policy.should_explain_rule_conditions,
+                "allow_full_solution": tutor_policy.allow_full_solution,
+                "answer_depth": tutor_policy.answer_depth,
+            }, ensure_ascii=False)
         sources = _build_vision_sources(textbook_id, page_context, grounding)
         image_for_model = (screenshot_context.get("pdf_crop") or {}).get("data_url") or turn_input.image_data
         if not image_for_model:
@@ -388,6 +426,7 @@ async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
             question=turn_input.question or "请分析这道题",
             marker_id=turn_input.marker_id or turn_input.chat_id,
             apprenticeship_level=_apprenticeship_name(student_state_payload.get("apprenticeship_level")),
+            applied_directive_id=applied_directive_id,
             answer=full_answer,
             textbook_id=textbook_id,
             page_number=turn_input.page_number,
@@ -452,6 +491,8 @@ async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
         await asyncio.sleep(0)
         bus.emit({"type": "done"})
         bus.close()
+        if applied_directive_id:
+            intervention_service.mark_applied(applied_directive_id, turn_id)
 
         yield sse_done(
             full_text=full_answer,
@@ -485,7 +526,7 @@ async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
 
 
 async def _load_vision_page_context(turn_input: QATurnInput) -> tuple[str, dict, str, dict, dict | None]:
-    textbook_id = turn_input.textbook_id or "高代上-丘维声"
+    textbook_id = canonical_textbook_id(turn_input.textbook_id or TextbookId.GAODAI_SHANG)
     sequence_id = "V1-C01-S01"
     page_context = {"error": "未提供页码，无法获取教材上下文"}
     whitelist = {"macro": "允许使用本教材涉及的所有概念和定理", "micro": ""}
@@ -503,20 +544,9 @@ async def _load_vision_page_context(turn_input: QATurnInput) -> tuple[str, dict,
 async def _get_page_context_with_fallback(textbook_id: str, page_number: int) -> tuple[dict, str]:
     from app.db.textbook_section_db import get_page_context
 
-    candidates = [textbook_id, "高代上-丘维声", "高代下-丘维声"]
-    seen: set[str] = set()
-    last_context: dict = {"error": "未提供页码，无法获取教材上下文"}
-    last_textbook_id = textbook_id
-    for candidate in candidates:
-        if not candidate or candidate in seen:
-            continue
-        seen.add(candidate)
-        context = await run_in_threadpool(get_page_context, candidate, page_number)
-        last_context = context
-        last_textbook_id = candidate
-        if context and "error" not in context:
-            return context, candidate
-    return last_context, last_textbook_id
+    canonical = canonical_textbook_id(textbook_id)
+    context = await run_in_threadpool(get_page_context, canonical, page_number)
+    return context, canonical
 
 
 def _safe_get_whitelist(textbook_id: str, sequence_id: str) -> dict:
@@ -762,6 +792,8 @@ async def answer_turn_with_tools(
     tool_def_list: list[ToolDef] = tool_defs or get_qa_tool_defs()
     full_response = ""
     runtime_result = None
+    apprenticeship_level: str | None = None
+    applied_directive_id: str | None = None
 
     try:
         yield sse_stage("searching", "正在匹配教材与知识图谱...")
@@ -772,10 +804,24 @@ async def answer_turn_with_tools(
         sources = _build_sources(grounding, kg_concepts)
 
         yield sse_stage("planning", "正在组织本轮讲解策略...")
-        student_state = _coerce_student_state(turn_input.user_id, None)
-        policy = decide_tutor_policy(
-            student_state, turn_input.teaching_mode, turn_input.socratic_submode,
-        )
+        try:
+            from app.services.intervention.service import intervention_service
+            student_state, policy, directive = intervention_service.compose_for_turn(
+                user_id=turn_input.user_id, grounding=grounding,
+                tree_id=turn_input.tree_id or "", node_id=turn_input.node_id or "",
+                teaching_mode=turn_input.teaching_mode,
+                socratic_submode=turn_input.socratic_submode,
+            )
+            applied_directive_id = directive["id"] if directive else None
+        except Exception:
+            student_state = _coerce_student_state(turn_input.user_id, None)
+            policy = decide_tutor_policy(
+                student_state, turn_input.teaching_mode, turn_input.socratic_submode,
+            )
+        from app.services.scaffolding_controller import scaffolding_controller
+        apprenticeship_level = scaffolding_controller.determine_level(
+            student_state.current_section_stage, turn_input.socratic_submode,
+        ).value
         from app.services.qa.prompt_builder import build_lightweight_prompt
         prompt = build_lightweight_prompt(
             turn_input.question, grounding, student_state, policy, history=turn_input.history,
@@ -861,7 +907,8 @@ async def answer_turn_with_tools(
             input_type=turn_input.input_type,
             question=turn_input.question,
             marker_id=turn_input.marker_id or turn_input.chat_id,
-            apprenticeship_level=None,
+            apprenticeship_level=apprenticeship_level,
+            applied_directive_id=applied_directive_id,
             answer=full_response,
             textbook_id=grounding.textbook_id,
             page_number=grounding.page_number,
@@ -898,6 +945,8 @@ async def answer_turn_with_tools(
         await asyncio.sleep(0)
         bus.emit({"type": "done"})
         bus.close()
+        if applied_directive_id:
+            intervention_service.mark_applied(applied_directive_id, turn_id)
 
         done_data = {
             "full_text": full_response,

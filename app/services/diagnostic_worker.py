@@ -84,6 +84,11 @@ async def run_diagnostic_batch(user_id: str | None = None) -> bool:
     return any(any(item.values()) for item in results) or dialogue_count > 0
 
 
+async def run_diagnostic_for_user(user_id: str) -> bool:
+    async with _get_diagnosis_lock(user_id):
+        return await run_diagnostic_batch(user_id)
+
+
 def _drain_dialogue_state_backlog(user_id: str | None = None) -> int:
     total = 0
     for _ in range(DIALOGUE_STATE_MAX_BATCHES):

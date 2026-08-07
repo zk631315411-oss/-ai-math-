@@ -1,15 +1,35 @@
 import { useState, useEffect } from 'react';
 import { getTextbookPreference, saveTextbookPreference } from '../services/api';
+import { migrateLegacyTextbookId, TEXTBOOKS, type TextbookId } from '../textbooks';
 
-export const PRESET_PDFS = [
-  { name: '高等代数（上册）丘维声', path: '/gaodai_vol1.pdf', textbookId: '高代上-丘维声' },
-  { name: '高等代数（下册）丘维声', path: '/高等代数下册_丘维声.pdf', textbookId: '高代下-丘维声' },
-  { name: '高等数学（上册）黄立宏', path: '/高等数学第二版上册黄立宏主编.pdf', textbookId: '高数上-黄立宏' },
-  { name: '高等数学（下册）黄立宏', path: '/高等数学第二版下册黄立宏主编.pdf', textbookId: '高数下-黄立宏' },
-];
+export const PRESET_PDFS = TEXTBOOKS.map(({ id, name, path }) => ({ name, path, textbookId: id }));
 
 const PDF_PAGE_KEY = 'pdf_viewer_page_v2';
 const PREF_KEY = 'textbook_preference';
+const MIGRATION_KEY = 'textbook_id_migration_v1';
+
+function migrateStoredTextbookIds(): void {
+  if (localStorage.getItem(MIGRATION_KEY) === 'complete') return;
+  try {
+    const preference = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');
+    const textbookId = migrateLegacyTextbookId(preference?.textbookId);
+    if (textbookId) localStorage.setItem(PREF_KEY, JSON.stringify({ textbookId }));
+
+    const current = migrateLegacyTextbookId(localStorage.getItem('current_textbook'));
+    if (current) localStorage.setItem('current_textbook', current);
+
+    const pages = JSON.parse(localStorage.getItem(PDF_PAGE_KEY) || '{}');
+    const migrated: Record<string, number> = {};
+    for (const [key, page] of Object.entries(pages)) {
+      const canonical = migrateLegacyTextbookId(key);
+      if (canonical && typeof page === 'number') migrated[canonical] = page;
+    }
+    localStorage.setItem(PDF_PAGE_KEY, JSON.stringify(migrated));
+    localStorage.setItem(MIGRATION_KEY, 'complete');
+  } catch {
+    // Leave the marker unset so a future load can retry a malformed value.
+  }
+}
 
 function getActualPage(textbookId: string): number {
   try {
@@ -20,10 +40,11 @@ function getActualPage(textbookId: string): number {
 
 export function useTextbookPreference(token: string | null) {
   const [selectedPdf, setSelectedPdf] = useState<string>('');
-  const [textbookId, setTextbookId] = useState<string>('');
+  const [textbookId, setTextbookId] = useState<TextbookId | ''>('');
 
   // 恢复偏好（云端 + localStorage）
   useEffect(() => {
+    migrateStoredTextbookIds();
     const localPref = localStorage.getItem(PREF_KEY);
     const localData = localPref ? JSON.parse(localPref) : null;
 
@@ -38,10 +59,10 @@ export function useTextbookPreference(token: string | null) {
     } else {
       // 登录：云端优先，localStorage 兜底
       getTextbookPreference(token).then(cloudPref => {
-        const tid = cloudPref.textbook_id || localData?.textbookId;
+        const tid = migrateLegacyTextbookId(cloudPref.textbook_id || localData?.textbookId);
         if (tid) {
           const matched = PRESET_PDFS.find(p => p.textbookId === tid);
-          const finalTid = matched ? matched.textbookId : (PRESET_PDFS[0]?.textbookId || tid);
+          const finalTid = matched ? matched.textbookId : PRESET_PDFS[0].textbookId;
           localStorage.setItem('current_textbook', finalTid);
 
           const url = matched

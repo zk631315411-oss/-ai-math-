@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 from datetime import datetime
+from app.textbooks import TextbookId
 
 
 class Section(BaseModel):
@@ -50,7 +51,7 @@ class QARequest(BaseModel):
     chat_id: Optional[str] = None  # Phase 2: 关联 chat_history 记录（标记更新用）
     marker_id: Optional[str] = None  # 前端页码徽标/对话线程 ID（只读上下文绑定）
     page_id: Optional[str] = None  # 兼容前端可能传入的页码徽标 ID 命名
-    textbook_id: Optional[str] = "高代上-丘维声"  # 教材ID，默认上册
+    textbook_id: Optional[TextbookId] = TextbookId.GAODAI_SHANG
     page_number: Optional[int] = None  # PDF物理页码（用于获取章节上下文）
     history: Optional[List[dict]] = None  # 对话历史 [{"user": "...", "assistant": "..."}]
     tree_id: Optional[str] = None
@@ -61,6 +62,7 @@ class QARequest(BaseModel):
     expected_node_revision: Optional[int] = Field(default=None, ge=0)
     crop_bbox: Optional[dict] = None  # 截图区域在 PDF 页面中的相对坐标
     screenshot_context_id: Optional[str] = None  # 已缓存的截图上下文 ID
+    auto_prepare_practice: bool = True
 
 
 class QAResponse(BaseModel):
@@ -186,7 +188,7 @@ class ExerciseGenerateRequest(BaseModel):
     user_id: str
     token: Optional[str] = None
     topic: Optional[str] = None
-    textbook_id: Optional[str] = None
+    textbook_id: Optional[TextbookId] = None
     page_number: Optional[int] = None
 
 
@@ -224,3 +226,22 @@ class FormulaConvertRequest(BaseModel):
 class FormulaConvertResponse(BaseModel):
     latex: str
     display_mode: Literal["inline", "block"]
+
+
+# === Conversation-driven practice v2 ===
+
+class PracticeDraftCreateRequest(BaseModel):
+    turn_id: str = Field(..., min_length=1, max_length=100)
+    node_id: str = Field(default="", max_length=100)
+    target_concept: str = Field(default="", max_length=200)
+    intervention_goal: str = Field(default="", max_length=1000)
+    evidence_quote: str = Field(default="", max_length=500)
+
+
+class PracticeAttemptRequest(BaseModel):
+    item_id: str = Field(..., min_length=1, max_length=100)
+    student_answer: str = Field(..., min_length=1, max_length=12000)
+
+
+class LearningPreferenceUpdate(BaseModel):
+    auto_prepare_practice: bool
