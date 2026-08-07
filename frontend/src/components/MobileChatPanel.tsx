@@ -28,6 +28,7 @@ interface Props {
   onCancelFork?: () => void;
   onClose: () => void;
   token?: string;
+  onGenerateAnimation?: (visualizationId: string) => Promise<void>;
 }
 
 function MobileChatPanelInner({
@@ -35,7 +36,7 @@ function MobileChatPanelInner({
   pendingImage, onClearPendingImage,
   thinkingStage, isThinking, thinkingExpanded, setThinkingExpanded,
   onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker,
-  onForkMessage, branchAnchor, onCancelFork, onClose, token,
+  onForkMessage, branchAnchor, onCancelFork, onClose, token, onGenerateAnimation,
 }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col animate-slide-up">
@@ -66,6 +67,7 @@ function MobileChatPanelInner({
           onForkMessage={onForkMessage}
           branchAnchor={branchAnchor}
           onCancelFork={onCancelFork}
+          onGenerateAnimation={onGenerateAnimation}
           compact
           token={token}
         />

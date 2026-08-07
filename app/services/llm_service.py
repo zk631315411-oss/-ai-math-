@@ -21,6 +21,13 @@ class LLMService:
         else:
             print("[WARN] QA_LLM_API_KEY not configured")
 
+        self.qa_async = None
+        if config.QA_LLM_API_KEY:
+            self.qa_async = AsyncOpenAI(
+                api_key=config.QA_LLM_API_KEY,
+                base_url=config.QA_LLM_API_BASE,
+            )
+
         # 用户画像用LLM客户端（同步，遗留兼容）
         self.profile_client = None
         if config.PROFILE_LLM_API_KEY:
@@ -118,6 +125,50 @@ class LLMService:
             messages=messages,
             tools=tools,
             tool_choice="auto",
+            stream=False,
+            temperature=temperature,
+        )
+
+    def vision_chat(
+        self,
+        image_data: str,
+        prompt: str,
+        *,
+        stream: bool = False,
+        temperature: float = 0.1,
+    ) -> Any:
+        """Call the configured multimodal model through the QA endpoint."""
+        if not self.qa_client:
+            raise RuntimeError("QA LLM service is not initialized")
+        return self.qa_client.chat.completions.create(
+            model=config.QA_VL_MODEL,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": image_data}},
+                    {"type": "text", "text": prompt},
+                ],
+            }],
+            stream=stream,
+            temperature=temperature,
+        )
+
+    async def chat_with_tools_async(
+        self,
+        messages: list,
+        tools: list[dict],
+        model: str | None = None,
+        temperature: float = 0.3,
+        tool_choice: str = "auto",
+    ) -> Any:
+        """Async OpenAI-compatible function calling used by ToolRuntime."""
+        if not self.qa_async:
+            raise RuntimeError("QA LLM 服务未初始化")
+        return await self.qa_async.chat.completions.create(
+            model=model or config.QA_LLM_MODEL,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
             stream=False,
             temperature=temperature,
         )

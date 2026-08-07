@@ -10,6 +10,14 @@ import base64
 import io
 import json
 
+if __name__ != "__main__":
+    import pytest
+
+    pytest.skip(
+        "manual LLM smoke suite; run `python tests/test_llm_switch.py` with model keys configured",
+        allow_module_level=True,
+    )
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 results = []

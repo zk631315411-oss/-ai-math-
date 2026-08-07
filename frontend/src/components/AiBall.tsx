@@ -17,13 +17,14 @@ interface Props {
   hasUnread: boolean;
   onRead: () => void;
   token?: string;
+  onGenerateAnimation?: (visualizationId: string) => Promise<void>;
 }
 
 export default function AiBall({
   messages, onSendMessage, onClearMessages, isLoading,
   pendingImage, onClearPendingImage,
   thinkingStage, thinkingContent: _thinkingContent, isThinking, thinkingExpanded, setThinkingExpanded,
-  hasUnread, onRead, token,
+  hasUnread, onRead, token, onGenerateAnimation,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -145,6 +146,7 @@ export default function AiBall({
                 thinkingStage={thinkingStage}
                 isThinking={isThinking} thinkingExpanded={thinkingExpanded}
                 setThinkingExpanded={setThinkingExpanded}
+                onGenerateAnimation={onGenerateAnimation}
                 compact
                 token={token}
               />

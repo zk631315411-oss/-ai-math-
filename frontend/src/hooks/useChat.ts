@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   fetchWithStage, createChatHistory, updateChatHistory,
   getChatTreeByHistory, ensureChatTreeByHistory, getChatNodeContext,
-  createChatTree, activateChatNode,
+  createChatTree, activateChatNode, createVisualizationAnimation,
+  getVisualizationAnimation, getVisualization,
 } from '../services/api';
 import type { Marker } from '../components/PageMarker';
-import type { Message, CropBBox, User } from '../types';
+import type { AnimationJob, MathVisualizationArtifact, Message, CropBBox, User } from '../types';
 
 function generateId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -62,6 +63,45 @@ export function useChat({
   const lastMsgCount = useRef(0);
   const wasLoading = useRef(false);
 
+  const hydrateVisualizations = useCallback(async (items: MathVisualizationArtifact[] | undefined) => {
+    if (!items?.length || !user.token) return items || [];
+    return Promise.all(items.map(async (item) => {
+      try {
+        return await getVisualization(item.id, user.userId || user.deviceId, user.token!);
+      } catch {
+        return item;
+      }
+    }));
+  }, [user]);
+
+  const updateVisualization = useCallback((visualizationId: string, update: (item: MathVisualizationArtifact) => MathVisualizationArtifact) => {
+    setMessages((current) => current.map((message) => ({
+      ...message,
+      visualizations: message.visualizations?.map((item) => item.id === visualizationId ? update(item) : item),
+    })));
+  }, []);
+
+  const generateVisualizationAnimation = useCallback(async (visualizationId: string) => {
+    if (!user.token) throw new Error('生成动画需要有效登录状态');
+    const userId = user.userId || user.deviceId;
+    let job = await createVisualizationAnimation(visualizationId, userId, user.token);
+    const applyJob = (next: AnimationJob) => updateVisualization(visualizationId, (item) => ({
+      ...item,
+      animation_status: next.status,
+      animation_job_id: next.id,
+      animation: next,
+    }));
+    applyJob(job);
+    for (let attempt = 0; attempt < 60 && (job.status === 'queued' || job.status === 'running'); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      job = await getVisualizationAnimation(job.id, userId, user.token);
+      applyJob(job);
+    }
+    if (job.status === 'queued' || job.status === 'running') {
+      throw new Error('动画仍在后台渲染，请稍后重新打开本对话查看');
+    }
+  }, [updateVisualization, user]);
+
   useEffect(() => {
     // 刚收到 assistant 回复时（isLoading true→false），标记未读
     if (wasLoading.current && !isLoading) {
@@ -89,9 +129,11 @@ export function useChat({
           setTreeNodes(tree.nodes.map(({ id, parent_node_id, title, archived_at }) => ({ id, parent_node_id, title, archived_at })));
           setActiveTreeNodeId(node.id);
           treeStateRef.current[marker.id] = { treeId: tree.id, nodeId: node.id, revision: node.revision };
-          setMessages(context.filter(m => (
+          const restored = context.filter(m => (
             m.role === 'user' || (m.role === 'assistant' && Boolean(m.content))
-          )).map((m, index) => ({
+          ));
+          const hydrated = await Promise.all(restored.map((m) => hydrateVisualizations(m.visualizations)));
+          setMessages(restored.map((m, index) => ({
             id: m.id,
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.content,
@@ -99,6 +141,7 @@ export function useChat({
             treeNodeId: node.id,
             treeMessageId: m.id,
             treeMessageStatus: m.status,
+            visualizations: hydrated[index],
           })));
           setBranchAnchor(null);
           return;
@@ -138,9 +181,11 @@ export function useChat({
       setTreeNodes(tree.nodes.map(({ id, parent_node_id, title, archived_at }) => ({ id, parent_node_id, title, archived_at })));
       setActiveTreeNodeId(nodeId);
       const marker = getMarkerById(markerId);
-      setMessages(context.filter((message) => (
+      const restored = context.filter((message) => (
         message.role === 'user' || (message.role === 'assistant' && Boolean(message.content))
-      )).map((message, index) => ({
+      ));
+      const hydrated = await Promise.all(restored.map((message) => hydrateVisualizations(message.visualizations)));
+      setMessages(restored.map((message, index) => ({
         id: message.id,
         role: message.role === 'assistant' ? 'assistant' : 'user',
         content: message.content,
@@ -148,12 +193,13 @@ export function useChat({
         treeNodeId: node.id,
         treeMessageId: message.id,
         treeMessageStatus: message.status,
+        visualizations: hydrated[index],
       })));
       setBranchAnchor(null);
     } catch {
       setError('无法切换到该分支');
     }
-  }, [activeThreadId, getMarkerById, user]);
+  }, [activeThreadId, getMarkerById, hydrateVisualizations, user]);
 
   const handleForkMessage = useCallback((message: Message) => {
     if (message.treeNodeId && message.treeMessageId) {
@@ -329,6 +375,11 @@ export function useChat({
             return msg;
           }));
         },
+        (artifact) => {
+          setMessages((prev) => prev.map((msg) => msg.id === assistantMessageId
+            ? { ...msg, visualizations: [...(msg.visualizations || []).filter((item) => item.id !== artifact.id), artifact] }
+            : msg));
+        },
       );
       if (answer.tree_turn && chatId) {
         treeState = {
@@ -345,6 +396,8 @@ export function useChat({
         treeNodeId: answer.tree_turn?.node_id || treeState?.nodeId,
         treeMessageId: answer.tree_turn?.assistant_message.id || msg.treeMessageId,
         treeMessageStatus: answer.tree_turn?.assistant_message.status || msg.treeMessageStatus,
+        visualizations: answer.visualizations || msg.visualizations || [],
+        degraded: answer.degraded,
       } : msg));
 
       // 落库
@@ -412,5 +465,6 @@ export function useChat({
     treeNodes, activeTreeNodeId, selectTreeNode,
     handleSendMessage, loadThreadToChat, clearMessages, clearPendingImage,
     handleCapture,
+    generateVisualizationAnimation,
   };
 }

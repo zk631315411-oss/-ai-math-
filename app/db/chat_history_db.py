@@ -14,30 +14,27 @@ def get_chat_history(user_id: str, limit: int = 50,
                      page_number: Optional[int] = None,
                      chat_id: Optional[str] = None) -> List[dict]:
     conn = get_conn()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
+        if chat_id:
+            cursor.execute("SELECT * FROM chat_history WHERE id=?", (chat_id,))
+        elif page_number is not None:
+            cursor.execute("""
+                SELECT * FROM chat_history
+                WHERE user_id=? AND page_number=?
+                ORDER BY created_at ASC LIMIT ?
+            """, (user_id, page_number, limit))
+        else:
+            cursor.execute("""
+                SELECT * FROM chat_history
+                WHERE user_id=?
+                ORDER BY created_at DESC LIMIT ?
+            """, (user_id, limit))
 
-    if chat_id:
-        cursor.execute("SELECT * FROM chat_history WHERE id=?", (chat_id,))
-        row = cursor.fetchone()
+        from app.db.visualization_db import decorate_chat_history
+        return decorate_chat_history(conn, cursor.fetchall())
+    finally:
         conn.close()
-        return [dict(row)] if row else []
-
-    if page_number is not None:
-        cursor.execute("""
-            SELECT * FROM chat_history
-            WHERE user_id=? AND page_number=?
-            ORDER BY created_at ASC LIMIT ?
-        """, (user_id, page_number, limit))
-    else:
-        cursor.execute("""
-            SELECT * FROM chat_history
-            WHERE user_id=?
-            ORDER BY created_at DESC LIMIT ?
-        """, (user_id, limit))
-
-    rows = cursor.fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
 
 
 def save_chat_history(user_id: str, question: str, answer: Optional[str] = None,
@@ -104,10 +101,17 @@ def update_chat_answer(
 
 
 def delete_chat_history(chat_id: str):
+    from app.db.visualization_db import delete_visualizations_for_chat
+    from app.services.visualization.storage import schedule_delete_objects
+
+    object_keys = delete_visualizations_for_chat(chat_id)
+    from app.db.tool_trace_db import delete_traces_for_chat
+    delete_traces_for_chat(chat_id)
     conn = get_conn()
     conn.execute("DELETE FROM chat_history WHERE id=?", (chat_id,))
     conn.commit()
     conn.close()
+    schedule_delete_objects(object_keys)
 
 
 def migrate_user_id(old_user_id: str, new_user_id: str) -> int:
@@ -120,4 +124,8 @@ def migrate_user_id(old_user_id: str, new_user_id: str) -> int:
     count = cursor.rowcount
     conn.commit()
     conn.close()
+    from app.db.visualization_db import migrate_visualization_user
+    migrate_visualization_user(old_user_id, new_user_id)
+    from app.db.tool_trace_db import migrate_trace_user
+    migrate_trace_user(old_user_id, new_user_id)
     return count

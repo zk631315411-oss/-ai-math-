@@ -1,17 +1,22 @@
-"""search_textbook 工具：在教材中搜索关键词。"""
+"""Search textbook grounding through a validated agent tool."""
 
 from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.services.agents.tool_def import ToolDef
 from app.services.qa.grounding_service import ground_text_turn
 
 
-def _search_textbook_impl(
-    keyword: str,
-    textbook_id: str | None = None,
-    page: int | None = None,
-) -> dict:
-    """在教材中搜索关键词，返回原文段落和定位信息。"""
+class SearchTextbookInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    keyword: str = Field(min_length=1, max_length=180, description="概念名、术语或数学表达式")
+    textbook_id: str | None = Field(default=None, max_length=200)
+    page: int | None = Field(default=None, ge=1, le=10000)
+
+
+def _search_textbook_impl(keyword: str, textbook_id: str | None = None, page: int | None = None) -> dict:
     grounding = ground_text_turn(
         textbook_id=textbook_id or "",
         page_number=page,
@@ -33,24 +38,8 @@ def _search_textbook_impl(
 
 search_textbook_tool = ToolDef(
     name="search_textbook",
-    description="在教材中搜索指定概念或关键词的原文段落，返回教材名称、页码、章节名和原文内容",
-    input_schema={
-        "type": "object",
-        "properties": {
-            "keyword": {
-                "type": "string",
-                "description": "搜索关键词，可以是概念名、术语或数学表达式",
-            },
-            "textbook_id": {
-                "type": "string",
-                "description": "教材ID，可选，不传时自动检测",
-            },
-            "page": {
-                "type": "integer",
-                "description": "页码，可选，指定后返回该页相关内容",
-            },
-        },
-        "required": ["keyword"],
-    },
+    display_name="查询教材",
+    description="在教材中搜索指定概念或关键词，返回页码、章节、原文摘要和相关概念。",
+    input_model=SearchTextbookInput,
     execute=_search_textbook_impl,
 )

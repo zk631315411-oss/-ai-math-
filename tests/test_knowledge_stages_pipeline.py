@@ -4,6 +4,10 @@ E2E test: knowledge_stages 数据链路打通
 
 本地运行: cd d:\ai-math && python tests/test_knowledge_stages_pipeline.py
 """
+if __name__ != "__main__":
+    import pytest
+    pytest.skip("manual live diagnostic script", allow_module_level=True)
+
 import sys, os, json, asyncio, time, sqlite3
 
 # Ensure we're in project root and it's on path

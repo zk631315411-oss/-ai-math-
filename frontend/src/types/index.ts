@@ -31,6 +31,32 @@ export interface Source {
   kg_rule_cases_count?: number;
 }
 
+export type MathVisualizationKind = 'function_2d' | 'parametric_2d' | 'vector_2d' | 'linear_transform_2d';
+export type AnimationStatus = 'not_requested' | 'queued' | 'running' | 'completed' | 'failed';
+
+export interface AnimationJob {
+  id: string;
+  visualization_id: string;
+  status: Exclude<AnimationStatus, 'not_requested'>;
+  error?: string;
+  video_url?: string | null;
+  poster_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MathVisualizationArtifact {
+  id: string;
+  version: 1;
+  kind: MathVisualizationKind;
+  title: string;
+  spec: Record<string, any>;
+  animation_available: boolean;
+  animation_status: AnimationStatus;
+  animation_job_id?: string;
+  animation?: AnimationJob;
+}
+
 // === 聊天消息 ===
 
 export interface Message {
@@ -44,6 +70,8 @@ export interface Message {
   treeNodeId?: string;
   treeMessageId?: string;
   treeMessageStatus?: 'streaming' | 'completed' | 'interrupted' | 'failed';
+  visualizations?: MathVisualizationArtifact[];
+  degraded?: boolean;
 }
 
 // === 截图裁剪框 ===

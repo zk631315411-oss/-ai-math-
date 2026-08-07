@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const python = process.env.AI_MATH_PYTHON || '.\\venv\\Scripts\\python.exe';
+const apiPort = Number(process.env.PLAYWRIGHT_API_PORT || 8010);
+const appPort = Number(process.env.PLAYWRIGHT_APP_PORT || 5174);
+
 export default defineConfig({
   testDir: './tests/specs',
   fullyParallel: true,
@@ -13,7 +17,7 @@ export default defineConfig({
   timeout: 180_000,
   expect: { timeout: 10_000 },
   use: {
-    baseURL: 'http://127.0.0.1:5174',
+    baseURL: `http://127.0.0.1:${appPort}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -31,22 +35,22 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `${process.env.PLAYWRIGHT_PYTHON || '.\\venv\\Scripts\\python.exe'} -m uvicorn app.main:app --host 127.0.0.1 --port 8010`,
+      command: `${python} -m uvicorn app.main:app --host 127.0.0.1 --port ${apiPort}`,
       cwd: '..',
       env: {
         AI_MATH_DB_PATH: 'data/playwright-learning.db',
         DIAGNOSIS_V2_MODE: 'shadow',
       },
-      port: 8010,
+      port: apiPort,
       timeout: 30_000,
       reuseExistingServer: false,
     },
     {
-      command: 'npm run dev -- --host 127.0.0.1 --port 5174',
+      command: `npm run dev -- --host 127.0.0.1 --port ${appPort}`,
       env: {
-        VITE_API_BASE: 'http://127.0.0.1:8010/api',
+        VITE_API_BASE: `http://127.0.0.1:${apiPort}/api`,
       },
-      port: 5174,
+      port: appPort,
       timeout: 30_000,
       reuseExistingServer: !process.env.CI,
     },

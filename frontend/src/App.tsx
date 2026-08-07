@@ -65,8 +65,13 @@ export default function App() {
 
   const handleMarkerClick = (marker: Marker) => {
     markers.handleMarkerClick(marker);
-    chat.loadThreadToChat(marker);
   };
+
+  useEffect(() => {
+    if (markers.activeMarker && markers.activeThreadId === markers.activeMarker.id) {
+      chat.loadThreadToChat(markers.activeMarker);
+    }
+  }, [markers.activeMarker?.id, markers.activeThreadId]);
 
   const handleCapture = (imageData: string, pageRatioX: number, pageRatioY: number, cropBBox: CropBBox) => {
     setIsCapturing(false);
@@ -235,6 +240,7 @@ export default function App() {
               treeNodes={chat.treeNodes}
               activeTreeNodeId={chat.activeTreeNodeId}
               onSelectTreeNode={chat.selectTreeNode}
+              onGenerateAnimation={chat.generateVisualizationAnimation}
               onStartExercise={exercise.startExercise}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}
@@ -287,6 +293,7 @@ export default function App() {
               onForkMessage={chat.handleForkMessage}
               branchAnchor={chat.branchAnchor}
               onCancelFork={chat.cancelFork}
+              onGenerateAnimation={chat.generateVisualizationAnimation}
               onStartExercise={exercise.startExercise}
               markerBanner={markers.activeMarker ? { id: markers.activeMarker.id, page: markers.activeMarker.page_number, question: markers.activeMarker.question } : null}
               onCloseMarkerBanner={() => markers.setActiveMarker(null)}
@@ -306,6 +313,7 @@ export default function App() {
               setThinkingExpanded={chat.setThinkingExpanded}
               hasUnread={chat.hasUnread}
               onRead={() => chat.setHasUnread(false)}
+              onGenerateAnimation={chat.generateVisualizationAnimation}
             />
           )}
         </div>}

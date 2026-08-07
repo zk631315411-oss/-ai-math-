@@ -36,6 +36,14 @@ class Config:
     QA_LLM_API_BASE: str = os.getenv("QA_LLM_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     QA_LLM_MODEL: str = os.getenv("QA_LLM_MODEL", "qwen3.6-plus")
 
+    TOOL_MAX_MODEL_ROUNDS: int = max(1, int(os.getenv("TOOL_MAX_MODEL_ROUNDS", "5")))
+    TOOL_MAX_TOTAL_CALLS: int = max(1, int(os.getenv("TOOL_MAX_TOTAL_CALLS", "8")))
+    TOOL_DEFAULT_TIMEOUT_SECONDS: float = max(0.1, float(os.getenv("TOOL_DEFAULT_TIMEOUT_SECONDS", "15")))
+    TOOL_MAX_CONSECUTIVE_FAILURE_ROUNDS: int = max(1, int(os.getenv("TOOL_MAX_CONSECUTIVE_FAILURE_ROUNDS", "2")))
+    VISION_EXTRACTION_CONFIDENCE: float = float(os.getenv("VISION_EXTRACTION_CONFIDENCE", "0.70"))
+    QA_TEXT_TURN_TIMEOUT_SECONDS: float = max(0.0, float(os.getenv("QA_TEXT_TURN_TIMEOUT_SECONDS", "0")))
+    QA_SCREENSHOT_TURN_TIMEOUT_SECONDS: float = max(0.0, float(os.getenv("QA_SCREENSHOT_TURN_TIMEOUT_SECONDS", "0")))
+
     # 截图问答用 VL 模型（DashScope 原生 MultiModal API）
     QA_VL_MODEL: str = os.getenv("QA_VL_MODEL", "qwen3.6-plus")
 
@@ -78,6 +86,7 @@ class Config:
 
 
     DB_PATH: str = os.getenv("AI_MATH_DB_PATH", str(DATA_DIR / "learning.db"))
+    DB_JOURNAL_MODE: str = os.getenv("AI_MATH_DB_JOURNAL_MODE", "WAL").strip().upper()
 
     # JWT 密钥
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
@@ -89,6 +98,18 @@ class Config:
     NEO4J_URI: str = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     NEO4J_USER: str = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "")
+
+    # 数学动画：Web API 只负责入队和签名，Manim 运行在独立 Worker。
+    VISUALIZATION_REDIS_URL: str = os.getenv("VISUALIZATION_REDIS_URL", "redis://localhost:6379/0")
+    VISUALIZATION_QUEUE: str = os.getenv("VISUALIZATION_QUEUE", "math-visualization")
+    VISUALIZATION_S3_ENDPOINT: str = os.getenv("VISUALIZATION_S3_ENDPOINT", "http://localhost:9000")
+    VISUALIZATION_S3_REGION: str = os.getenv("VISUALIZATION_S3_REGION", "us-east-1")
+    VISUALIZATION_S3_BUCKET: str = os.getenv("VISUALIZATION_S3_BUCKET", "ai-math-visualizations")
+    VISUALIZATION_S3_ACCESS_KEY: str = os.getenv("VISUALIZATION_S3_ACCESS_KEY", "minioadmin")
+    VISUALIZATION_S3_SECRET_KEY: str = os.getenv("VISUALIZATION_S3_SECRET_KEY", "minioadmin")
+    VISUALIZATION_URL_TTL_SECONDS: int = int(os.getenv("VISUALIZATION_URL_TTL_SECONDS", "900"))
+    VISUALIZATION_MAX_OUTPUT_BYTES: int = int(os.getenv("VISUALIZATION_MAX_OUTPUT_BYTES", str(25 * 1024 * 1024)))
+    VISUALIZATION_WORKER_CONCURRENCY: int = max(1, int(os.getenv("VISUALIZATION_WORKER_CONCURRENCY", "1")))
 
     @classmethod
     def ensure_dirs(cls):

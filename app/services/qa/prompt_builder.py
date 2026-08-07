@@ -10,6 +10,14 @@ from app.services.scaffolding_controller import (
     scaffolding_controller,
 )
 
+
+VISUALIZATION_TOOL_POLICY = """【数学可视化工具规则】
+- 学生明确要求绘图时，调用 create_math_visualization。
+- 学生明确要求动画或动态演示时，调用 create_math_visualization 时必须填写 animation。
+- 割线趋近切线使用 secant_to_tangent；黎曼和细分使用 riemann_refinement；函数形变使用 function_transform；二维矩阵变换使用 linear_map_2d。
+- 例如割线动画参数必须包含 `"animation":{"template":"secant_to_tangent","parameters":{"x0":切点横坐标}}`，不能只生成静态 series。
+- 动画只提供受限场景协议，不生成或执行 Python 代码。"""
+
 # Socratic 子模式对应的角色段
 SUBMODE_ROLE = {
     "preview": "你是一位数学导学教练。学生还没学过这个概念，你需要用生活中的例子和直观类比引入，通过一系列引导性问题让学生自己发现规律。不要直接给出定义和结论，要让学生从具体现象中归纳。",
@@ -168,6 +176,8 @@ def build_lightweight_prompt(
 
 【最近相关历史】
 {_format_history(history)}
+
+{VISUALIZATION_TOOL_POLICY}
 
 【学生问题】
 {question}

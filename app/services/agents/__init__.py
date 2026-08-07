@@ -12,6 +12,7 @@ from app.services.agents.qa_agent import QAAgent
 from app.services.agents.registry import AGENT_REGISTRY, clear, get_agent, list_agents, register
 from app.services.agents.tool_def import ToolDef
 from app.services.agents.tool_executor import execute_tool_call, execute_tool_calls
+from app.services.agents.tool_runtime import ToolRuntime, ToolRuntimeConfig, ToolRuntimeContext
 
 # 注册工具
 def _register_tools() -> None:
@@ -25,6 +26,9 @@ __all__ = [
     "ExerciseAgent",
     "QAAgent",
     "ToolDef",
+    "ToolRuntime",
+    "ToolRuntimeConfig",
+    "ToolRuntimeContext",
     "execute_tool_call",
     "execute_tool_calls",
     "clear",

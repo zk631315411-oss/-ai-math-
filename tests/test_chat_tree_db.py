@@ -260,7 +260,7 @@ class ChatTreeDbTests(unittest.TestCase):
         append_message(root["id"], self.user, "assistant", "父节点后续回答")
         captured = {}
 
-        async def fake_answer_turn(turn_input):
+        async def fake_answer_turn(_agent, turn_input, stream=True):
             captured["history"] = turn_input.history
             captured["node_id"] = turn_input.node_id
             yield sse_text("分支回答")
@@ -269,7 +269,7 @@ class ChatTreeDbTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(router)
         token = create_access_token({"user_id": self.user})
-        with patch("app.routers.qa.answer_turn", new=fake_answer_turn):
+        with patch("app.routers.qa.QAAgent.run", new=fake_answer_turn):
             response = TestClient(app).post(
                 "/api/qa/solve-stream",
                 headers={"Authorization": f"Bearer {token}"},

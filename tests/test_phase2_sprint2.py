@@ -215,7 +215,7 @@ def test_exercise_models():
 def test_full_app_routes():
     """6. 完整路由注册"""
     from app.main import app
-    routes = [r.path for r in app.routes if hasattr(r, "path")]
+    routes = set(app.openapi()["paths"])
     exercise_routes = [r for r in routes if "/exercise" in r]
     expected = ["/api/exercise/generate", "/api/exercise/list",
                 "/api/exercise/{exercise_id}/submit",

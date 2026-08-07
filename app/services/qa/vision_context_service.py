@@ -34,7 +34,7 @@ def get_valid_screenshot_cache(turn_input: QATurnInput) -> dict | None:
 
     if not turn_input.screenshot_context_id:
         return None
-    cached = get_screenshot_context_cache(turn_input.screenshot_context_id)
+    cached = get_screenshot_context_cache(turn_input.screenshot_context_id, turn_input.user_id)
     if not cached:
         return None
     if turn_input.textbook_id and cached.get("textbook_id") != turn_input.textbook_id:
@@ -85,6 +85,7 @@ def prepare_screenshot_context(turn_input: QATurnInput, textbook_id: str, page_c
 
     if not cached and page_number:
         cached = find_screenshot_context_cache(
+            turn_input.user_id,
             img_hash,
             textbook_id,
             page_number,
@@ -146,6 +147,7 @@ def prepare_screenshot_context(turn_input: QATurnInput, textbook_id: str, page_c
     )
 
     cache_id = save_screenshot_context_cache(
+        user_id=turn_input.user_id,
         image_hash=img_hash,
         textbook_id=textbook_id,
         page_number=page_number,

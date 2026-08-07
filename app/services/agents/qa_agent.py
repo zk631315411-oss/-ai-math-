@@ -6,25 +6,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, AsyncIterator
 
+from app.config import config
 from app.services.agents.base import BaseAgent
 from app.services.qa.answer_service import answer_turn
 from app.services.qa.contracts import QATurnInput
 from app.services.qa.streaming_service import sse_error
-
-# 延迟 import 避免循环依赖
-def _get_tools() -> list:
-    """获取 QAAgent 注册的工具列表。"""
-    from app.services.agents.tools.search_textbook import search_textbook_tool
-    from app.services.agents.tools.lookup_kg_node import lookup_kg_node_tool
-    from app.services.agents.tools.verify_math import verify_math_tool
-    return [
-        search_textbook_tool.to_openai_tool(),
-        lookup_kg_node_tool.to_openai_tool(),
-        verify_math_tool.to_openai_tool(),
-    ]
-
 
 class QAAgent(BaseAgent):
     """数学问答 Agent：教材定位 + KG 对齐 + 流式回答。"""
@@ -34,7 +23,11 @@ class QAAgent(BaseAgent):
 
     def get_tools(self) -> list[dict]:
         """返回工具列表，启用工具调用模式。"""
-        return _get_tools()
+        return [tool.to_openai_tool() for tool in self.get_tool_defs()]
+
+    def get_tool_defs(self) -> list:
+        from app.services.agents.tools import get_qa_tool_defs
+        return get_qa_tool_defs()
 
     async def run(self, input: Any, stream: bool = True) -> AsyncIterator[dict]:
         if input is None:
@@ -44,11 +37,28 @@ class QAAgent(BaseAgent):
             yield sse_error(f"QAAgent 期望 QATurnInput，收到 {type(input).__name__}")
             return
 
-        tools = self.get_tools()
-        if tools:
-            from app.services.qa.answer_service import answer_turn_with_tools
-            async for event in answer_turn_with_tools(input, tools=tools):
-                yield event
-        else:
-            async for event in answer_turn(input):
-                yield event
+        async def events():
+            tool_defs = self.get_tool_defs()
+            if input.input_type == "text" and tool_defs:
+                from app.services.qa.answer_service import answer_turn_with_tools
+                async for event in answer_turn_with_tools(input, tool_defs=tool_defs):
+                    yield event
+            else:
+                async for event in answer_turn(input):
+                    yield event
+
+        timeout = (
+            config.QA_TEXT_TURN_TIMEOUT_SECONDS
+            if input.input_type == "text"
+            else config.QA_SCREENSHOT_TURN_TIMEOUT_SECONDS
+        )
+        try:
+            if timeout > 0:
+                async with asyncio.timeout(timeout):
+                    async for event in events():
+                        yield event
+            else:
+                async for event in events():
+                    yield event
+        except TimeoutError:
+            yield sse_error("本轮回答超时，请稍后重试")

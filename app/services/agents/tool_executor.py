@@ -1,73 +1,159 @@
-"""工具执行器。"""
+"""Validated and bounded execution for registered agent tools."""
 
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
-from typing import Any
+import logging
+import time
+from dataclasses import dataclass, field
+from typing import Any, Literal
 
-from app.services.agents.tool_def import ToolDef
+from app.services.agents.tool_def import ToolArgumentError, ToolDef
 
-# 工具执行超时（秒）
-TOOL_TIMEOUT_SECONDS = 15
+
+logger = logging.getLogger("tool_runtime.executor")
+
+
+ToolStatus = Literal["success", "error", "skipped", "cancelled"]
+ToolErrorCode = Literal[
+    "invalid_arguments", "unknown_tool", "duplicate_call", "timeout",
+    "execution_failed", "policy_denied", "budget_exceeded", "cancelled",
+]
+
+
+@dataclass
+class ToolOutcome:
+    tool_call_id: str
+    tool_name: str
+    status: ToolStatus
+    model_payload: dict[str, Any] = field(default_factory=dict)
+    artifacts: list[dict[str, Any]] = field(default_factory=list)
+    error_code: ToolErrorCode | None = None
+    error_message: str | None = None
+    retryable: bool = False
+    duration_ms: int = 0
+    normalized_arguments: dict[str, Any] = field(default_factory=dict)
+
+    def as_tool_message(self) -> dict[str, str]:
+        payload = self.model_payload if self.status == "success" else {
+            "error": {
+                "code": self.error_code,
+                "message": self.error_message or "工具调用失败",
+                "retryable": self.retryable,
+            }
+        }
+        return {
+            "role": "tool",
+            "tool_call_id": self.tool_call_id,
+            "content": json.dumps(payload, ensure_ascii=False, allow_nan=False),
+        }
 
 
 class ToolExecutionError(Exception):
-    """工具执行异常。"""
-    pass
+    """Backward-compatible public exception for direct executor callers."""
 
 
-async def execute_tool_call(
-    tool_call: Any,
-    tools: list[ToolDef],
-) -> dict[str, Any]:
-    """执行单个 tool_call。"""
-    tool_name = tool_call.function.name
-    tool = _find_tool(tool_name, tools)
+@dataclass(frozen=True)
+class PreparedToolCall:
+    tool_call_id: str
+    tool_name: str
+    tool: ToolDef
+    arguments: dict[str, Any]
 
+
+def prepare_tool_call(tool_call: Any, tools: list[ToolDef]) -> PreparedToolCall | ToolOutcome:
+    """Validate a provider tool call without executing it."""
+    started = time.perf_counter()
+    name = str(getattr(getattr(tool_call, "function", None), "name", ""))
+    call_id = str(getattr(tool_call, "id", ""))
+    tool = _find_tool(name, tools)
     if tool is None or tool.execute is None:
-        raise ToolExecutionError(f"工具 '{tool_name}' 未注册或未实现")
-
+        return _error(call_id, name, "unknown_tool", "请求的工具不可用", False, started)
     try:
-        arguments = json.loads(tool_call.function.arguments)
-    except json.JSONDecodeError as e:
-        raise ToolExecutionError(f"工具 '{tool_name}' 参数解析失败: {e}")
+        raw = json.loads(tool_call.function.arguments)
+        if not isinstance(raw, dict):
+            raise ToolArgumentError("工具参数必须是 JSON 对象")
+        arguments = tool.validate_arguments(raw)
+    except (json.JSONDecodeError, ToolArgumentError) as exc:
+        return _error(call_id, name, "invalid_arguments", str(exc), True, started)
+    return PreparedToolCall(call_id, name, tool, arguments)
 
+
+async def execute_prepared_tool_call(prepared: PreparedToolCall) -> ToolOutcome:
+    started = time.perf_counter()
+    tool = prepared.tool
+    arguments = prepared.arguments
     try:
-        # 工具可以是同步函数或异步函数，统一处理
-        if asyncio.iscoroutinefunction(tool.execute):
-            result = await asyncio.wait_for(
-                tool.execute(**arguments),
-                timeout=TOOL_TIMEOUT_SECONDS,
-            )
+        if inspect.iscoroutinefunction(tool.execute):
+            result = await asyncio.wait_for(tool.execute(**arguments), timeout=tool.timeout_seconds)
         else:
             result = await asyncio.wait_for(
                 asyncio.to_thread(tool.execute, **arguments),
-                timeout=TOOL_TIMEOUT_SECONDS,
+                timeout=tool.timeout_seconds,
             )
+    except asyncio.CancelledError:
+        return _error(prepared.tool_call_id, prepared.tool_name, "cancelled", "工具调用已取消", False, started, status="cancelled", arguments=arguments)
     except asyncio.TimeoutError:
-        raise ToolExecutionError(f"工具 '{tool_name}' 执行超时（{TOOL_TIMEOUT_SECONDS}s）")
-    except Exception as e:
-        raise ToolExecutionError(f"工具 '{tool_name}' 执行异常: {e}")
+        return _error(prepared.tool_call_id, prepared.tool_name, "timeout", "工具执行超时", True, started, arguments=arguments)
+    except Exception:
+        logger.exception("tool execution failed: %s", prepared.tool_name)
+        return _error(prepared.tool_call_id, prepared.tool_name, "execution_failed", "工具执行失败", True, started, arguments=arguments)
 
-    return {
-        "role": "tool",
-        "tool_call_id": tool_call.id,
-        "content": json.dumps(result, ensure_ascii=False),
-    }
+    model_payload = result
+    artifacts: list[dict[str, Any]] = []
+    if isinstance(result, dict) and "model_result" in result:
+        model_payload = result.get("model_result") or {}
+        raw_artifacts = result.get("artifacts")
+        if isinstance(raw_artifacts, list):
+            artifacts = [item for item in raw_artifacts if isinstance(item, dict)]
+    if not isinstance(model_payload, dict):
+        model_payload = {"result": model_payload}
+    return ToolOutcome(
+        tool_call_id=prepared.tool_call_id,
+        tool_name=prepared.tool_name,
+        status="success",
+        model_payload=model_payload,
+        artifacts=artifacts,
+        duration_ms=int((time.perf_counter() - started) * 1000),
+        normalized_arguments=arguments,
+    )
 
 
-async def execute_tool_calls(
-    tool_calls: list[Any],
-    tools: list[ToolDef],
-) -> list[dict[str, Any]]:
-    """并发执行多个 tool_call。"""
-    tasks = [execute_tool_call(tc, tools) for tc in tool_calls]
-    return await asyncio.gather(*tasks, return_exceptions=True)
+async def execute_tool_call(tool_call: Any, tools: list[ToolDef]) -> ToolOutcome:
+    prepared = prepare_tool_call(tool_call, tools)
+    if isinstance(prepared, ToolOutcome):
+        return prepared
+    return await execute_prepared_tool_call(prepared)
+
+
+async def execute_tool_calls(tool_calls: list[Any], tools: list[ToolDef]) -> list[ToolOutcome]:
+    return await asyncio.gather(*(execute_tool_call(call, tools) for call in tool_calls))
 
 
 def _find_tool(name: str, tools: list[ToolDef]) -> ToolDef | None:
-    for tool in tools:
-        if tool.name == name:
-            return tool
-    return None
+    return next((tool for tool in tools if tool.name == name), None)
+
+
+def _error(
+    call_id: str,
+    name: str,
+    code: ToolErrorCode,
+    message: str,
+    retryable: bool,
+    started: float,
+    *,
+    status: ToolStatus = "error",
+    arguments: dict[str, Any] | None = None,
+) -> ToolOutcome:
+    return ToolOutcome(
+        tool_call_id=call_id,
+        tool_name=name,
+        status=status,
+        error_code=code,
+        error_message=message,
+        retryable=retryable,
+        duration_ms=int((time.perf_counter() - started) * 1000),
+        normalized_arguments=arguments or {},
+    )

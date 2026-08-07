@@ -1,4 +1,8 @@
 """Test prompt fix on cloud: verify LLM copies Neo4j concept names exactly."""
+if __name__ != "__main__":
+    import pytest
+    pytest.skip("manual cloud diagnostic script", allow_module_level=True)
+
 import sys, sqlite3, asyncio, time
 sys.path.insert(0, "/opt/ai-math")
 DB = "/opt/ai-math/data/learning.db"

@@ -1,0 +1,71 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - visualization-internal
+      - host-access
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - visualization-internal
+      - host-access
+
+  manim-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/visualization/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - minio
+    environment:
+      AI_MATH_DB_PATH: /workspace/data/learning.db
+      AI_MATH_DB_JOURNAL_MODE: DELETE
+      VISUALIZATION_REDIS_URL: redis://redis:6379/0
+      VISUALIZATION_QUEUE: math-visualization
+      VISUALIZATION_S3_ENDPOINT: http://minio:9000
+      VISUALIZATION_S3_REGION: us-east-1
+      VISUALIZATION_S3_BUCKET: ai-math-visualizations
+      VISUALIZATION_S3_ACCESS_KEY: minioadmin
+      VISUALIZATION_S3_SECRET_KEY: minioadmin
+      VISUALIZATION_MAX_OUTPUT_BYTES: 26214400
+      VISUALIZATION_WORKER_CONCURRENCY: 1
+    volumes:
+      - ../../data:/workspace/data
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 256
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - visualization-internal
+
+volumes:
+  redis-data:
+  minio-data:
+
+networks:
+  visualization-internal:
+    internal: true
+  host-access:

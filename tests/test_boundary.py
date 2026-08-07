@@ -5,6 +5,15 @@
 
 import sys, os, asyncio, time
 from datetime import datetime
+
+if __name__ != "__main__":
+    import pytest
+
+    pytest.skip(
+        "manual boundary suite; run `python tests/test_boundary.py` with the API running",
+        allow_module_level=True,
+    )
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import httpx

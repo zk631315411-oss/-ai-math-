@@ -13,7 +13,10 @@ def init_db():
     cursor = conn.cursor()
 
     # WAL 模式：多读一写并发，reader 与 writer 互不阻塞
-    cursor.execute("PRAGMA journal_mode=WAL")
+    journal_mode = config.DB_JOURNAL_MODE
+    if journal_mode not in {"WAL", "DELETE"}:
+        journal_mode = "WAL"
+    cursor.execute(f"PRAGMA journal_mode={journal_mode}")
 
     # 用户基本信息表（user_profiles）
     cursor.execute("""
@@ -166,6 +169,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS screenshot_context_cache (
             id TEXT PRIMARY KEY,
+            user_id TEXT,
             image_hash TEXT NOT NULL,
             textbook_id TEXT NOT NULL,
             page_number INTEGER NOT NULL,
@@ -178,11 +182,22 @@ def init_db():
             md_match_text TEXT,
             locator_signals TEXT,
             vision_summary TEXT,
+            vision_extraction TEXT,
+            extraction_version TEXT,
             vision_model TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    for column, definition in (
+        ("user_id", "TEXT"),
+        ("vision_extraction", "TEXT"),
+        ("extraction_version", "TEXT"),
+    ):
+        try:
+            cursor.execute(f"ALTER TABLE screenshot_context_cache ADD COLUMN {column} {definition}")
+        except Exception:
+            pass
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_screenshot_cache_lookup
@@ -598,6 +613,10 @@ def init_db():
     # chat_history/follow_ups format so existing clients remain compatible.
     from app.db.chat_tree_db import init_chat_tree_schema
     init_chat_tree_schema(conn)
+    from app.db.visualization_db import init_visualization_schema
+    init_visualization_schema(conn)
+    from app.db.tool_trace_db import init_tool_trace_schema
+    init_tool_trace_schema(conn)
 
     conn.commit()
     conn.close()

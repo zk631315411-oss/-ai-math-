@@ -100,13 +100,13 @@ def parse_markdown_sections(text: str) -> dict:
             title = m.group(1).strip().lower()
             body = re.sub(r"^##\s*.+?\n", "", block).strip()
             # 规范化标题名
-            if "题目" in title:
+            if "题目" in title or title in {"title", "question", "problem"}:
                 sections["question"] = body
-            elif "答案" in title:
+            elif "答案" in title or title in {"answer", "solution"}:
                 sections["answer"] = body
-            elif "提示" in title:
+            elif "提示" in title or title in {"hint", "hints"}:
                 sections["hints"] = body
-            elif "验证" in title:
+            elif "验证" in title or title in {"verification", "verify"}:
                 sections["verification"] = body
             elif "computable" in title:
                 sections["computable"] = body

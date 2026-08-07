@@ -211,7 +211,7 @@ def test_sprint2_error_analyzer():
 def test_sprint2_routes():
     """Sprint 2: exercise API routes registered"""
     from app.main import app
-    routes = [r.path for r in app.routes if hasattr(r, "path")]
+    routes = set(app.openapi()["paths"])
     for ep in ["/api/exercise/generate", "/api/exercise/list",
                "/api/exercise/{exercise_id}/submit",
                "/api/exercise/{exercise_id}/hint",
@@ -241,7 +241,7 @@ def test_sprint3_insight_cache():
 def test_sprint3_routes():
     """Sprint 3: insight API routes registered"""
     from app.main import app
-    routes = [r.path for r in app.routes if hasattr(r, "path")]
+    routes = set(app.openapi()["paths"])
     for ep in ["/api/auth/insight", "/api/auth/insight/regenerate"]:
         assert ep in routes, f"Missing: {ep}"
     return True
@@ -250,7 +250,7 @@ def test_sprint3_routes():
 def test_full_integration():
     """End-to-end: full app loads, all expected routes present"""
     from app.main import app
-    routes = [r.path for r in app.routes if hasattr(r, "path")]
+    routes = set(app.openapi()["paths"])
 
     expected = [
         "/", "/health",

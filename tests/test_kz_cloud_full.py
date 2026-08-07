@@ -1,4 +1,8 @@
 """Run diagnostics for ALL kz topics on cloud."""
+if __name__ != "__main__":
+    import pytest
+    pytest.skip("manual cloud diagnostic script", allow_module_level=True)
+
 import sys, os, asyncio, time, sqlite3
 sys.path.insert(0, "/opt/ai-math")
 DB = "/opt/ai-math/data/learning.db"

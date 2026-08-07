@@ -34,6 +34,7 @@ class QATurnInput:
     node_id: str | None = None
     fork_message_id: str | None = None
     referenced_node_ids: list[str] = field(default_factory=list)
+    client_turn_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -84,7 +85,7 @@ class QAStreamEvent:
         "stage", "content", "thinking", "thinking_chunk",
         "done", "error", "heartbeat",
         "wait_for_input", "progress",
-        "tool_call", "tool_result",
+        "tool_call", "tool_result", "visualization",
     ]
     data: dict[str, Any] = field(default_factory=dict)
 

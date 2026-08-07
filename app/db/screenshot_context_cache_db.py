@@ -9,17 +9,18 @@ def _uid() -> str:
     return str(uuid.uuid4())
 
 
-def get_screenshot_context_cache(cache_id: str) -> Optional[dict]:
+def get_screenshot_context_cache(cache_id: str, user_id: str) -> Optional[dict]:
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM screenshot_context_cache WHERE id=?",
-        (cache_id,),
+        "SELECT * FROM screenshot_context_cache WHERE id=? AND user_id=?",
+        (cache_id, user_id),
     ).fetchone()
     conn.close()
     return dict(row) if row else None
 
 
 def find_screenshot_context_cache(
+    user_id: str,
     image_hash: str,
     textbook_id: str,
     page_number: int,
@@ -30,7 +31,8 @@ def find_screenshot_context_cache(
     row = conn.execute(
         """
         SELECT * FROM screenshot_context_cache
-        WHERE image_hash=?
+        WHERE user_id=?
+          AND image_hash=?
           AND textbook_id=?
           AND page_number=?
           AND crop_bbox_hash=?
@@ -38,7 +40,7 @@ def find_screenshot_context_cache(
         ORDER BY updated_at DESC
         LIMIT 1
         """,
-        (image_hash, textbook_id, page_number, crop_bbox_hash, full_context_hash),
+        (user_id, image_hash, textbook_id, page_number, crop_bbox_hash, full_context_hash),
     ).fetchone()
     conn.close()
     return dict(row) if row else None
@@ -46,6 +48,7 @@ def find_screenshot_context_cache(
 
 def save_screenshot_context_cache(
     *,
+    user_id: str,
     image_hash: str,
     textbook_id: str,
     page_number: int,
@@ -64,14 +67,15 @@ def save_screenshot_context_cache(
     conn.execute(
         """
         INSERT INTO screenshot_context_cache (
-            id, image_hash, textbook_id, page_number, crop_bbox, crop_bbox_hash,
+            id, user_id, image_hash, textbook_id, page_number, crop_bbox, crop_bbox_hash,
             full_context_hash, pdf_crop_path, md_match_status, md_match_confidence,
             md_match_text, locator_signals, vision_model
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             cache_id,
+            user_id,
             image_hash,
             textbook_id,
             page_number,
@@ -95,6 +99,9 @@ def update_screenshot_context_cache(
     cache_id: str,
     *,
     vision_summary: Optional[str] = None,
+    vision_extraction: Optional[dict] = None,
+    extraction_version: Optional[str] = None,
+    vision_model: Optional[str] = None,
     pdf_crop_path: Optional[str] = None,
 ) -> None:
     sets = ["updated_at=CURRENT_TIMESTAMP"]
@@ -102,6 +109,15 @@ def update_screenshot_context_cache(
     if vision_summary is not None:
         sets.append("vision_summary=?")
         params.append(vision_summary)
+    if vision_extraction is not None:
+        sets.append("vision_extraction=?")
+        params.append(json.dumps(vision_extraction, ensure_ascii=False))
+    if extraction_version is not None:
+        sets.append("extraction_version=?")
+        params.append(extraction_version)
+    if vision_model is not None:
+        sets.append("vision_model=?")
+        params.append(vision_model)
     if pdf_crop_path is not None:
         sets.append("pdf_crop_path=?")
         params.append(pdf_crop_path)

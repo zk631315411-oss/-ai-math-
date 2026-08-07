@@ -1,5 +1,6 @@
 ﻿import type { TokenResponse, UserProfileUpdate, UserProfile } from '../types';
 import { request, get, post, put, patch, del } from './request';
+import type { AnimationJob, MathVisualizationArtifact } from '../types';
 
 // === 用户认证相关API ===
 
@@ -80,7 +81,8 @@ export async function fetchWithStage(
   forkMessageId?: string,
   clientTurnId?: string,
   onTreeTurnStarted?: (turn: ChatTreeTurn) => void,
-): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null; tree_turn?: ChatTreeTurn }> {
+  onVisualization?: (artifact: MathVisualizationArtifact) => void,
+): Promise<{ answer: string; sources: any[]; thinking: string; screenshot_context_id?: string | null; tree_turn?: ChatTreeTurn; visualizations: MathVisualizationArtifact[]; degraded: boolean; degradation_code?: string }> {
   const payload: any = {
     user_id: userId,
     question,
@@ -121,6 +123,9 @@ export async function fetchWithStage(
   let thinking = '';
   let screenshotContextIdResult: string | null = null;
   let treeTurn: ChatTreeTurn | undefined;
+  let visualizations: MathVisualizationArtifact[] = [];
+  let degraded = false;
+  let degradationCode: string | undefined;
   let currentEventType: string | null = null;
 
   while (true) {
@@ -159,7 +164,7 @@ export async function fetchWithStage(
           continue;
         }
 
-        if (data.error) {
+        if (data.error && currentEventType === 'error') {
           throw new Error(data.error);
         }
 
@@ -180,17 +185,21 @@ export async function fetchWithStage(
           fullContent += data.text;
           if (onContent) onContent(data.text);
         }
-        // tool_call事件 - LLM正在调用工具
+        // 工具状态独立展示，不污染回答正文。
         else if (currentEventType === 'tool_call' && data.name) {
-          if (onContent) onContent(`[正在${_getToolLabel(data.name)}...]`);
+          onStage('tool', data.status_text || `正在${_getToolLabel(data.name)}...`);
         }
-        // tool_result事件 - 工具执行完成
         else if (currentEventType === 'tool_result' && data.name) {
-          if (data.error) {
-            if (onContent) onContent(`[${_getToolLabel(data.name)}失败: ${data.error}]`);
+          if (data.status === 'error' || data.status === 'skipped' || data.error) {
+            onStage('tool', `${_getToolLabel(data.name)}失败，继续组织回答...`);
           } else {
-            if (onContent) onContent(`[${_getToolLabel(data.name)}完成]`);
+            onStage('tool', `${_getToolLabel(data.name)}完成`);
           }
+        }
+        else if (currentEventType === 'visualization' && data.id) {
+          const artifact = data as MathVisualizationArtifact;
+          visualizations = [...visualizations.filter((item) => item.id !== artifact.id), artifact];
+          onVisualization?.(artifact);
         }
         // done事件 - 提取sources和thinking
         else if (currentEventType === 'done') {
@@ -198,12 +207,15 @@ export async function fetchWithStage(
           if (data.sources) sources = data.sources;
           if (data.screenshot_context_id) screenshotContextIdResult = data.screenshot_context_id;
           if (data.tree_turn) treeTurn = data.tree_turn as ChatTreeTurn;
+          if (Array.isArray(data.visualizations)) visualizations = data.visualizations;
+          degraded = Boolean(data.degraded);
+          if (data.degradation_code) degradationCode = String(data.degradation_code);
         }
       }
     }
   }
 
-  return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult, tree_turn: treeTurn };
+  return { answer: fullContent, sources, thinking, screenshot_context_id: screenshotContextIdResult, tree_turn: treeTurn, visualizations, degraded, degradation_code: degradationCode };
 }
 
 function _getToolLabel(name: string): string {
@@ -211,6 +223,7 @@ function _getToolLabel(name: string): string {
     'search_textbook': '查教材',
     'lookup_kg_node': '查知识图谱',
     'verify_math': '验算',
+    'create_math_visualization': '生成数学示意图',
   };
   return labels[name] || name;
 }
@@ -323,6 +336,31 @@ export interface ChatTreeMessage {
   role: 'user' | 'assistant' | 'tool' | 'system_event';
   content: string;
   status: 'streaming' | 'completed' | 'interrupted' | 'failed';
+  visualizations?: MathVisualizationArtifact[];
+}
+
+export async function createVisualizationAnimation(
+  visualizationId: string,
+  userId: string,
+  token: string,
+): Promise<AnimationJob> {
+  return post<AnimationJob>(`/visualizations/${encodeURIComponent(visualizationId)}/animations`, { user_id: userId }, token);
+}
+
+export async function getVisualizationAnimation(
+  jobId: string,
+  userId: string,
+  token: string,
+): Promise<AnimationJob> {
+  return get<AnimationJob>(`/visualizations/animations/${encodeURIComponent(jobId)}?user_id=${encodeURIComponent(userId)}`, token);
+}
+
+export async function getVisualization(
+  visualizationId: string,
+  userId: string,
+  token: string,
+): Promise<MathVisualizationArtifact> {
+  return get<MathVisualizationArtifact>(`/visualizations/${encodeURIComponent(visualizationId)}?user_id=${encodeURIComponent(userId)}`, token);
 }
 export interface ChatTreeNode {
   id: string;

@@ -3,6 +3,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import FormulaComposer from './FormulaComposer';
 import type { Message } from '../types';
 import CompactTreeRail, { type TreeRailNode } from './CompactTreeRail';
+import MathVisualization from './MathVisualization';
 
 interface Props {
   messages: Message[];
@@ -27,6 +28,7 @@ interface Props {
   activeTreeNodeId?: string | null;
   onSelectTreeNode?: (nodeId: string) => void;
   token?: string;
+  onGenerateAnimation?: (visualizationId: string) => Promise<void>;
 }
 
 // 防止 KaTeX 长公式溢出：每个公式独立滚动，不强制整个气泡滚动
@@ -43,7 +45,7 @@ const katexOverflowCSS = `
   }
 `;
 
-function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode, token = '' }: Props) {
+function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, pendingImage, onClearPendingImage, thinkingStage, isThinking, thinkingExpanded: _thinkingExpanded = true, setThinkingExpanded: _setThinkingExpanded, compact, onStartExercise, markerBanner, onCloseMarkerBanner, onDeleteMarker, onForkMessage, branchAnchor, onCancelFork, treeNodes, activeTreeNodeId, onSelectTreeNode, token = '', onGenerateAnimation }: Props) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -124,8 +126,10 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
 
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className="flex flex-col items-start max-w-[85%]">
-            <div className={`chat-message w-full rounded-2xl px-4 py-3 ${
+            <div className={`flex flex-col items-start ${msg.visualizations?.length ? 'max-w-[96%] w-full' : 'max-w-[85%]'}`}>
+            <div className={`chat-message rounded-2xl px-4 py-3 ${
+              msg.role === 'assistant' && msg.visualizations?.length ? 'max-w-[85%]' : 'w-full'
+            } ${
               msg.role === 'user'
                 ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm shadow-blue-200 dark:shadow-none rounded-br-md'
                 : 'bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-md'
@@ -163,6 +167,14 @@ function ChatPanelInner({ messages, onSendMessage, onClearMessages, isLoading, p
                 </div>
               )}
             </div>
+            {msg.role === 'assistant' && msg.degraded && (
+              <p className="mt-1.5 ml-1 text-xs text-amber-700 dark:text-amber-400">
+                部分辅助能力暂不可用，已基于现有信息回答
+              </p>
+            )}
+            {msg.role === 'assistant' && msg.visualizations?.map((artifact) => (
+              <MathVisualization key={artifact.id} artifact={artifact} onGenerateAnimation={onGenerateAnimation} />
+            ))}
             {msg.role === 'assistant' && msg.content.trim() && msg.treeMessageStatus === 'completed' && msg.treeNodeId && msg.treeMessageId && onForkMessage && (
               <button
                 type="button"

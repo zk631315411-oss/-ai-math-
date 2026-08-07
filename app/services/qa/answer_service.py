@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 import asyncio
+import re
 import time
 import uuid
 from typing import AsyncIterator
@@ -227,6 +228,76 @@ def _coerce_weak_prerequisite(value) -> WeakPrerequisite:
 
 
 async def _answer_vision_turn(turn_input: QATurnInput) -> AsyncIterator[dict]:
+    """Extract a trustworthy problem first, then hand it to the shared ToolRuntime."""
+    from app.db.screenshot_context_cache_db import (
+        get_screenshot_context_cache,
+        update_screenshot_context_cache,
+    )
+    from app.services.qa.vision_extraction import (
+        VISION_EXTRACTION_VERSION,
+        VisionExtraction,
+        extract_vision_problem,
+        format_extracted_question,
+    )
+
+    try:
+        textbook_id, page_context, _sequence_id, _whitelist, _profile = await _load_vision_page_context(turn_input)
+        yield sse_stage("reading_pdf", "正在读取 PDF 原图区域...")
+        screenshot_context = await run_in_threadpool(
+            prepare_screenshot_context, turn_input, textbook_id, page_context,
+        )
+        image_for_model = (screenshot_context.get("pdf_crop") or {}).get("data_url") or turn_input.image_data
+        if not image_for_model:
+            raise RuntimeError("未能获取截图图像")
+        locator_prompt = build_screenshot_locator_prompt(
+            screenshot_context["locator_result"], screenshot_context["reused_cache"],
+        )
+        cached = await run_in_threadpool(
+            get_screenshot_context_cache, screenshot_context["cache_id"], turn_input.user_id,
+        )
+        extraction = None
+        if cached and cached.get("vision_extraction") \
+                and cached.get("extraction_version") == VISION_EXTRACTION_VERSION \
+                and cached.get("vision_model") == config.QA_VL_MODEL:
+            try:
+                import json
+                extraction = VisionExtraction.model_validate(json.loads(cached["vision_extraction"]))
+            except Exception:
+                extraction = None
+        if extraction is None:
+            yield sse_stage("recognizing", "正在识别题目与公式...")
+            extraction = await extract_vision_problem(
+                image_for_model, locator_prompt, turn_input.question,
+            )
+            await run_in_threadpool(
+                update_screenshot_context_cache,
+                screenshot_context["cache_id"],
+                vision_extraction=extraction.model_dump(),
+                extraction_version=VISION_EXTRACTION_VERSION,
+                vision_model=config.QA_VL_MODEL,
+            )
+        if extraction.can_use_tools():
+            extracted_input = replace(
+                turn_input,
+                question=format_extracted_question(extraction, turn_input.question),
+                input_type="mixed",
+                textbook_id=textbook_id,
+                screenshot_context_id=screenshot_context["cache_id"],
+            )
+            async for event in answer_turn_with_tools(extracted_input):
+                yield event
+            return
+        yield sse_stage("recognition_fallback", "题目细节识别不够可靠，正在直接结合图片回答...")
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        yield sse_stage("recognition_fallback", "结构化识别暂不可用，正在直接结合图片回答...")
+
+    async for event in _answer_vision_direct(turn_input):
+        yield event
+
+
+async def _answer_vision_direct(turn_input: QATurnInput) -> AsyncIterator[dict]:
     turn_id = str(uuid.uuid4())
     started_at = time.perf_counter()
     full_answer = ""
@@ -234,11 +305,6 @@ async def _answer_vision_turn(turn_input: QATurnInput) -> AsyncIterator[dict]:
     student_state_payload: dict = {}  # 异常时兜底默认值
 
     try:
-        import dashscope
-        from dashscope import MultiModalConversation
-
-        dashscope.api_key = config.QA_LLM_API_KEY
-
         textbook_id, page_context, sequence_id, whitelist, user_profile = await _load_vision_page_context(turn_input)
         grounding = ground_text_turn(textbook_id, turn_input.page_number, turn_input.question)
         section_node_id = grounding.section_node_id
@@ -284,32 +350,24 @@ async def _answer_vision_turn(turn_input: QATurnInput) -> AsyncIterator[dict]:
         if not image_for_model:
             raise RuntimeError("未能获取截图图像，请重新截取教材区域后再试")
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"image": image_for_model},
-                    {"text": prompt_text},
-                ],
-            }
-        ]
+        messages = [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": image_for_model}},
+                {"type": "text", "text": prompt_text},
+            ],
+        }]
 
         yield sse_stage("generating", "正在生成回答...")
-        response = MultiModalConversation.call(
-            model=config.QA_VL_MODEL,
-            messages=messages,
-            stream=True,
-        )
+        response = llm_service.vision_chat(image_for_model, prompt_text, stream=True)
 
         for chunk in response:
-            if chunk.status_code != 200:
-                raise RuntimeError(f"图片理解失败: {chunk.message}")
-            if not chunk.output or not chunk.output.choices:
+            if not chunk.choices:
                 continue
-            choice = chunk.output.choices[0]
-            if not choice.message:
+            delta = chunk.choices[0].delta
+            if not delta:
                 continue
-            content = choice.message.get("content", "")
+            content = getattr(delta, "content", "")
             for token in _iter_vision_text(content):
                 full_answer += token
                 yield sse_text(token)
@@ -679,39 +737,36 @@ async def answer_turn_with_tools(
     *,
     tools: list[dict] | None = None,
     tool_defs: list | None = None,
-    max_tool_rounds: int = 5,
+    max_tool_rounds: int | None = None,
 ) -> AsyncIterator[dict]:
-    """支持工具调用的 QA 入口。
-
-    LLM 可以通过工具调用自主决定查教材、查 KG、验算等，
-    结果回注后继续思考，直到输出最终回答。
-
-    Args:
-        turn_input: QA 输入
-        tools: OpenAI Function Calling 格式的 tools 参数（传给 LLM）
-        tool_defs: ToolDef 对象列表，用于执行工具。不传时从 tools 中尝试恢复
-        max_tool_rounds: 最大工具调用轮数，防止无限循环
-    """
-    import json
-
+    """Compatibility entry point backed exclusively by ToolRuntime."""
+    from app.db.tool_trace_db import save_tool_trace
+    from app.db.visualization_db import save_visualization
+    from app.services.agents.tool_def import ToolDef
+    from app.services.agents.tool_runtime import (
+        ToolRuntime,
+        ToolRuntimeConfig,
+        ToolRuntimeContext,
+    )
+    from app.services.agents.tools import get_qa_tool_defs
     from app.services.qa.event_bus import StreamBus
     from app.services.qa.turn_store import start_persist_consumer
 
+    del tools  # ToolDef is the canonical schema and execution registry.
     if not turn_input.question:
         yield sse_error("未能识别题目内容")
         return
 
     started_at = time.perf_counter()
-    turn_id = str(uuid.uuid4())
+    turn_id = turn_input.client_turn_id or str(uuid.uuid4())
+    tool_def_list: list[ToolDef] = tool_defs or get_qa_tool_defs()
     full_response = ""
+    runtime_result = None
 
     try:
-        # 1. 前置定位（与现有纯 prompt 流程一致）
         yield sse_stage("searching", "正在匹配教材与知识图谱...")
         grounding = ground_text_turn(
-            turn_input.textbook_id or "",
-            turn_input.page_number,
-            turn_input.question,
+            turn_input.textbook_id or "", turn_input.page_number, turn_input.question,
         )
         kg_concepts = [node.name for node in grounding.related_concepts if node.name]
         sources = _build_sources(grounding, kg_concepts)
@@ -719,132 +774,94 @@ async def answer_turn_with_tools(
         yield sse_stage("planning", "正在组织本轮讲解策略...")
         student_state = _coerce_student_state(turn_input.user_id, None)
         policy = decide_tutor_policy(
-            student_state,
-            turn_input.teaching_mode,
-            turn_input.socratic_submode,
+            student_state, turn_input.teaching_mode, turn_input.socratic_submode,
         )
         from app.services.qa.prompt_builder import build_lightweight_prompt
         prompt = build_lightweight_prompt(
-            turn_input.question,
-            grounding,
-            student_state,
-            policy,
-            history=turn_input.history,
+            turn_input.question, grounding, student_state, policy, history=turn_input.history,
+        )
+        prompt += (
+            "\n\n当函数曲线、向量或二维线性变换能明显帮助理解时，请调用 "
+            "create_math_visualization。每回合最多生成一个示意图；简单定义题不要为了装饰而画图。"
         )
 
-        # 2. 工具调用循环
-        messages = [{"role": "user", "content": prompt}]
-        tool_rounds = 0
-        tool_list = tools or []
-
-        # 获取 ToolDef 列表用于执行
-        from app.services.agents.tool_def import ToolDef
-        from app.services.agents.tools.search_textbook import search_textbook_tool
-        from app.services.agents.tools.lookup_kg_node import lookup_kg_node_tool
-        from app.services.agents.tools.verify_math import verify_math_tool
-
-        _tool_defs: list[ToolDef] = tool_defs or [
-            search_textbook_tool,
-            lookup_kg_node_tool,
-            verify_math_tool,
-        ]
-
-        while tool_rounds < max_tool_rounds:
-            yield sse_stage("thinking", "正在思考...")
-
-            # 调用 LLM（非流式，带 tools 参数）
-            response = llm_service.chat_with_tools(
-                messages=messages,
-                tools=tool_list,
+        async def handle_artifact(artifact: dict, _outcome) -> dict:
+            artifact = _ensure_requested_animation(artifact, turn_input.question)
+            return await asyncio.to_thread(
+                save_visualization,
+                artifact,
+                user_id=turn_input.user_id,
+                turn_id=turn_id,
+                chat_history_id=turn_input.chat_id or turn_input.marker_id,
             )
 
-            finish_reason = response.choices[0].finish_reason
-            message = response.choices[0].message
+        async def handle_trace(payload: dict) -> None:
+            context = payload["context"]
+            outcome = payload["outcome"]
+            await asyncio.to_thread(
+                save_tool_trace,
+                turn_id=context.turn_id,
+                user_id=context.user_id,
+                chat_history_id=context.chat_history_id,
+                assistant_message_id=context.assistant_message_id,
+                round_index=payload["round_index"],
+                tool_call_id=outcome.tool_call_id,
+                tool_name=outcome.tool_name,
+                call_fingerprint=payload["fingerprint"],
+                arguments=outcome.normalized_arguments,
+                status=outcome.status,
+                error_code=outcome.error_code,
+                retryable=outcome.retryable,
+                duration_ms=outcome.duration_ms,
+                artifact_ids=payload["artifact_ids"],
+                model_name=context.model_name,
+            )
 
-            if finish_reason == "tool_calls":
-                tool_calls = message.tool_calls
+        runtime = ToolRuntime(
+            tools=tool_def_list,
+            model_call=llm_service.chat_with_tools_async,
+            config=ToolRuntimeConfig(
+                max_model_rounds=max_tool_rounds or config.TOOL_MAX_MODEL_ROUNDS,
+                max_total_calls=config.TOOL_MAX_TOTAL_CALLS,
+                max_consecutive_failure_rounds=config.TOOL_MAX_CONSECUTIVE_FAILURE_ROUNDS,
+            ),
+            artifact_handler=handle_artifact,
+            trace_handler=handle_trace,
+        )
+        yield sse_stage("thinking", "正在思考...")
+        async for runtime_event in runtime.run(
+            [{"role": "user", "content": prompt}],
+            ToolRuntimeContext(
+                turn_id=turn_id,
+                user_id=turn_input.user_id,
+                chat_history_id=turn_input.chat_id or turn_input.marker_id,
+                model_name=config.QA_LLM_MODEL,
+            ),
+        ):
+            if runtime_event.type == "tool_call":
+                yield sse_event("tool_call", runtime_event.data)
+            elif runtime_event.type == "tool_result":
+                yield sse_event("tool_result", runtime_event.data)
+            elif runtime_event.type == "visualization":
+                yield sse_event("visualization", runtime_event.data)
+            elif runtime_event.type == "final":
+                runtime_result = runtime_event.data["result"]
 
-                # 推送 tool_call 事件
-                for tc in tool_calls:
-                    yield sse_event("tool_call", {
-                        "tool_call_id": tc.id,
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    })
+        if runtime_result is None:
+            raise RuntimeError("工具运行时未返回最终回答")
+        full_response = runtime_result.content
+        if full_response:
+            yield sse_text(full_response)
 
-                # 构造 assistant 消息（含 tool_calls）
-                assistant_msg = {
-                    "role": "assistant",
-                    "content": message.content,
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            },
-                        }
-                        for tc in tool_calls
-                    ],
-                }
-                messages.append(assistant_msg)
-
-                # 执行工具
-                from app.services.agents.tool_executor import execute_tool_calls as _execute_tool_calls
-
-                results = await _execute_tool_calls(tool_calls, _tool_defs)
-
-                # 处理执行结果
-                for tc, result in zip(tool_calls, results):
-                    if isinstance(result, Exception):
-                        error_msg = str(result)
-                        messages.append({
-                            "role": "tool",
-                            "tool_call_id": tc.id,
-                            "content": json.dumps({"error": error_msg}, ensure_ascii=False),
-                        })
-                        yield sse_event("tool_result", {
-                            "tool_call_id": tc.id,
-                            "name": tc.function.name,
-                            "error": error_msg,
-                        })
-                    else:
-                        messages.append(result)
-                        yield sse_event("tool_result", {
-                            "tool_call_id": tc.id,
-                            "name": tc.function.name,
-                            "status": "success",
-                        })
-
-                tool_rounds += 1
-                continue
-
-            elif finish_reason == "stop":
-                # LLM 回答完毕，输出最终回答
-                content = message.content or ""
-                full_response = content
-                yield sse_text(content)
-                break
-
-            else:
-                yield sse_error(f"LLM 返回异常 finish_reason: {finish_reason}")
-                return
-
-        if tool_rounds >= max_tool_rounds:
-            yield sse_error("工具调用超过最大轮数限制，已截断")
-
-        # 3. 持久化（与现有纯 prompt 流程一致）
         latency_ms = int((time.perf_counter() - started_at) * 1000)
-        apprenticeship_level = None
         record = QATurnRecord(
             turn_id=turn_id,
             user_id=turn_input.user_id,
             chat_id=turn_input.chat_id,
-            input_type="text",
+            input_type=turn_input.input_type,
             question=turn_input.question,
             marker_id=turn_input.marker_id or turn_input.chat_id,
-            apprenticeship_level=apprenticeship_level,
+            apprenticeship_level=None,
             answer=full_response,
             textbook_id=grounding.textbook_id,
             page_number=grounding.page_number,
@@ -859,37 +876,109 @@ async def answer_turn_with_tools(
                     "page_number": turn_input.page_number,
                     "tree_id": turn_input.tree_id,
                     "node_id": turn_input.node_id,
-                    "fork_message_id": turn_input.fork_message_id,
-                    "referenced_node_ids": turn_input.referenced_node_ids,
                 },
-                "tool_rounds": tool_rounds,
-                "max_tool_rounds": max_tool_rounds,
+                "tool_runtime": {
+                    "model_rounds": runtime_result.model_rounds,
+                    "stats": runtime_result.stats,
+                    "degraded": runtime_result.degraded,
+                    "degradation_code": runtime_result.degradation_code,
+                },
             },
-            messages_snapshot=messages,
+            messages_snapshot=runtime_result.messages,
+            screenshot_context_id=turn_input.screenshot_context_id,
             prompt_preview=prompt[:2000],
             model_name=config.QA_LLM_MODEL,
             latency_ms=latency_ms,
         )
-
         persist_done = asyncio.Event()
         bus = StreamBus()
         asyncio.create_task(start_persist_consumer(bus, record, persist_done))
-        # 注册实时诊断消费者（延迟 import 避免循环依赖）
         from app.services.diagnostic_worker import listen_qa_done
         asyncio.create_task(listen_qa_done(bus, turn_input.user_id, persist_done))
-        # 让出控制权，确保消费者 task 先调度再 emit 事件
         await asyncio.sleep(0)
         bus.emit({"type": "done"})
         bus.close()
 
-        yield sse_done(
-            full_text=full_response,
-            thinking="",
-            sources=sources,
-            sequence_id=grounding.sequence_id,
-            qa_turn_id=turn_id,
-        )
-
+        done_data = {
+            "full_text": full_response,
+            "thinking": "",
+            "sources": sources,
+            "sequence_id": grounding.sequence_id,
+            "qa_turn_id": turn_id,
+            "visualizations": runtime_result.visualizations,
+            "degraded": runtime_result.degraded,
+            "tool_stats": runtime_result.stats,
+        }
+        if turn_input.screenshot_context_id:
+            done_data["screenshot_context_id"] = turn_input.screenshot_context_id
+        if runtime_result.degradation_code:
+            done_data["degradation_code"] = runtime_result.degradation_code
+        yield sse_done(**done_data)
+    except asyncio.CancelledError:
+        raise
     except Exception as exc:
-        latency_ms = int((time.perf_counter() - started_at) * 1000)
         yield sse_error(str(exc))
+
+
+def _ensure_requested_animation(artifact: dict, question: str) -> dict:
+    """Attach only a bounded recipe when the user explicitly requested animation.
+
+    The model may omit an optional nested field even after selecting the plot tool.
+    Rebuilding through the same validated spec builder keeps this fallback inside the
+    four-template protocol and never executes model-provided code.
+    """
+    from app.services.visualization.spec_builder import build_visualization
+
+    if artifact.get("animation_available"):
+        return artifact
+    text = question or ""
+    if not re.search(r"(?:\u52a8\u753b|\u52a8\u6001|\u64ad\u653e|\u6f14\u793a|animate|animation)", text, re.IGNORECASE):
+        return artifact
+    lowered = text.lower()
+    if "\u5272\u7ebf" in text or "\u5207\u7ebf" in text or "secant" in lowered or "tangent" in lowered:
+        template = "secant_to_tangent"
+    elif "\u9ece\u66fc" in text or "\u7ec6\u5206" in text or "riemann" in lowered:
+        template = "riemann_refinement"
+    elif "\u77e9\u9635" in text or "\u7ebf\u6027\u53d8\u6362" in text or "linear_map" in lowered:
+        template = "linear_map_2d"
+    elif "\u5f62\u53d8" in text or "\u53d8\u6362" in text or "transform" in lowered:
+        template = "function_transform"
+    else:
+        return artifact
+
+    kind = artifact.get("kind")
+    spec = artifact.get("spec") or {}
+    parameters: dict[str, float] = {}
+    if template == "secant_to_tangent":
+        match = re.search(r"(?:x\s*[_0]?\s*=|x0\s*=)\s*(-?\d+(?:\.\d+)?)", text, re.IGNORECASE)
+        parameters["x0"] = float(match.group(1)) if match else 0.0
+    try:
+        if template in {"secant_to_tangent", "riemann_refinement", "function_transform"}:
+            if kind != "function_2d":
+                return artifact
+            series = [
+                {key: item[key] for key in ("expression", "label", "color") if item.get(key)}
+                for item in (spec.get("series") or [])
+            ]
+            rebuilt = build_visualization(
+                kind=kind,
+                title=artifact.get("title", ""),
+                series=series,
+                domain=spec.get("domain"),
+                samples=max(32, min(600, len((spec.get("series") or [{}])[0].get("points") or []))),
+                animation={"template": template, "parameters": parameters},
+            )
+        elif template == "linear_map_2d" and kind == "linear_transform_2d":
+            rebuilt = build_visualization(
+                kind=kind,
+                title=artifact.get("title", ""),
+                matrix=spec.get("matrix"),
+                vectors=spec.get("vectors"),
+                animation={"template": template, "parameters": parameters},
+            )
+        else:
+            return artifact
+    except (KeyError, TypeError, ValueError, IndexError):
+        return artifact
+    rebuilt["id"] = artifact.get("id", rebuilt["id"])
+    return rebuilt

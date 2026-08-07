@@ -8,6 +8,7 @@ from app.db.user_profile_db import get_user_profile
 from app.services.qa import QATurnInput, answer_turn, has_screenshot_context
 from app.services.qa.streaming_service import sse_event
 from app.db.chat_tree_db import begin_turn, finish_turn, get_authorized_context, TreeError
+from app.services.agents.qa_agent import QAAgent
 
 router = APIRouter(prefix="/api/qa", tags=["题目答疑"])
 
@@ -222,10 +223,9 @@ async def solve_question_stream(request: QARequest, authorization: str | None = 
                 node_id=effective_node_id,
                 fork_message_id=request.fork_message_id,
                 referenced_node_ids=request.referenced_node_ids,
+                client_turn_id=request.client_turn_id,
             )
-            if has_screenshot_context(visual_input):
-                turn_stream = answer_turn(visual_input)
-            else:
+            if not has_screenshot_context(visual_input):
                 qa_input = QATurnInput(
                     user_id=user_id or "anonymous",
                     chat_id=getattr(request, "chat_id", None),
@@ -242,8 +242,10 @@ async def solve_question_stream(request: QARequest, authorization: str | None = 
                     node_id=effective_node_id,
                     fork_message_id=request.fork_message_id,
                     referenced_node_ids=request.referenced_node_ids,
+                    client_turn_id=request.client_turn_id,
                 )
-                turn_stream = answer_turn(qa_input)
+                visual_input = qa_input
+            turn_stream = QAAgent().run(visual_input)
 
             async for event in turn_stream:
                 event_type = event.get("event")

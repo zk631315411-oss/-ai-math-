@@ -2,6 +2,10 @@
 E2E profile test: simulate 3+ questions on same topic, trigger LLM diagnostic, verify profile updates.
 Run on server: cd /opt/ai-math && venv/bin/python3 tests/test_e2e_profile.py
 """
+if __name__ != "__main__":
+    import pytest
+    pytest.skip("manual live diagnostic script", allow_module_level=True)
+
 import sys, os, json, asyncio, time, sqlite3
 os.chdir('/opt/ai-math')
 sys.path.insert(0, '/opt/ai-math')

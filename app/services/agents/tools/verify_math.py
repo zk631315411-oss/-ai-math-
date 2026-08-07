@@ -1,9 +1,27 @@
-"""verify_math 工具：SymPy 数学验算。"""
+"""Validated SymPy verification agent tool."""
 
 from __future__ import annotations
 
-from app.services.sympy_sandbox import verify_computable, WHITELIST
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from app.services.agents.tool_def import ToolDef
+from app.services.sympy_sandbox import WHITELIST, verify_computable
+
+
+VerificationType = Literal[*tuple(WHITELIST.keys())]
+
+
+class VerifyMathInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+    expression: str = Field(min_length=1, max_length=500)
+    comp_type: VerificationType
+    expected: str | list[Any] | float | int
+    matrix: list[list[float]] | None = None
+    vector: list[list[float]] | None = None
+    degree: int | None = Field(default=None, ge=1, le=20)
 
 
 def _verify_math_impl(
@@ -12,8 +30,7 @@ def _verify_math_impl(
     expected: str | list | float | int,
     **kwargs,
 ) -> dict:
-    """用 SymPy 验算数学表达式。"""
-    data = {"expression": expression}
+    data: dict = {"expression": expression}
     if comp_type.startswith("matrix_") or comp_type == "system_solve":
         if "matrix" in kwargs:
             data["matrix"] = kwargs["matrix"]
@@ -21,9 +38,7 @@ def _verify_math_impl(
             data["vector"] = kwargs["vector"]
     if comp_type in ("polynomial_roots", "polynomial_factor"):
         data["degree"] = kwargs.get("degree", 5)
-
     result = verify_computable(comp_type, data, expected)
-
     return {
         "success": result.get("success", False),
         "sympy_result": result.get("sympy_result"),
@@ -36,39 +51,8 @@ def _verify_math_impl(
 
 verify_math_tool = ToolDef(
     name="verify_math",
-    description="用 SymPy 验算数学表达式是否正确，支持矩阵运算、多项式求根、因式分解、线性方程组求解等",
-    input_schema={
-        "type": "object",
-        "properties": {
-            "expression": {
-                "type": "string",
-                "description": "数学表达式，如 'x**2 - 5*x + 6'",
-            },
-            "comp_type": {
-                "type": "string",
-                "enum": list(WHITELIST.keys()),
-                "description": "计算类型",
-            },
-            "expected": {
-                "type": ["string", "number", "array"],
-                "description": "预期结果，根据 comp_type 决定类型：字符串（因式分解）、数字（行列式）、数组（特征值/根）",
-            },
-            "matrix": {
-                "type": "array",
-                "items": {"type": "array", "items": {"type": "number"}},
-                "description": "矩阵数据，仅 matrix_* 和 system_solve 类型需要",
-            },
-            "vector": {
-                "type": "array",
-                "items": {"type": "array", "items": {"type": "number"}},
-                "description": "向量数据，仅 system_solve 类型需要",
-            },
-            "degree": {
-                "type": "integer",
-                "description": "多项式次数上限，可选，默认 5",
-            },
-        },
-        "required": ["expression", "comp_type", "expected"],
-    },
+    display_name="核对计算",
+    description="使用受限 SymPy 验证矩阵、方程组、多项式及其他白名单数学计算。",
+    input_model=VerifyMathInput,
     execute=_verify_math_impl,
 )

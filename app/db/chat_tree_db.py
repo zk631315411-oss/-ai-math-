@@ -362,6 +362,10 @@ def finish_turn(turn_id: str, user_id: str, content: str, status: str) -> dict:
             (row["tree_id"],),
         )
         conn.commit()
+        from app.db.visualization_db import attach_turn_visualizations
+        attach_turn_visualizations(turn_id, row["id"])
+        from app.db.tool_trace_db import attach_turn_traces
+        attach_turn_traces(turn_id, row["id"])
         return _turn_dict(conn, turn_id, user_id, created=False)
     except Exception:
         conn.rollback()
@@ -384,7 +388,8 @@ def _turn_dict(conn, turn_id: str, user_id: str, created: bool = False) -> dict:
         raise TreeNotFound("tree turn not found")
     if rows[0]["user_id"] != user_id:
         raise TreeForbidden("tree turn does not belong to user")
-    messages = {row["role"]: dict(row) for row in rows}
+    from app.db.visualization_db import decorate_messages
+    messages = {message["role"]: message for message in decorate_messages(conn, rows)}
     first = rows[0]
     return {
         "turn_id": turn_id,
@@ -563,7 +568,9 @@ def get_messages(node_id: str, user_id: str, include_archived: bool = False) -> 
     conn = get_conn()
     try:
         _owned_node(conn, node_id, user_id, include_archived=include_archived)
-        return [dict(r) for r in conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node_id,)).fetchall()]
+        from app.db.visualization_db import decorate_messages
+        rows = conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node_id,)).fetchall()
+        return decorate_messages(conn, rows)
     finally:
         conn.close()
 
@@ -626,7 +633,8 @@ def get_authorized_context(
             else:
                 rows = conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (ref_id,)).fetchall()
             result.extend(dict(r) for r in rows)
-        return result
+        from app.db.visualization_db import decorate_messages
+        return decorate_messages(conn, result)
     finally:
         conn.close()
 
@@ -635,7 +643,9 @@ def _node_dict(conn, node_id: str, include_messages: bool = False, include_archi
     row = conn.execute("SELECT * FROM chat_nodes WHERE id=?", (node_id,)).fetchone()
     data = dict(row)
     if include_messages:
-        data["messages"] = [dict(r) for r in conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node_id,)).fetchall()]
+        from app.db.visualization_db import decorate_messages
+        rows = conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node_id,)).fetchall()
+        data["messages"] = decorate_messages(conn, rows)
     return data
 
 
@@ -647,7 +657,9 @@ def _tree_dict(conn, tree_id: str, include_archived: bool = False) -> dict:
         query += " AND archived_at IS NULL"
     tree["nodes"] = [dict(r) for r in conn.execute(query, params).fetchall()]
     for node in tree["nodes"]:
-        node["messages"] = [dict(r) for r in conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node["id"],)).fetchall()]
+        from app.db.visualization_db import decorate_messages
+        rows = conn.execute("SELECT * FROM chat_messages WHERE node_id=? ORDER BY sequence_no", (node["id"],)).fetchall()
+        node["messages"] = decorate_messages(conn, rows)
     return tree
 
 
