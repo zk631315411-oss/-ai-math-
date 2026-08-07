@@ -68,7 +68,7 @@ test('mobile fits the page and keeps zoomed content reachable', async ({ page },
   expect(fitMetrics.pageRight).toBeLessThanOrEqual(fitMetrics.scrollRight);
 
   const scroller = page.getByTestId('pdf-scroll-container');
-  await scroller.locator('select').selectOption('1');
+  await page.getByTestId('pdf-mobile-toolbar').locator('select').selectOption('1');
   await expect.poll(() => scroller.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(true);
 
   const zoomMetrics = await renderedPage.evaluate(element => {
@@ -79,6 +79,43 @@ test('mobile fits the page and keeps zoomed content reachable', async ({ page },
     return { pageLeft: pageRect.left, scrollLeft: scrollRect.left };
   });
   expect(zoomMetrics.pageLeft).toBeGreaterThanOrEqual(zoomMetrics.scrollLeft);
+});
+
+test('narrow desktop keeps the mobile PDF toolbar pinned while scrolling', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop');
+  await page.setViewportSize({ width: 958, height: 1031 });
+
+  await page.goto('/');
+  await page.locator('header select').first().selectOption({ index: 1 });
+  await expect(page.locator('.react-pdf__Page canvas')).toBeVisible({ timeout: 90_000 });
+
+  const scroller = page.getByTestId('pdf-scroll-container');
+  const toolbar = page.getByTestId('pdf-mobile-toolbar');
+  await toolbar.locator('select').selectOption('1');
+  await expect.poll(() => scroller.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+
+  const bottomOffset = async () => page.evaluate(() => {
+    const scrollElement = document.querySelector('[data-testid="pdf-scroll-container"]');
+    const toolbarElement = document.querySelector('[data-testid="pdf-mobile-toolbar"]');
+    if (!scrollElement || !toolbarElement) throw new Error('PDF viewport elements are missing');
+    const scrollRect = scrollElement.getBoundingClientRect();
+    const toolbarRect = toolbarElement.getBoundingClientRect();
+    return {
+      offset: Math.abs(scrollRect.bottom - toolbarRect.bottom),
+      toolbarTop: toolbarRect.top,
+      viewportTop: scrollRect.top,
+    };
+  });
+
+  const before = await bottomOffset();
+  expect(before.offset).toBeLessThanOrEqual(1);
+
+  await scroller.evaluate(element => { element.scrollTop = element.scrollHeight / 2; });
+  await expect.poll(() => scroller.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+
+  const after = await bottomOffset();
+  expect(after.offset).toBeLessThanOrEqual(1);
+  expect(after.toolbarTop).toBeGreaterThan(after.viewportTop);
 });
 
 test('exercise feedback and diagnostic cards use authenticated per-user APIs', async ({ page }, testInfo) => {

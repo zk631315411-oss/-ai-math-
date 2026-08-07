@@ -328,12 +328,13 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
       </div>
       )}
 
-      {/* PDF内容区域 */}
-      <div ref={scrollContainerRef} data-testid="pdf-scroll-container"
-        className="flex-1 overflow-auto bg-slate-200 dark:bg-slate-700 p-4 relative"
-        onClick={mobile ? resetToolbarTimer : undefined}>
-        <div className={`flex ${alignPageToStart ? 'justify-start' : 'justify-center'}`}>
-          <div className="relative inline-block" ref={setContainerRef}>
+      {/* PDF视口：滚动内容与悬浮工具栏分层，避免工具栏随页面滚动。 */}
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        <div ref={scrollContainerRef} data-testid="pdf-scroll-container"
+          className={`h-full overflow-auto bg-slate-200 p-4 dark:bg-slate-700 ${mobile ? 'pb-16' : ''}`}
+          onClick={mobile ? resetToolbarTimer : undefined}>
+          <div className={`flex ${alignPageToStart ? 'justify-start' : 'justify-center'}`}>
+            <div className="relative inline-block" ref={setContainerRef}>
             {!pageImageConfig && (
               <Document
                 file={pdfUrl}
@@ -386,22 +387,24 @@ function PDFViewerInner({ pdfUrl, textbookId, onPageChange, mobile, markers, pdf
                 </div>
               </div>
             )}
-            {markers && onMarkerClick && viewerPage && pdfContainerRef && (
-              <PageMarker
-                markers={markers}
-                currentPage={viewerPage}
-                containerRef={pdfContainerRef}
-                containerHeight={pageContainerHeight}
-                onMarkerClick={onMarkerClick}
-              />
-            )}
+              {markers && onMarkerClick && viewerPage && pdfContainerRef && (
+                <PageMarker
+                  markers={markers}
+                  currentPage={viewerPage}
+                  containerRef={pdfContainerRef}
+                  containerHeight={pageContainerHeight}
+                  onMarkerClick={onMarkerClick}
+                />
+              )}
+            </div>
           </div>
         </div>
 
         {/* 移动端底部工具栏 */}
         {mobile && numPages > 0 && (
           <>
-            <div className={`absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ${toolbarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div data-testid="pdf-mobile-toolbar"
+              className={`absolute bottom-0 left-0 right-0 z-20 transition-all duration-500 ${toolbarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <div className="h-12 bg-black/50 backdrop-blur flex items-center justify-between px-2">
                 <button
                   onClick={(e) => { e.stopPropagation(); handlePageChange(Math.max(1, currentPage - 1)); resetToolbarTimer(); }}
