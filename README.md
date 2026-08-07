@@ -68,7 +68,7 @@ V2 is currently released in `shadow` mode. It records and audits evidence withou
 | 高等数学 下册 (黄立宏) | ✓ | Structured MD ready, page map done | — |
 | 离散数学 第六版 (耿素云) | — | Structured MD ready | — |
 
-KG extraction uses the **v4.4 pipeline** (教材提取模块/高代提取/): 25-script multi-round LLM pipeline with rule-case extraction, knowledge grouping, AI review gating, and Neo4j import. See `教材提取模块/高代提取/v4.4_step说明.md` for full documentation.
+KG extraction uses the **v4.4 pipeline** (教材提取模块/高代提取/): 27-script multi-round LLM pipeline with rule-case extraction, knowledge grouping, AI review gating, and Neo4j import. See `教材提取模块/高代提取/v4.4_step说明.md` for full documentation.
 
 ---
 
@@ -110,7 +110,7 @@ KG extraction uses the **v4.4 pipeline** (教材提取模块/高代提取/): 25-
 │  │  diagnostic_worker · pending_worker           │    │
 │  └───────────────────────────────────────────────┘    │
 │  ┌─────────────── Data Layer ─────────────────┐    │
-│  │  SQLite (12 tables)  │  Neo4j (2,980 nodes)  │    │
+│  │  SQLite (45 tables)  │  Neo4j (2,980 nodes)  │    │
 │  │  math_profiles       │  Concept · Theorem    │    │
 │  │  knowledge_stages    │  USES · DERIVES       │    │
 │  │  exercise_bank       │  HAS_PROPERTY · etc.  │    │
@@ -276,14 +276,17 @@ cd frontend && npm run build    # vite build → dist/
 ```
 ai-math/
 ├── app/
-│   ├── routers/         # 6 route modules
-│   ├── services/        # 10+ service modules + agents/ + qa/ 子模块
-│   │   ├── agents/      # BaseAgent 统一接口 · Registry · QAAgent · ExerciseAgent
-│   │   └── qa/          # StreamBus · turn_store · prompt_builder · 其他 QA 子模块
-│   ├── db/              # 16 data modules
+│   ├── routers/         # 11 route modules
+│   ├── services/        # 14 service modules；qa/diagnosis/agents/practice/visualization 等子模块各有独立 README
+│   │   ├── agents/      # BaseAgent 统一接口 · Registry · ToolRuntime（见 agents/README.md）
+│   │   ├── qa/          # StreamBus · turn_store · prompt_builder（见 qa/README.md）
+│   │   ├── diagnosis/   # V2 分源评分 + 确定性投影（见 diagnosis/README.md）
+│   │   ├── practice/    # 教材优先自适应练习（见 practice/README.md）
+│   │   └── visualization/ # 数学可视化 spec 工具（见 visualization/README.md）
+│   ├── db/              # 21 data modules
 │   └── models/          # Pydantic schemas
 ├── frontend/src/
-│   ├── components/      # 19 React components
+│   ├── components/      # 28 React components
 │   └── hooks/           # Auth + textbook preference hooks
 ├── pipeline/            # Legacy KG construction scripts
 ├── 教材提取模块/         # KG extraction pipeline (v4.4: 25-script LLM pipeline)
@@ -299,7 +302,7 @@ ai-math/
 | Frontend | React 18, TypeScript, Vite, TailwindCSS, react-pdf, KaTeX |
 | Backend | FastAPI, Uvicorn, SSE streaming |
 | LLM | DashScope Qwen3.6-plus (QA), Qwen3.6-flash (diagnostic) |
-| Data | SQLite WAL (12 tables), Neo4j Aura (knowledge graph) |
+| Data | SQLite WAL (45 tables), Neo4j Aura (knowledge graph) |
 | Math Sandbox | SymPy |
 | Deployment | Alibaba Cloud ECS, Nginx, systemd |
 
